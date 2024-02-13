@@ -1,0 +1,274 @@
+apiVersion: gobackup.io/v1
+kind: BackupModel
+metadata:
+  name: example-backupmodel
+  namespace: default
+spec:
+  description: "This is an example BackupModel"
+  compressWith:
+    type: "tar.gz"
+  encryptWith:
+    openssl: true
+    salt: true
+    base64: false
+    password: "mysecretpassword"
+    args: "-aes-256-cbc"
+    cipher: "aes-256-cbc"
+    type: "openssl"
+  before_script: "echo 'Starting backup'"
+  after_script: "echo 'Backup completed'"
+  default_storage: "s3"
+---
+apiVersion: storage.gobackup.io/v1
+kind: SCP
+metadata:
+  name: example-scp
+  namespace: default
+spec:
+  path: "/path/to/your/directory"
+  host: "example.com"
+  port: 22
+  # privateKey: "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
+  # passphrase: "your-passphrase"
+  username: "test"
+  password: "testpassword"
+---
+apiVersion: storage.gobackup.io/v1
+kind: FTP
+metadata:
+  name: example-ftp
+  namespace: default
+spec:
+  path: "/path/to/your/directory"
+  host: "example.com"
+  port: 21
+  username: "your-username"
+  password: "your-password"
+  timeout: 30
+  tls: true
+  explicitTLS: false
+  noCheckCertificate: false
+---
+apiVersion: storage.gobackup.io/v1
+kind: SFTP
+metadata:
+  name: example-sftp
+  namespace: default
+spec:
+  path: "/path/to/your/directory"
+  host: "example.com"
+  port: 22
+  privateKey: "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
+  passphrase: "your-passphrase"
+  username: "your-username"
+  # password: "your-password"
+---
+apiVersion: storage.gobackup.io/v1
+kind: S3
+metadata:
+  name: example-s3
+  namespace: default
+spec:
+  bucket: "your-bucket-name"
+  region: "your-region"
+  accessKeyID: "your-access-key-id"
+  secretAccessKey: "your-secret-access-key"
+  maxRetries: 3
+  storageClass: "STANDARD_IA"
+  forcePathStyle: false
+  endpoint: "s3.amazonaws.com"
+---
+apiVersion: storage.gobackup.io/v1
+kind: Azure
+metadata:
+  name: example-azure
+  namespace: default
+spec:
+  account: "your-storage-account"
+  container: "your-container-name"
+  tenantID: "your-tenant-id"
+  clientID: "your-client-id"
+  clientSecret: "your-client-secret"
+---
+apiVersion: storage.gobackup.io/v1
+kind: GCS
+metadata:
+  name: example-gcs
+  namespace: default
+spec:
+  bucket: "your-bucket-name"
+  path: "/path/to/your/directory"
+  # credentials: "your-credentials"
+  credentialsSecret: "your-credentials-secret"
+---
+apiVersion: storage.gobackup.io/v1
+kind: WebDAV
+metadata:
+  name: example-webdav
+  namespace: default
+spec:
+  root: "/path/to/your/directory"
+  username: "your-username"
+  password: "your-password"
+---
+apiVersion: database.gobackup.io/v1
+kind: ETCD
+metadata:
+  name: example-etcd
+  namespace: default
+spec:
+  endpoints:
+    - "http://example-endpoint-1:2379"
+    - "http://example-endpoint-2:2379"
+  additionalOptions:
+    - "--username=myuser"
+    - "--password=mypassword"
+---
+apiVersion: database.gobackup.io/v1
+kind: InfluxDB
+metadata:
+  name: example-influxdb
+  namespace: default
+spec:
+  host: "http://example.com"
+  token: "your-token"
+  bucket: "your-bucket"
+  bucketID: "your-bucket-id"
+  org: "your-org"
+  orgID: "your-org-id"
+  skipVerify: false
+  httpDebug: false
+---
+apiVersion: database.gobackup.io/v1
+kind: MariaDB
+metadata:
+  name: example-mariadb
+  namespace: default
+spec:
+  host: "example.com"
+  port: 3306
+  username: "your-username"
+  password: "your-password"
+  database: "your-database"
+  additionalOptions: "your-additional-options"
+---
+apiVersion: database.gobackup.io/v1
+kind: MongoDB
+metadata:
+  name: example-mongodb
+  namespace: default
+spec:
+  host: "example.com"
+  port: 27017
+  username: "your-username"
+  password: "your-password"
+  database: "your-database"
+  authDB: "your-auth-db"
+  excludeTables:
+    - "table1"
+    - "table2"
+  oplog: false
+  additionalOptions: "your-additional-options"
+---
+apiVersion: database.gobackup.io/v1
+kind: MSSQL
+metadata:
+  name: example-mssql
+  namespace: default
+spec:
+  host: "example.com"
+  port: 1433
+  username: "your-username"
+  password: "your-password"
+  database: "your-database"
+  trustServerCertificate: false
+  additionalOptions: "your-additional-options"
+---
+apiVersion: database.gobackup.io/v1
+kind: MySQL
+metadata:
+  name: example-mysql
+  namespace: default
+spec:
+  host: "example.com"
+  port: 3306
+  username: "your-username"
+  password: "your-password"
+  database: "your-database"
+  tables:
+    - "table1"
+    - "table2"
+  excludeTables:
+    - "table3"
+    - "table4"
+  additionalOptions: "your-additional-options"
+---
+apiVersion: database.gobackup.io/v1
+kind: PostgreSQL
+metadata:
+  name: example-postgresql
+  namespace: default
+spec:
+  host: "example.com"
+  port: 5432
+  username: "your-username"
+  password: "your-password"
+  database: "your-database"
+  tables:
+    - "table1"
+    - "table2"
+  excludeTables:
+    - "table3"
+    - "table4"
+  additionalOptions: "your-additional-options"
+---
+apiVersion: database.gobackup.io/v1
+kind: Redis
+metadata:
+  name: example-redis
+  namespace: default
+spec:
+  host: "example.com"
+  port: 6379
+  password: "your-password"
+---
+apiVersion: gobackup.io/v1
+kind: CronBackup
+metadata:
+  name: example-cronbackup
+  namespace: default
+backupModelRef:
+  name: "your-backup-model"
+  schedule:
+    cron: "0 0 * * *"
+    # every: "day"
+    # at: "00:00"
+storageRefs:
+  - apiGroup: "storage.gobackup.io"
+    type: "S3"
+    name: "example-s3"
+    keep: 5
+    timeout: 30
+databaseRefs:
+  - apiGroup: "database.gobackup.io"
+    type: "MySQL"
+    name: "example-mysql"
+---
+apiVersion: gobackup.io/v1
+kind: Backup
+metadata:
+  name: example-backup
+  namespace: default
+backupModelRef:
+  name: "your-backup-model"
+storageRefs:
+  - apiGroup: "storage.gobackup.io"
+    type: "S3"
+    name: "example-s3"
+    keep: 5
+    timeout: 30
+databaseRefs:
+  - apiGroup: "database.gobackup.io"
+    type: "MySQL"
+    name: "example-mysql"
+
