@@ -25,17 +25,32 @@ import (
 
 // BackupModelSpec defines the desired state of BackupModel
 type BackupModelSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of BackupModel. Edit backupmodel_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Description    string   `json:"description"`
+	CompressWith   Compress `json:"compressWith"`
+	EncodeWith     Encode   `json:"encodeWith"`
+	BeforeScript   string   `json:"beforeScript"`
+	AfterScript    string   `json:"afterScript"`
+	DefaultStorage string   `json:"defaultStorage"`
 }
 
 // BackupModelStatus defines the observed state of BackupModel
 type BackupModelStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+}
+
+type Compress struct {
+	Type string `json:"type"`
+}
+
+type Encode struct {
+	Openssl  bool   `json:"openssl"`
+	Salt     bool   `json:"salt"`
+	Base64   bool   `json:"base64"`
+	Password string `json:"password"`
+	Args     string `json:"args"`
+	Cipher   string `json:"cipher"`
+	Type     string `json:"type"`
 }
 
 //+kubebuilder:object:root=true

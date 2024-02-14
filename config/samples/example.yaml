@@ -15,9 +15,9 @@ spec:
     args: "-aes-256-cbc"
     cipher: "aes-256-cbc"
     type: "openssl"
-  before_script: "echo 'Starting backup'"
-  after_script: "echo 'Backup completed'"
-  default_storage: "s3"
+  beforeScript: "echo 'Starting backup'"
+  afterScript: "echo 'Backup completed'"
+  defaultStorage: "s3"
 ---
 apiVersion: storage.gobackup.io/v1
 kind: SCP

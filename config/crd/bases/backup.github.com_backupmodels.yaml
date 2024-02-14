@@ -34,10 +34,53 @@ spec:
           spec:
             description: BackupModelSpec defines the desired state of BackupModel
             properties:
-              foo:
-                description: Foo is an example field of BackupModel. Edit backupmodel_types.go
-                  to remove/update
+              afterScript:
                 type: string
+              beforeScript:
+                type: string
+              compressWith:
+                properties:
+                  type:
+                    type: string
+                required:
+                - type
+                type: object
+              defaultStorage:
+                type: string
+              description:
+                type: string
+              encodeWith:
+                properties:
+                  args:
+                    type: string
+                  base64:
+                    type: boolean
+                  cipher:
+                    type: string
+                  openssl:
+                    type: boolean
+                  password:
+                    type: string
+                  salt:
+                    type: boolean
+                  type:
+                    type: string
+                required:
+                - args
+                - base64
+                - cipher
+                - openssl
+                - password
+                - salt
+                - type
+                type: object
+            required:
+            - afterScript
+            - beforeScript
+            - compressWith
+            - defaultStorage
+            - description
+            - encodeWith
             type: object
           status:
             description: BackupModelStatus defines the observed state of BackupModel

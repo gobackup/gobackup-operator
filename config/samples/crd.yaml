@@ -67,11 +67,11 @@ spec:
                     type: string
                   type:
                     type: string
-              before_script:
+              beforeScript:
                 type: string
-              after_script:
+              afterScript:
                 type: string
-              default_storage:
+              defaultStorage:
                 type: string
     additionalPrinterColumns:
     - name: Compression
@@ -82,10 +82,10 @@ spec:
       type: string
       description: Encryption of the backup model
       jsonPath: .spec.encryptWith.type
-    - name: Default_Storage
+    - name: DefaultStorage
       type: string
       description: Default storage of the backup model
-      jsonPath: .spec.default_storage
+      jsonPath: .spec.defaultStorage
   scope: Namespaced
   names:
     plural: backupmodels

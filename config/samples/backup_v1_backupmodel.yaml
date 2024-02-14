@@ -9,4 +9,17 @@ metadata:
     app.kubernetes.io/created-by: backup-operator
   name: backupmodel-sample
 spec:
-  # TODO(user): Add fields here
+  description: "This is an example BackupModel"
+  compressWith:
+    type: "tar.gz"
+  encodeWith:
+    openssl: true
+    salt: true
+    base64: false
+    password: "mysecretpassword"
+    args: "-aes-256-cbc"
+    cipher: "aes-256-cbc"
+    type: "openssl"
+  beforeScript: "echo 'Starting backup'"
+  afterScript: "echo 'Backup completed'"
+  defaultStorage: "s3"
