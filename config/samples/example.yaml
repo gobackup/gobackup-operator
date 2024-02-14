@@ -7,7 +7,7 @@ spec:
   description: "This is an example BackupModel"
   compressWith:
     type: "tar.gz"
-  encryptWith:
+  encodeWith:
     openssl: true
     salt: true
     base64: false

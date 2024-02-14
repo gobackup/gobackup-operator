@@ -50,7 +50,7 @@ spec:
                       - "tar.zst"
                       - "tar"
                       - ""
-              encryptWith:
+              encodeWith:
                 type: object
                 properties:
                   openssl:
@@ -81,7 +81,7 @@ spec:
     - name: Encryption
       type: string
       description: Encryption of the backup model
-      jsonPath: .spec.encryptWith.type
+      jsonPath: .spec.encodeWith.type
     - name: DefaultStorage
       type: string
       description: Default storage of the backup model
