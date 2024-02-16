@@ -62,6 +62,11 @@ make uninstall
 make undeploy
 ```
 
+## ToDo
+- Create backup based on config
+- Write backup config file to secret
+- Start backup cronjob
+
 ## Contributing
 // TODO(user): Add detailed information on how you would like others to contribute to this project
 
