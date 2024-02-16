@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"os/exec"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -50,9 +51,14 @@ type BackupModelReconciler struct {
 func (r *BackupModelReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	cmd := exec.Command("gobackup", "-v")
 
-	fmt.Println("<<<----->>>")
+	output, err := cmd.Output()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("<<<----->>>", string(output))
 
 	return ctrl.Result{}, nil
 }
