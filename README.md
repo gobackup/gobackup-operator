@@ -1,9 +1,9 @@
 # backup-operator
-Backup operator performs getting backup from storage
+Handling backup from various storages.
 
 
 ## Description
-A k8s operator to make backup of storages including Etcd using [gobackup](https://github.com/gobackup/gobackup)
+A Kubernetes operator for backing up various storages, including Etcd, based on [gobackup](https://github.com/gobackup/gobackup).
 
 ## Getting Started
 
@@ -36,17 +36,12 @@ make install
 make deploy IMG=<some-registry>/backup-operator:tag
 ```
 
-> **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin 
-privileges or be logged in as admin.
-
 **Create instances of your solution**
 You can apply the samples (examples) from the config/sample:
 
 ```sh
 kubectl apply -k config/samples/
 ```
-
->**NOTE**: Ensure that the samples has default values to test it out.
 
 ### To Uninstall
 **Delete the instances (CRs) from the cluster:**
