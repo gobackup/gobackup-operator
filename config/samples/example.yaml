@@ -17,7 +17,6 @@ spec:
     type: "openssl"
   beforeScript: "echo 'Starting backup'"
   afterScript: "echo 'Backup completed'"
-  defaultStorage: "s3"
 ---
 apiVersion: storage.gobackup.io/v1
 kind: SCP

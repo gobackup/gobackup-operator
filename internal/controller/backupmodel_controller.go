@@ -69,3 +69,8 @@ func (r *BackupModelReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&backupv1.BackupModel{}).
 		Complete(r)
 }
+
+// TODO:
+// CRDs: Storage, DB, Backupmodel, Backup/CronBackup -> First create these CRDs.
+// CRDs existance validation
+// Set trigger on Backup/CronBackup

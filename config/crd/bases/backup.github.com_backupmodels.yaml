@@ -45,8 +45,6 @@ spec:
                 required:
                 - type
                 type: object
-              defaultStorage:
-                type: string
               description:
                 type: string
               encodeWith:
@@ -78,7 +76,6 @@ spec:
             - afterScript
             - beforeScript
             - compressWith
-            - defaultStorage
             - description
             - encodeWith
             type: object

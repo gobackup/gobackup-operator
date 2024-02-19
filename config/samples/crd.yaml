@@ -71,8 +71,6 @@ spec:
                 type: string
               afterScript:
                 type: string
-              defaultStorage:
-                type: string
     additionalPrinterColumns:
     - name: Compression
       type: string
@@ -82,10 +80,6 @@ spec:
       type: string
       description: Encryption of the backup model
       jsonPath: .spec.encodeWith.type
-    - name: DefaultStorage
-      type: string
-      description: Default storage of the backup model
-      jsonPath: .spec.defaultStorage
   scope: Namespaced
   names:
     plural: backupmodels
