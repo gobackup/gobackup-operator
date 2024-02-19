@@ -17,4 +17,13 @@ resources:
   kind: BackupModel
   path: github.com/payamQorbanpour/backup-operator/api/v1
   version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: github.com
+  group: backup
+  kind: CronBackup
+  path: github.com/payamQorbanpour/backup-operator/api/v1
+  version: v1
 version: "3"

@@ -1,4 +1,5 @@
 ## Append samples of your project ##
 resources:
 - backup_v1_backupmodel.yaml
+- backup_v1_cronbackup.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

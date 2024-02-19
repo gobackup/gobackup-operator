@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -27,34 +28,41 @@ import (
 	backupv1 "github.com/payamQorbanpour/backup-operator/api/v1"
 )
 
-// BackupModelReconciler reconciles a BackupModel object
-type BackupModelReconciler struct {
+// CronBackupReconciler reconciles a CronBackup object
+type CronBackupReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=backup.github.com,resources=backupmodels,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=backup.github.com,resources=backupmodels/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=backup.github.com,resources=backupmodels/finalizers,verbs=update
+//+kubebuilder:rbac:groups=backup.github.com,resources=cronbackups,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=backup.github.com,resources=cronbackups/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=backup.github.com,resources=cronbackups/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the BackupModel object against the actual cluster state, and then
+// the CronBackup object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
-func (r *BackupModelReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
+
+	fmt.Println("<<<---CRON-->>>")
 
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *BackupModelReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *CronBackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&backupv1.BackupModel{}).
+		For(&backupv1.CronBackup{}).
 		Complete(r)
 }
+
+// TODO:
+// CRDs existance validation
+// Check if Storage, DataBase, BackupModel CRDs exist before creating CronBackup
+// func (r *CronBackupReconciler) ensureCRDs(ctx context.Context, cronBackup *backupv1.CronBackup) error

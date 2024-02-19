@@ -30,3 +30,29 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - backup.github.com
+  resources:
+  - cronbackups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - backup.github.com
+  resources:
+  - cronbackups/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - backup.github.com
+  resources:
+  - cronbackups/status
+  verbs:
+  - get
+  - patch
+  - update
