@@ -27,11 +27,13 @@ import (
 type CronBackupSpec struct {
 }
 
+type Schedule struct {
+	Cron string `json:"cron,omitempty"`
+}
+
 type BackupModelRef struct {
-	Name     string `json:"name,omitempty"`
-	Schedule struct {
-		Cron string `json:"cron,omitempty"`
-	} `json:"schedule,omitempty"`
+	Name     string   `json:"name,omitempty"`
+	Schedule Schedule `json:"schedule,omitempty"`
 }
 
 type StorageRef struct {

@@ -24,6 +24,27 @@ spec:
               of an object. Servers should convert recognized schemas to the latest
               internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
+          backupModelRef:
+            properties:
+              name:
+                type: string
+              schedule:
+                properties:
+                  cron:
+                    type: string
+                type: object
+            type: object
+          databaseRefs:
+            items:
+              properties:
+                apiGroup:
+                  type: string
+                name:
+                  type: string
+                type:
+                  type: string
+              type: object
+            type: array
           kind:
             description: 'Kind is a string value representing the REST resource this
               object represents. Servers may infer this from the endpoint the client
@@ -33,15 +54,25 @@ spec:
             type: object
           spec:
             description: CronBackupSpec defines the desired state of CronBackup
-            properties:
-              foo:
-                description: Foo is an example field of CronBackup. Edit cronbackup_types.go
-                  to remove/update
-                type: string
             type: object
           status:
             description: CronBackupStatus defines the observed state of CronBackup
             type: object
+          storageRefs:
+            items:
+              properties:
+                apiGroup:
+                  type: string
+                keep:
+                  type: integer
+                name:
+                  type: string
+                timeout:
+                  type: integer
+                type:
+                  type: string
+              type: object
+            type: array
         type: object
     served: true
     storage: true
