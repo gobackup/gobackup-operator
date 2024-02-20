@@ -52,6 +52,21 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	fmt.Println("<<<---CRON-->>>")
 
+	// Define a CronBackup object
+	cronBackup := &backupv1.CronBackup{}
+
+	for storageRef := range cronBackup.Spec.StorageRefs {
+		// ensureStorage()
+		fmt.Println("<<<---storageRef-->>>", storageRef)
+	}
+
+	for databaseRef := range cronBackup.Spec.DatabaseRefs {
+		// ensureDatabase()
+		fmt.Println("<<<---databaseRef-->>>", databaseRef)
+	}
+
+	// TODO: Create cronjob with the given BackupModel using gobackup perform
+
 	return ctrl.Result{}, nil
 }
 
@@ -60,6 +75,20 @@ func (r *CronBackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&backupv1.CronBackup{}).
 		Complete(r)
+}
+
+// Ensure Storage CRD existance
+func (r *CronBackupReconciler) ensureStorage(ctx context.Context, storageName string) error {
+	// TODO: Check storage.type exists in storageRefs with apiGroup: "storage.gobackup.io"
+
+	return nil
+}
+
+// Ensure Database CRD existance
+func (r *CronBackupReconciler) ensureDatabase(ctx context.Context, storageName string) error {
+	// TODO: Check databse.type exists in databaseRefs with apiGroup: "database.gobackup.io"
+
+	return nil
 }
 
 // TODO:

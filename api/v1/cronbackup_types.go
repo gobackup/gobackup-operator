@@ -25,11 +25,30 @@ import (
 
 // CronBackupSpec defines the desired state of CronBackup
 type CronBackupSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	BackupModelRef BackupModelRef `json:"backupModelRef,omitempty"`
+	StorageRefs    []StorageRef   `json:"storageRefs,omitempty"`
+	DatabaseRefs   []DatabaseRef  `json:"databaseRefs,omitempty"`
+}
 
-	// Foo is an example field of CronBackup. Edit cronbackup_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type BackupModelRef struct {
+	Name     string `json:"name,omitempty"`
+	Schedule struct {
+		Cron string `json:"cron,omitempty"`
+	} `json:"schedule,omitempty"`
+}
+
+type StorageRef struct {
+	APIGroup string `json:"apiGroup,omitempty"`
+	Type     string `json:"type,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Keep     int    `json:"keep,omitempty"`
+	Timeout  int    `json:"timeout,omitempty"`
+}
+
+type DatabaseRef struct {
+	APIGroup string `json:"apiGroup,omitempty"`
+	Type     string `json:"type,omitempty"`
+	Name     string `json:"name,omitempty"`
 }
 
 // CronBackupStatus defines the observed state of CronBackup
