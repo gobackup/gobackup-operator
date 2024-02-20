@@ -90,8 +90,3 @@ func (r *CronBackupReconciler) ensureDatabase(ctx context.Context, storageName s
 
 	return nil
 }
-
-// TODO:
-// CRDs existance validation
-// Check if Storage, DataBase, BackupModel CRDs exist before creating CronBackup
-// func (r *CronBackupReconciler) ensureCRDs(ctx context.Context, cronBackup *backupv1.CronBackup) error
