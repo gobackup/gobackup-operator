@@ -55,12 +55,12 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	// Define a CronBackup object
 	cronBackup := &backupv1.CronBackup{}
 
-	for storageRef := range cronBackup.Spec.StorageRefs {
+	for storageRef := range cronBackup.StorageRefs {
 		// ensureStorage()
 		fmt.Println("<<<---storageRef-->>>", storageRef)
 	}
 
-	for databaseRef := range cronBackup.Spec.DatabaseRefs {
+	for databaseRef := range cronBackup.DatabaseRefs {
 		// ensureDatabase()
 		fmt.Println("<<<---databaseRef-->>>", databaseRef)
 	}

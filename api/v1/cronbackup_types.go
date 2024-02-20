@@ -25,9 +25,6 @@ import (
 
 // CronBackupSpec defines the desired state of CronBackup
 type CronBackupSpec struct {
-	BackupModelRef BackupModelRef `json:"backupModelRef,omitempty"`
-	StorageRefs    []StorageRef   `json:"storageRefs,omitempty"`
-	DatabaseRefs   []DatabaseRef  `json:"databaseRefs,omitempty"`
 }
 
 type BackupModelRef struct {
@@ -67,6 +64,10 @@ type CronBackup struct {
 
 	Spec   CronBackupSpec   `json:"spec,omitempty"`
 	Status CronBackupStatus `json:"status,omitempty"`
+
+	BackupModelRef BackupModelRef `json:"backupModelRef,omitempty"`
+	StorageRefs    []StorageRef   `json:"storageRefs,omitempty"`
+	DatabaseRefs   []DatabaseRef  `json:"databaseRefs,omitempty"`
 }
 
 //+kubebuilder:object:root=true
