@@ -18,9 +18,13 @@ package controller
 
 import (
 	"context"
-	"fmt"
 
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -50,22 +54,23 @@ type CronBackupReconciler struct {
 func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	fmt.Println("<<<---CRON-->>>")
-
 	// Define a CronBackup object
 	cronBackup := &backupv1.CronBackup{}
 
-	for storageRef := range cronBackup.StorageRefs {
-		// ensureStorage()
-		fmt.Println("<<<---storageRef-->>>", storageRef)
+	// Fetch the CronBackup instance
+	if err := r.Get(ctx, req.NamespacedName, cronBackup); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	for databaseRef := range cronBackup.DatabaseRefs {
-		// ensureDatabase()
-		fmt.Println("<<<---databaseRef-->>>", databaseRef)
+	// Ensure Storage and Database CRDs existance
+	if len(cronBackup.StorageRefs) < 0 || len(cronBackup.DatabaseRefs) < 0 {
+		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
 
-	// TODO: Create cronjob with the given BackupModel using gobackup perform
+	// TODO: Create a secret from goabckup config
+
+	// Create cronjob with the given BackupModel to run 'gobackup perform'
+	r.createBackupJob(ctx)
 
 	return ctrl.Result{}, nil
 }
@@ -77,16 +82,62 @@ func (r *CronBackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// Ensure Storage CRD existance
-func (r *CronBackupReconciler) ensureStorage(ctx context.Context, storageName string) error {
-	// TODO: Check storage.type exists in storageRefs with apiGroup: "storage.gobackup.io"
+func (r *CronBackupReconciler) createBackupJob(ctx context.Context) (*batchv1.Job, error) {
+	_ = log.FromContext(ctx)
 
-	return nil
-}
+	job := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "gobackup-job",
+			Namespace: "default",
+		},
+		Spec: batchv1.JobSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:    "gobackup",
+							Image:   "busybox",
+							Command: []string{"/bin/sh", "-c", "gobackup perform"},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "gobackup-secret-volume",
+									MountPath: "/root/.gobackup",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "gobackup-secret-volume",
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName: "gobackup-secret",
+								},
+							},
+						},
+					},
+					RestartPolicy: corev1.RestartPolicyNever,
+				},
+			},
+		},
+	}
 
-// Ensure Database CRD existance
-func (r *CronBackupReconciler) ensureDatabase(ctx context.Context, storageName string) error {
-	// TODO: Check databse.type exists in databaseRefs with apiGroup: "database.gobackup.io"
+	config, err := clientcmd.BuildConfigFromFlags("", "/Users/payam/.kube/config")
+	if err != nil {
+		return nil, err
+	}
 
-	return nil
+	// Create a clientset from the configuration
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the Job
+	_, err = clientset.BatchV1().Jobs("default").Create(ctx, job, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }
