@@ -97,34 +97,12 @@ func (r *CronBackupReconciler) createBackupJob(ctx context.Context) (*batchv1.Jo
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
-					InitContainers: []corev1.Container{
-						{
-							Name:    "install-gobackup",
-							Image:   "golang:alpine",
-							Command: []string{"/bin/sh", "-c"},
-							Args: []string{
-								"apk add --no-cache git; " +
-									"go get github.com/huacnlee/gobackup; " +
-									"mv /go/bin/gobackup /gobackup",
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "gobackup-bin",
-									MountPath: "/gobackup",
-								},
-							},
-						},
-					},
 					Containers: []corev1.Container{
 						{
 							Name:    "gobackup",
-							Image:   "busybox",
-							Command: []string{"/bin/sh", "-c", "cd /gobackup && ./gobackup perform"},
+							Image:   "huacnlee/gobackup",
+							Command: []string{"/bin/sh", "-c", "gobackup perform"},
 							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "gobackup-bin",
-									MountPath: "/gobackup",
-								},
 								{
 									Name:      "gobackup-secret-volume",
 									MountPath: "/root/.gobackup",
@@ -133,12 +111,6 @@ func (r *CronBackupReconciler) createBackupJob(ctx context.Context) (*batchv1.Jo
 						},
 					},
 					Volumes: []corev1.Volume{
-						{
-							Name: "gobackup-bin",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
-							},
-						},
 						{
 							Name: "gobackup-secret-volume",
 							VolumeSource: corev1.VolumeSource{
