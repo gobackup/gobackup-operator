@@ -7,6 +7,21 @@ metadata:
     app.kubernetes.io/part-of: backup-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: backup-operator
-  name: cronbackup-sample
-spec:
-  # TODO(user): Add fields here
+  name: example-cronbackup
+  namespace: default
+backupModelRef:
+  name: "your-backup-model"
+  schedule:
+    cron: "0 0 * * *"
+    # every: "day"
+    # at: "00:00"
+storageRefs:
+  - apiGroup: "storage.gobackup.io"
+    type: "S3"
+    name: "example-s3"
+    keep: 5
+    timeout: 30
+databaseRefs:
+  - apiGroup: "database.gobackup.io"
+    type: "MySQL"
+    name: "example-mysql"

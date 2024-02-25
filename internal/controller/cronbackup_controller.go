@@ -64,13 +64,13 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	// Ensure Storage and Database CRDs existance
-	if len(cronBackup.StorageRefs) < 0 || len(cronBackup.DatabaseRefs) < 0 {
+	if len(cronBackup.StorageRefs) <= 0 || len(cronBackup.DatabaseRefs) <= 0 {
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
 
 	// TODO: Create a secret from goabckup config
 
-	// Create cronjob with the given BackupModel to run 'gobackup perform'
+	// Create job with the given BackupModel to run 'gobackup perform'
 	_, err := r.createBackupJob(ctx)
 	if err != nil {
 		fmt.Println("Err: ", err)
@@ -141,6 +141,55 @@ func (r *CronBackupReconciler) createBackupJob(ctx context.Context) (*batchv1.Jo
 	_, err = clientset.BatchV1().Jobs("default").Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context) (*batchv1.Job, error) {
+	_ = log.FromContext(ctx)
+
+	cronJob := &batchv1.CronJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-cronjob",
+			Namespace: "default",
+		},
+		Spec: batchv1.CronJobSpec{
+			Schedule: "*/1 * * * *", // Runs every minute
+			JobTemplate: batchv1.JobTemplateSpec{
+				Spec: batchv1.JobSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:    "example",
+									Image:   "busybox",
+									Command: []string{"/bin/sh", "-c", "date; echo Hello from the Kubernetes cluster"},
+								},
+							},
+							RestartPolicy: corev1.RestartPolicyOnFailure,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	config, err := clientcmd.BuildConfigFromFlags("", "/Users/payam/.kube/config")
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a clientset from the configuration
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the CronJob
+	_, err = clientset.BatchV1().CronJobs("default").Create(ctx, cronJob, metav1.CreateOptions{})
+	if err != nil {
+		panic(err)
 	}
 
 	return nil, nil
