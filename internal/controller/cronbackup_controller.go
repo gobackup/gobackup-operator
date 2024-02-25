@@ -151,7 +151,7 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context) (*batchv
 
 	cronJob := &batchv1.CronJob{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-cronjob",
+			Name:      "gobackup-cronjob",
 			Namespace: "default",
 		},
 		Spec: batchv1.CronJobSpec{
@@ -162,9 +162,25 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context) (*batchv
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{
 								{
-									Name:    "example",
-									Image:   "busybox",
-									Command: []string{"/bin/sh", "-c", "date; echo Hello from the Kubernetes cluster"},
+									Name:    "gobackup",
+									Image:   "huacnlee/gobackup",
+									Command: []string{"/bin/sh", "-c", "gobackup perform"},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "gobackup-secret-volume",
+											MountPath: "/root/.gobackup",
+										},
+									},
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: "gobackup-secret-volume",
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "gobackup-secret",
+										},
+									},
 								},
 							},
 							RestartPolicy: corev1.RestartPolicyOnFailure,
