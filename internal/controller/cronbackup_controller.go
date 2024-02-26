@@ -64,7 +64,8 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	// Ensure Storage and Database CRDs existance
-	if len(cronBackup.StorageRefs) <= 0 || len(cronBackup.DatabaseRefs) <= 0 {
+	// TODO: Extend this by checking every storage and database
+	if len(cronBackup.StorageRefs) == 0 || len(cronBackup.DatabaseRefs) == 0 {
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
 
