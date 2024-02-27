@@ -63,7 +63,7 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Ensure Storage and Database CRDs existance
+	// Ensure Storage and Database CRDs existence
 	// TODO: Extend this by checking every storage and database
 	if len(cronBackup.StorageRefs) == 0 || len(cronBackup.DatabaseRefs) == 0 {
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
@@ -87,6 +87,7 @@ func (r *CronBackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+// createBackupJob creates a job to run the 'gobackup perform'
 func (r *CronBackupReconciler) createBackupJob(ctx context.Context) (*batchv1.Job, error) {
 	_ = log.FromContext(ctx)
 
@@ -144,10 +145,12 @@ func (r *CronBackupReconciler) createBackupJob(ctx context.Context) (*batchv1.Jo
 		return nil, err
 	}
 
-	return nil, nil
+	return job, nil
 }
 
-func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context) (*batchv1.Job, error) {
+// nolint
+// createBackupCronJob creates a cronjob to run the 'gobackup perform'
+func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context) (*batchv1.CronJob, error) {
 	_ = log.FromContext(ctx)
 
 	cronJob := &batchv1.CronJob{
@@ -209,5 +212,5 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context) (*batchv
 		panic(err)
 	}
 
-	return nil, nil
+	return cronJob, nil
 }
