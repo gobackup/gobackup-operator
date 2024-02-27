@@ -25,6 +25,8 @@ SHELL = /usr/bin/env bash -o pipefail
 .PHONY: all
 all: build
 
+LINT = golang.org/x/lint/golint
+
 ##@ General
 
 # The help target prints out all targets with their descriptions organized
