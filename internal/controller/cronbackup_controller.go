@@ -101,9 +101,10 @@ func (r *CronBackupReconciler) createBackupJob(ctx context.Context) (*batchv1.Jo
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:    "gobackup",
-							Image:   "huacnlee/gobackup",
-							Command: []string{"/bin/sh", "-c", "gobackup perform"},
+							Name:            "gobackup",
+							Image:           "huacnlee/gobackup",
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							Command:         []string{"/bin/sh", "-c", "gobackup perform"},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "gobackup-secret-volume",
@@ -166,9 +167,10 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context) (*batchv
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{
 								{
-									Name:    "gobackup",
-									Image:   "huacnlee/gobackup",
-									Command: []string{"/bin/sh", "-c", "gobackup perform"},
+									Name:            "gobackup",
+									Image:           "huacnlee/gobackup",
+									ImagePullPolicy: corev1.PullIfNotPresent,
+									Command:         []string{"/bin/sh", "-c", "gobackup perform"},
 									VolumeMounts: []corev1.VolumeMount{
 										{
 											Name:      "gobackup-secret-volume",
