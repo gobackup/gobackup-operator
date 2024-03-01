@@ -70,6 +70,14 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	// TODO: Create a secret from goabckup config
+	// for _, database := range cronBackup.DatabaseRefs {
+	// TODO: Fetch the database type instance for example: example-postgres
+	// and add it to the gobackup config file
+	// }
+	// for _, storage := range cronBackup.StorageRefs {
+	// TODO: Fetch the storage type instance for example: example-s3
+	// and add it to the gobackup config file
+	// }
 
 	// Create job with the given BackupModel to run 'gobackup perform'
 	_, err := r.createBackupJob(ctx)
