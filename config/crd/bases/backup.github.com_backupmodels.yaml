@@ -34,11 +34,11 @@ spec:
           spec:
             description: BackupModelSpec defines the desired state of BackupModel
             properties:
-              afterScript:
+              after_script:
                 type: string
-              beforeScript:
+              before_script:
                 type: string
-              compressWith:
+              compress_with:
                 properties:
                   type:
                     type: string
@@ -47,7 +47,7 @@ spec:
                 type: object
               description:
                 type: string
-              encodeWith:
+              encode_with:
                 properties:
                   args:
                     type: string
@@ -73,11 +73,11 @@ spec:
                 - type
                 type: object
             required:
-            - afterScript
-            - beforeScript
-            - compressWith
+            - after_script
+            - before_script
+            - compress_with
             - description
-            - encodeWith
+            - encode_with
             type: object
           status:
             description: BackupModelStatus defines the observed state of BackupModel

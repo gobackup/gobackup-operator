@@ -26,10 +26,10 @@ import (
 // BackupModelSpec defines the desired state of BackupModel
 type BackupModelSpec struct {
 	Description  string   `json:"description"`
-	CompressWith Compress `json:"compressWith"`
-	EncodeWith   Encode   `json:"encodeWith"`
-	BeforeScript string   `json:"beforeScript"`
-	AfterScript  string   `json:"afterScript"`
+	CompressWith Compress `json:"compress_with"`
+	EncodeWith   Encode   `json:"encode_with"`
+	BeforeScript string   `json:"before_script"`
+	AfterScript  string   `json:"after_script"`
 }
 
 // BackupModelStatus defines the observed state of BackupModel
