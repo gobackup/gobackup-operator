@@ -56,6 +56,12 @@ make uninstall
 - [ ] Config validations
 - [ ] Add backup cronjob
 
+
+## Releases
+### gobackup-operator 0.1.0-alpha:
+
+This release enables users to backup from PostgreSQL database and push it to S3 storage
+
 ## Contributing
 
 Just create a new branch (feature-{branch-name}) and push.
