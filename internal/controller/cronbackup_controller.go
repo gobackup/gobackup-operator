@@ -239,6 +239,7 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context) (*batchv
 	return cronJob, nil
 }
 
+// nolint
 // getCRD fetches a CRD instance.
 func getCRD(ctx context.Context, dynamicClient dynamic.Interface, group, version, resource, namespace, name string) (*unstructured.Unstructured, error) {
 	gvr := schema.GroupVersionResource{Group: group, Version: version, Resource: resource}
