@@ -56,3 +56,55 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - backup.github.com
+  resources:
+  - postgresqls
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - backup.github.com
+  resources:
+  - postgresqls/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - backup.github.com
+  resources:
+  - postgresqls/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - backup.github.com
+  resources:
+  - s3s
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - backup.github.com
+  resources:
+  - s3s/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - backup.github.com
+  resources:
+  - s3s/status
+  verbs:
+  - get
+  - patch
+  - update

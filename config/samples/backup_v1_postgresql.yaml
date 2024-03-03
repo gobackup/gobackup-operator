@@ -1,0 +1,12 @@
+apiVersion: backup.github.com/v1
+kind: PostgreSQL
+metadata:
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: postgresql-sample
+    app.kubernetes.io/part-of: backup-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: backup-operator
+  name: postgresql-sample
+spec:
+  # TODO(user): Add fields here

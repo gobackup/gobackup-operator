@@ -23,8 +23,12 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -69,6 +73,21 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
 
+	config, err := clientcmd.BuildConfigFromFlags("", "/Users/payam/.kube/config")
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// dynamicClient, err := dynamic.NewForConfig(config)
+	// if err != nil {
+	// 	return ctrl.Result{}, err
+	// }
+
+	// examplepsql, err := getCRD(ctx, dynamicClient, "database.gobackup.io", "v1", "postgresqls", "default", "example-postgresql")
+	// if err != nil {
+	// 	return ctrl.Result{}, err
+	// }
+
 	// TODO: Create a secret from goabckup config
 	// for _, database := range cronBackup.DatabaseRefs {
 	// TODO: Fetch the database type instance for example: example-postgres
@@ -80,7 +99,7 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	// }
 
 	// Create job with the given BackupModel to run 'gobackup perform'
-	_, err := r.createBackupJob(ctx)
+	_, err = r.createBackupJob(ctx, config)
 	if err != nil {
 		fmt.Println("Err: ", err)
 	}
@@ -96,7 +115,7 @@ func (r *CronBackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // createBackupJob creates a job to run the 'gobackup perform'
-func (r *CronBackupReconciler) createBackupJob(ctx context.Context) (*batchv1.Job, error) {
+func (r *CronBackupReconciler) createBackupJob(ctx context.Context, config *rest.Config) (*batchv1.Job, error) {
 	_ = log.FromContext(ctx)
 
 	job := &batchv1.Job{
@@ -135,11 +154,6 @@ func (r *CronBackupReconciler) createBackupJob(ctx context.Context) (*batchv1.Jo
 				},
 			},
 		},
-	}
-
-	config, err := clientcmd.BuildConfigFromFlags("", "/Users/payam/.kube/config")
-	if err != nil {
-		return nil, err
 	}
 
 	// Create a clientset from the configuration
@@ -223,4 +237,17 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context) (*batchv
 	}
 
 	return cronJob, nil
+}
+
+// getCRD fetches a CRD instance.
+func getCRD(ctx context.Context, dynamicClient dynamic.Interface, group, version, resource, namespace, name string) (*unstructured.Unstructured, error) {
+	gvr := schema.GroupVersionResource{Group: group, Version: version, Resource: resource}
+
+	// Fetch the instance
+	crdObj, err := dynamicClient.Resource(gvr).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch CRD %s in namespace %s: %w", name, namespace, err)
+	}
+
+	return crdObj, nil
 }
