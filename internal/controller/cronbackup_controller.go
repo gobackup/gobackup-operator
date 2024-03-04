@@ -19,13 +19,13 @@ package controller
 import (
 	"context"
 	"fmt"
+	"os"
 
+	"gopkg.in/yaml.v2"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -35,12 +35,40 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	backupv1 "github.com/payamQorbanpour/backup-operator/api/v1"
+	"github.com/payamQorbanpour/backup-operator/pkg/utils"
 )
 
 // CronBackupReconciler reconciles a CronBackup object
 type CronBackupReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+}
+
+// BackupConfig represents the configuration for backups
+type BackupConfig struct {
+	Models Models `yaml:"models,omitempty"`
+}
+
+// Models represents the different models for backup configuration
+type Models struct {
+	MyBackup MyBackup `yaml:"my_backup,omitempty"`
+}
+
+// MyBackup represents the configuration for "my_backup" model
+type MyBackup struct {
+	Databases   Databases                `yaml:"databases"`
+	Storages    Storages                 `yaml:"storages"`
+	BackupModel backupv1.BackupModelSpec `yaml:"compress_with,omitempty"`
+}
+
+// Databases represents the database configurations
+type Databases struct {
+	Postgres backupv1.PostgreSQLSpecConfig `yaml:"postgres"`
+}
+
+// Storages represents the storage configurations
+type Storages struct {
+	S3 backupv1.S3SpecConfig `yaml:"s3"`
 }
 
 //+kubebuilder:rbac:groups=backup.github.com,resources=cronbackups,verbs=get;list;watch;create;update;patch;delete
@@ -78,14 +106,90 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
-	// dynamicClient, err := dynamic.NewForConfig(config)
-	// if err != nil {
-	// 	return ctrl.Result{}, err
-	// }
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
-	// examplepsql, err := getCRD(ctx, dynamicClient, "database.gobackup.io", "v1", "postgresqls", "default", "example-postgresql")
-	// if err != nil {
-	// 	return ctrl.Result{}, err
+	examplepsql, err := utils.GetCRD(ctx, dynamicClient, "database.gobackup.io", "v1", "postgresqls", "default", "example-postgresql")
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	examples3, err := utils.GetCRD(ctx, dynamicClient, "storage.gobackup.io", "v1", "s3s", "default", "example-s3")
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	var postgreSQLSpec backupv1.PostgreSQLSpec
+
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(examplepsql.Object["spec"].(map[string]interface{}), &postgreSQLSpec); err != nil {
+		return ctrl.Result{}, err
+	}
+	postgreSQLSpec.Type = "postgresql"
+
+	var s3Spec backupv1.S3Spec
+
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(examples3.Object["spec"].(map[string]interface{}), &s3Spec); err != nil {
+		return ctrl.Result{}, err
+	}
+	s3Spec.Type = "s3"
+	backupConfig := BackupConfig{
+		Models: Models{
+			MyBackup: MyBackup{
+				Databases: Databases{
+					backupv1.PostgreSQLSpecConfig(postgreSQLSpec),
+				},
+				Storages: Storages{
+					backupv1.S3SpecConfig(s3Spec),
+				},
+			},
+		},
+	}
+
+	yamlData, err := yaml.Marshal(&backupConfig)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Write to gobackup.yaml
+	err = os.WriteFile("gobackup.yaml", yamlData, 0644)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "gobackup-secret",
+		},
+		StringData: map[string]string{
+			"gobackup.yml": string(yamlData),
+		},
+	}
+
+	// Create a clientset from the configuration
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Create the Secret in the specified namespace
+	_, err = clientset.CoreV1().Secrets("default").Create(ctx, secret, metav1.CreateOptions{})
+	if err != nil {
+		panic(err.Error())
+	}
+
+	fmt.Printf("-----model--->:\n%s\n", string(yamlData))
+
+	// secretData, _ := yaml.Marshal(backupConfig)
+	// secret := &corev1.Secret{
+	// 	ObjectMeta: metav1.ObjectMeta{
+	// 		Name:      secretName,
+	// 		Namespace: ns,
+	// 	},
+	// 	Data: map[string][]byte{
+	// 		"gobackup.yaml": secretData,
+	// 	},
 	// }
 
 	// TODO: Create a secret from goabckup config
@@ -237,18 +341,4 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context) (*batchv
 	}
 
 	return cronJob, nil
-}
-
-// nolint
-// getCRD fetches a CRD instance.
-func getCRD(ctx context.Context, dynamicClient dynamic.Interface, group, version, resource, namespace, name string) (*unstructured.Unstructured, error) {
-	gvr := schema.GroupVersionResource{Group: group, Version: version, Resource: resource}
-
-	// Fetch the instance
-	crdObj, err := dynamicClient.Resource(gvr).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch CRD %s in namespace %s: %w", name, namespace, err)
-	}
-
-	return crdObj, nil
 }

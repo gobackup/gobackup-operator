@@ -44,20 +44,17 @@ spec:
                 type: boolean
               maxRetries:
                 type: integer
+              path:
+                type: string
               region:
                 type: string
               secretAccessKey:
                 type: string
               storageClass:
                 type: string
+              type:
+                type: string
             required:
-            - accessKeyID
-            - bucket
-            - endpoint
-            - forcePathStyle
-            - maxRetries
-            - region
-            - secretAccessKey
             - storageClass
             type: object
           status:

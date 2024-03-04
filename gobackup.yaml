@@ -1,0 +1,22 @@
+models:
+  my_backup:
+    databases:
+      postgres:
+        host: postgres-service
+        port: 5432
+        type: postgresql
+        database: my_database
+        username: postgres
+        password: mysecretpassword
+        additional_options: your-additional-options
+    storages:
+      s3:
+        type: s3
+        bucket: bilbilak
+        region: ir-thr-at1
+        endpoint: s3.ir-thr-at1.arvanstorage.ir
+        access_key_id: f12ef39a-91c1-44da-914f-54dce223458f
+        secret_access_key: 5fa95fd9bcd78338519dc5f891fa6d289045af4773b24bd2ef195129e7a7d8be
+        force_path_style: true
+        storage_class: ""
+        max_retries: 3

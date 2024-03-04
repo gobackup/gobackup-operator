@@ -25,14 +25,30 @@ import (
 
 // S3Spec defines the desired state of S3
 type S3Spec struct {
-	Bucket          string `json:"bucket" yaml:"bucket"`
-	Region          string `json:"region" yaml:"region"`
-	AccessKeyID     string `json:"accessKeyID" yaml:"accessKeyID"`
-	SecretAccessKey string `json:"secretAccessKey" yaml:"secretAccessKey"`
-	MaxRetries      int    `json:"maxRetries" yaml:"maxRetries"`
+	Type            string `json:"type,omitempty" yaml:"type,omitempty"`
+	Bucket          string `json:"bucket,omitempty" yaml:"bucket,omitempty"`
+	Region          string `json:"region,omitempty" yaml:"region,omitempty"`
+	Endpoint        string `json:"endpoint,omitempty" yaml:"endpoint,omitempty"`
+	Path            string `json:"path,omitempty" yaml:"path,omitempty"`
+	AccessKeyID     string `json:"accessKeyID,omitempty" yaml:"accessKeyID,omitempty"`
+	SecretAccessKey string `json:"secretAccessKey,omitempty" yaml:"secretAccessKey,omitempty"`
+	ForcePathStyle  bool   `json:"forcePathStyle,omitempty" yaml:"forcePathStyle,omitempty"`
 	StorageClass    string `json:"storageClass" yaml:"storageClass"`
-	ForcePathStyle  bool   `json:"forcePathStyle" yaml:"forcePathStyle"`
-	Endpoint        string `json:"endpoint" yaml:"endpoint"`
+	MaxRetries      int    `json:"maxRetries,omitempty" yaml:"maxRetries,omitempty"`
+}
+
+// S3SpecConfig duplicates S3Spec for gobackup config file
+type S3SpecConfig struct {
+	Type            string `json:"type,omitempty" yaml:"type,omitempty"`
+	Bucket          string `json:"bucket,omitempty" yaml:"bucket,omitempty"`
+	Region          string `json:"region,omitempty" yaml:"region,omitempty"`
+	Endpoint        string `json:"endpoint,omitempty" yaml:"endpoint,omitempty"`
+	Path            string `json:"path,omitempty" yaml:"path,omitempty"`
+	AccessKeyID     string `json:"access_key_id,omitempty" yaml:"access_key_id,omitempty"`
+	SecretAccessKey string `json:"secret_access_key,omitempty" yaml:"secret_access_key,omitempty"`
+	ForcePathStyle  bool   `json:"force_path_style,omitempty" yaml:"force_path_style,omitempty"`
+	StorageClass    string `json:"storage_class" yaml:"storage_class"`
+	MaxRetries      int    `json:"max_retries,omitempty" yaml:"max_retries,omitempty"`
 }
 
 // S3Status defines the observed state of S3
