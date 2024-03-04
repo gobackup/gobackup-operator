@@ -25,14 +25,28 @@ import (
 
 // PostgreSQLSpec defines the desired state of PostgreSQL
 type PostgreSQLSpec struct {
-	Host              string   `json:"host" yaml:"host"`
-	Port              int      `json:"port" yaml:"port"`
-	Username          string   `json:"username" yaml:"username"`
-	Password          string   `json:"password" yaml:"password"`
-	Database          string   `json:"database" yaml:"database"`
-	Tables            []string `json:"tables" yaml:"tables"`
-	ExcludeTables     []string `json:"excludeTables" yaml:"excludeTables"`
-	AdditionalOptions string   `json:"additionalOptions" yaml:"additionalOptions"`
+	Host              string   `json:"host,omitempty" yaml:"host,omitempty"`
+	Port              int      `json:"port,omitempty" yaml:"port,omitempty"`
+	Type              string   `json:"type,omitempty" yaml:"type,omitempty"`
+	Database          string   `json:"database,omitempty" yaml:"database,omitempty"`
+	Username          string   `json:"username,omitempty" yaml:"username,omitempty"`
+	Password          string   `json:"password,omitempty" yaml:"password,omitempty"`
+	Tables            []string `json:"tables,omitempty" yaml:"tables,omitempty"`
+	ExcludeTables     []string `json:"excludeTables,omitempty" yaml:"excludeTables,omitempty"`
+	AdditionalOptions string   `json:"additionalOptions,omitempty" yaml:"additionalOptions,omitempty"`
+}
+
+// PostgreSQLSpec duplicates PostgreSQL for gobackup config file
+type PostgreSQLSpecConfig struct {
+	Host              string   `json:"host,omitempty" yaml:"host,omitempty"`
+	Port              int      `json:"port,omitempty" yaml:"port,omitempty"`
+	Type              string   `json:"type,omitempty" yaml:"type,omitempty"`
+	Database          string   `json:"database,omitempty" yaml:"database,omitempty"`
+	Username          string   `json:"username,omitempty" yaml:"username,omitempty"`
+	Password          string   `json:"password,omitempty" yaml:"password,omitempty"`
+	Tables            []string `json:"tables,omitempty" yaml:"tables,omitempty"`
+	ExcludeTables     []string `json:"exclude_tables,omitempty" yaml:"exclude_tables,omitempty"`
+	AdditionalOptions string   `json:"additional_options,omitempty" yaml:"additional_options,omitempty"`
 }
 
 // PostgreSQLStatus defines the observed state of PostgreSQL
