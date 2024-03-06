@@ -1,4 +1,4 @@
-module github.com/payamQorbanpour/backup-operator
+module github.com/gobackup/gobackup-operator
 
 go 1.20
 

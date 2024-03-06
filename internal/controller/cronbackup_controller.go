@@ -34,8 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	backupv1 "github.com/payamQorbanpour/backup-operator/api/v1"
-	"github.com/payamQorbanpour/backup-operator/pkg/utils"
+	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
+	"github.com/gobackup/gobackup-operator/pkg/utils"
 )
 
 // CronBackupReconciler reconciles a CronBackup object
@@ -71,9 +71,9 @@ type Storages struct {
 	S3 backupv1.S3SpecConfig `yaml:"s3"`
 }
 
-//+kubebuilder:rbac:groups=backup.github.com,resources=cronbackups,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=backup.github.com,resources=cronbackups/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=backup.github.com,resources=cronbackups/finalizers,verbs=update
+//+kubebuilder:rbac:groups=gobackup.io,resources=cronbackups,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=gobackup.io,resources=cronbackups/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=gobackup.io,resources=cronbackups/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

@@ -12,7 +12,7 @@ metadata:
   name: postgresql-viewer-role
 rules:
 - apiGroups:
-  - backup.github.com
+  - gobackup.io
   resources:
   - postgresqls
   verbs:
@@ -20,7 +20,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - backup.github.com
+  - gobackup.io
   resources:
   - postgresqls/status
   verbs:

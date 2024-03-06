@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	backupv1 "github.com/payamQorbanpour/backup-operator/api/v1"
+	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
 )
 
 // S3Reconciler reconciles a S3 object
@@ -33,9 +33,9 @@ type S3Reconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=backup.github.com,resources=s3s,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=backup.github.com,resources=s3s/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=backup.github.com,resources=s3s/finalizers,verbs=update
+//+kubebuilder:rbac:groups=gobackup.io,resources=s3s,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=gobackup.io,resources=s3s/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=gobackup.io,resources=s3s/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
