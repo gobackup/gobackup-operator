@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	backupv1 "github.com/payamQorbanpour/backup-operator/api/v1"
+	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
 )
 
 // PostgreSQLReconciler reconciles a PostgreSQL object
@@ -33,9 +33,9 @@ type PostgreSQLReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=backup.github.com,resources=postgresqls,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=backup.github.com,resources=postgresqls/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=backup.github.com,resources=postgresqls/finalizers,verbs=update
+//+kubebuilder:rbac:groups=gobackup.io,resources=postgresqls,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=gobackup.io,resources=postgresqls/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=gobackup.io,resources=postgresqls/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

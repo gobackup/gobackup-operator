@@ -32,8 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	backupv1 "github.com/payamQorbanpour/backup-operator/api/v1"
-	"github.com/payamQorbanpour/backup-operator/internal/controller"
+	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
+	"github.com/gobackup/gobackup-operator/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
 
