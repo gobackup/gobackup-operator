@@ -203,7 +203,7 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	// }
 
 	// Create job with the given BackupModel to run 'gobackup perform'
-	_, err = r.createBackupJob(ctx, config)
+	_, err = r.createBackupJob(ctx, config, "default")
 	if err != nil {
 		fmt.Println("Err: ", err)
 	}
@@ -219,13 +219,13 @@ func (r *CronBackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // createBackupJob creates a job to run the 'gobackup perform'
-func (r *CronBackupReconciler) createBackupJob(ctx context.Context, config *rest.Config) (*batchv1.Job, error) {
+func (r *CronBackupReconciler) createBackupJob(ctx context.Context, config *rest.Config, namespace string) (*batchv1.Job, error) {
 	_ = log.FromContext(ctx)
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gobackup-job",
-			Namespace: "default",
+			Namespace: namespace,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
@@ -267,7 +267,7 @@ func (r *CronBackupReconciler) createBackupJob(ctx context.Context, config *rest
 	}
 
 	// Create the Job
-	_, err = clientset.BatchV1().Jobs("default").Create(ctx, job, metav1.CreateOptions{})
+	_, err = clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -277,13 +277,13 @@ func (r *CronBackupReconciler) createBackupJob(ctx context.Context, config *rest
 
 // nolint
 // createBackupCronJob creates a cronjob to run the 'gobackup perform'
-func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context) (*batchv1.CronJob, error) {
+func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, namespace string) (*batchv1.CronJob, error) {
 	_ = log.FromContext(ctx)
 
 	cronJob := &batchv1.CronJob{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gobackup-cronjob",
-			Namespace: "default",
+			Namespace: namespace,
 		},
 		Spec: batchv1.CronJobSpec{
 			Schedule: "*/1 * * * *", // Runs every minute
@@ -335,7 +335,7 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context) (*batchv
 	}
 
 	// Create the CronJob
-	_, err = clientset.BatchV1().CronJobs("default").Create(ctx, cronJob, metav1.CreateOptions{})
+	_, err = clientset.BatchV1().CronJobs(namespace).Create(ctx, cronJob, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
 	}
