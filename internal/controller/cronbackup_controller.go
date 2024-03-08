@@ -56,9 +56,9 @@ type Models struct {
 
 // MyBackup represents the configuration for "my_backup" model
 type MyBackup struct {
-	Databases   Databases                `yaml:"databases"`
-	Storages    Storages                 `yaml:"storages"`
-	BackupModel backupv1.BackupModelSpec `yaml:"compress_with,omitempty"`
+	Databases Databases `yaml:"databases"`
+	Storages  Storages  `yaml:"storages"`
+	backupv1.BackupModelSpecConfig
 }
 
 // Databases represents the database configurations
@@ -111,12 +111,12 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
-	examplepsql, err := utils.GetCRD(ctx, dynamicClient, "database.gobackup.io", "v1", "postgresqls", "default", "example-postgresql")
+	examplepsql, err := utils.GetCRD(ctx, dynamicClient, "database.gobackup.io", "v1", "postgresqls", "gobackup-operator-test", "example-postgresql")
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	examples3, err := utils.GetCRD(ctx, dynamicClient, "storage.gobackup.io", "v1", "s3s", "default", "example-s3")
+	examples3, err := utils.GetCRD(ctx, dynamicClient, "storage.gobackup.io", "v1", "s3s", "gobackup-operator-test", "example-s3")
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -174,7 +174,7 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	// Create the Secret in the specified namespace
-	_, err = clientset.CoreV1().Secrets("default").Create(ctx, secret, metav1.CreateOptions{})
+	_, err = clientset.CoreV1().Secrets("gobackup-operator-test").Create(ctx, secret, metav1.CreateOptions{})
 	if err != nil {
 		panic(err.Error())
 	}
@@ -203,7 +203,7 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	// }
 
 	// Create job with the given BackupModel to run 'gobackup perform'
-	_, err = r.createBackupJob(ctx, config, "default")
+	_, err = r.createBackupJob(ctx, config, "gobackup-operator-test")
 	if err != nil {
 		fmt.Println("Err: ", err)
 	}
