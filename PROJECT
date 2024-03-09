@@ -5,7 +5,7 @@
 domain: gobackup.io
 layout:
 - go.kubebuilder.io/v4
-projectName: backup-operator
+projectName: gobackup-operator
 repo: gobackup.io/gobackup/gobackup-operator
 resources:
 - api:
@@ -13,7 +13,7 @@ resources:
     namespaced: true
   controller: true
   domain: gobackup.io
-  group: backup
+  group: gobackup
   kind: BackupModel
   path: gobackup.io/gobackup/gobackup-operator/api/v1
   version: v1
@@ -22,7 +22,7 @@ resources:
     namespaced: true
   controller: true
   domain: gobackup.io
-  group: backup
+  group: gobackup
   kind: CronBackup
   path: gobackup.io/gobackup/gobackup-operator/api/v1
   version: v1
@@ -31,7 +31,7 @@ resources:
     namespaced: true
   controller: true
   domain: gobackup.io
-  group: backup
+  group: storage.gobackup
   kind: S3
   path: gobackup.io/gobackup/gobackup-operator/api/v1
   version: v1
@@ -40,7 +40,7 @@ resources:
     namespaced: true
   controller: true
   domain: gobackup.io
-  group: backup
+  group: database.gobackup
   kind: PostgreSQL
   path: gobackup.io/gobackup/gobackup-operator/api/v1
   version: v1

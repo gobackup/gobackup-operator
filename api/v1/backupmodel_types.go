@@ -20,16 +20,23 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // BackupModelSpec defines the desired state of BackupModel
 type BackupModelSpec struct {
 	Description  string   `json:"description"`
-	CompressWith Compress `json:"compress_with"`
-	EncodeWith   Encode   `json:"encode_with"`
-	BeforeScript string   `json:"before_script"`
-	AfterScript  string   `json:"after_script"`
+	CompressWith Compress `json:"compressWith"`
+	EncodeWith   Encode   `json:"encodeWith"`
+	BeforeScript string   `json:"beforeScript"`
+	AfterScript  string   `json:"afterScript"`
+}
+
+type BackupModelSpecConfig struct {
+	Description  string   `json:"description" yaml:"description,omitempty"`
+	CompressWith Compress `json:"compress_with" yaml:"compress_with,omitempty"`
+	EncodeWith   Encode   `json:"encode_with" yaml:"encode_with,omitempty"`
+	BeforeScript string   `json:"before_script" yaml:"before_script,omitempty"`
+	AfterScript  string   `json:"after_script" yaml:"after_script,omitempty"`
 }
 
 // BackupModelStatus defines the observed state of BackupModel

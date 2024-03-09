@@ -1,13 +1,8 @@
 apiVersion: gobackup.io/v1
 kind: BackupModel
 metadata:
-  labels:
-    app.kubernetes.io/name: backupmodel
-    app.kubernetes.io/instance: backupmodel-sample
-    app.kubernetes.io/part-of: gobackup-operator
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: gobackup-operator
-  name: backupmodel-sample
+  name: example-backupmodel
+  namespace: gobackup-operator-test
 spec:
   description: "This is an example BackupModel"
   compressWith:

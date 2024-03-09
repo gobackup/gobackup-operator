@@ -1,9 +1,8 @@
-# backup-operator
-Handling backup from various storages.
-
+# gobackup-operator
 
 **Please note:** This project is currently under active development.
 
+Handling backup from various storages.
 
 ## Description
 A Kubernetes operator for backing up various storages, including Etcd, based on [gobackup](https://github.com/gobackup/gobackup).
