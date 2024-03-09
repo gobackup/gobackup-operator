@@ -24,7 +24,7 @@ spec:
                   type:
                     type: string
                     enum:
-                      - "tgz" 
+                      - "tgz"
                       - "gz"
                       - "taz"
                       - "tar.gz"
@@ -254,6 +254,8 @@ spec:
               bucket:
                 type: string
               region:
+                type: string
+              path:
                 type: string
               accessKeyID:
                 type: string
@@ -800,7 +802,7 @@ spec:
                   type: string
                 name:
                   type: string
-                keep: 
+                keep:
                   type: integer
                 timeout:
                   type: integer
@@ -878,7 +880,7 @@ spec:
                   type: string
                 name:
                   type: string
-                keep: 
+                keep:
                   type: integer
                 timeout:
                   type: integer
