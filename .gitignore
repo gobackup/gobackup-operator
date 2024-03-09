@@ -26,3 +26,6 @@ Dockerfile.cross
 *.swp
 *.swo
 *~
+
+# Resource examples for preparing test environment on local machine
+example.local
