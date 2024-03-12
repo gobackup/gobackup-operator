@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gobackup-operator-role-binding
+  namespace: gobackup-operator-test
+subjects:
+- kind: ServiceAccount
+  name: gobackup-operator-service-account
+  namespace: gobackup-operator-test
+roleRef:
+  kind: Role
+  name: gobackup-operator-role
+  apiGroup: rbac.authorization.k8s.io

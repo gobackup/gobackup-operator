@@ -1,9 +1,14 @@
-# backup-operator
-Handling backup from various storages.
+<p align="center">
 
+<img src="https://github.com/gobackup/gobackup-operator/assets/25246658/a9e1e736-d073-4b65-a2a2-081613cc9e3b" width="500" />
+
+</p>
+
+# gobackup-operator
 
 **Please note:** This project is currently under active development.
 
+Handling backup from various storages.
 
 ## Description
 A Kubernetes operator for backing up various storages, including Etcd, based on [gobackup](https://github.com/gobackup/gobackup).
@@ -55,6 +60,12 @@ make uninstall
 - [ ] Create a kubernetes secret from goabckup config file
 - [ ] Config validations
 - [ ] Add backup cronjob
+
+
+## Releases
+### gobackup-operator 0.1.0-alpha:
+
+This release enables users to backup from PostgreSQL database and push it to S3 storage
 
 ## Contributing
 

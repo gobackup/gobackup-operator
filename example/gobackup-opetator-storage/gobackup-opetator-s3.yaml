@@ -1,0 +1,14 @@
+apiVersion: storage.gobackup.io/v1
+kind: S3
+metadata:
+  name: example-s3
+  namespace: gobackup-operator-test
+spec:
+  bucket: ""
+  region: "us-east-1"
+  accessKeyID: "****"
+  secretAccessKey: "****"
+  maxRetries: 3
+  storageClass: ""
+  forcePathStyle: false
+  endpoint: "" # Custom endpoint

@@ -32,8 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	backupv1 "github.com/payamQorbanpour/backup-operator/api/v1"
-	"github.com/payamQorbanpour/backup-operator/internal/controller"
+	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
+	"github.com/gobackup/gobackup-operator/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -101,6 +101,20 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CronBackup")
+		os.Exit(1)
+	}
+	if err = (&controller.S3Reconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "S3")
+		os.Exit(1)
+	}
+	if err = (&controller.PostgreSQLReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "PostgreSQL")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

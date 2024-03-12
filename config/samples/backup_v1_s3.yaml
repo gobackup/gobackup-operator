@@ -1,0 +1,12 @@
+apiVersion: gobackup.io/v1
+kind: S3
+metadata:
+  labels:
+    app.kubernetes.io/name: s3
+    app.kubernetes.io/instance: s3-sample
+    app.kubernetes.io/part-of: gobackup-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: gobackup-operator
+  name: s3-sample
+spec:
+  # TODO(user): Add fields here

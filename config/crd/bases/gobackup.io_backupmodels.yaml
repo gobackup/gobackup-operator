@@ -4,9 +4,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.13.0
-  name: backupmodels.backup.github.com
+  name: backupmodels.gobackup.io
 spec:
-  group: backup.github.com
+  group: gobackup.io
   names:
     kind: BackupModel
     listKind: BackupModelList
@@ -34,11 +34,11 @@ spec:
           spec:
             description: BackupModelSpec defines the desired state of BackupModel
             properties:
-              after_script:
+              afterScript:
                 type: string
-              before_script:
+              beforeScript:
                 type: string
-              compress_with:
+              compressWith:
                 properties:
                   type:
                     type: string
@@ -47,7 +47,7 @@ spec:
                 type: object
               description:
                 type: string
-              encode_with:
+              encodeWith:
                 properties:
                   args:
                     type: string
@@ -73,11 +73,11 @@ spec:
                 - type
                 type: object
             required:
-            - after_script
-            - before_script
-            - compress_with
+            - afterScript
+            - beforeScript
+            - compressWith
             - description
-            - encode_with
+            - encodeWith
             type: object
           status:
             description: BackupModelStatus defines the observed state of BackupModel

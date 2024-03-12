@@ -1,0 +1,24 @@
+models:
+  my_backup:
+    databases:
+      postgres:
+        host: xxxxxxxx
+        port: 5432
+        type: postgresql
+        database: xxxxxxxx
+        username: xxxxxxxx
+        password: xxxxxxxx
+    storages:
+      s3:
+        type: s3
+        bucket: xxxxxxxx
+        region: xxxxxxxx
+        endpoint: xxxxxxxx
+        path: backups
+        access_key_id: xxxxxxxx
+        secret_access_key: xxxxxxxx
+        force_path_style: true
+        storage_class: ""
+    compress_with:
+      type: tgz
+

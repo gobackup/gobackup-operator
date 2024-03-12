@@ -6,13 +6,13 @@ metadata:
     app.kubernetes.io/name: clusterrole
     app.kubernetes.io/instance: cronbackup-editor-role
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: backup-operator
-    app.kubernetes.io/part-of: backup-operator
+    app.kubernetes.io/created-by: gobackup-operator
+    app.kubernetes.io/part-of: gobackup-operator
     app.kubernetes.io/managed-by: kustomize
   name: cronbackup-editor-role
 rules:
 - apiGroups:
-  - backup.github.com
+  - gobackup.io
   resources:
   - cronbackups
   verbs:
@@ -24,7 +24,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - backup.github.com
+  - gobackup.io
   resources:
   - cronbackups/status
   verbs:

@@ -19,18 +19,23 @@ package controller
 import (
 	"context"
 	"fmt"
+	"os"
 
+	"gopkg.in/yaml.v2"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	backupv1 "github.com/payamQorbanpour/backup-operator/api/v1"
+	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
+	"github.com/gobackup/gobackup-operator/pkg/utils"
 )
 
 // CronBackupReconciler reconciles a CronBackup object
@@ -39,9 +44,36 @@ type CronBackupReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=backup.github.com,resources=cronbackups,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=backup.github.com,resources=cronbackups/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=backup.github.com,resources=cronbackups/finalizers,verbs=update
+// BackupConfig represents the configuration for backups
+type BackupConfig struct {
+	Models Models `yaml:"models,omitempty"`
+}
+
+// Models represents the different models for backup configuration
+type Models struct {
+	MyBackup MyBackup `yaml:"my_backup,omitempty"`
+}
+
+// MyBackup represents the configuration for "my_backup" model
+type MyBackup struct {
+	Databases Databases `yaml:"databases"`
+	Storages  Storages  `yaml:"storages"`
+	backupv1.BackupModelSpecConfig
+}
+
+// Databases represents the database configurations
+type Databases struct {
+	Postgres backupv1.PostgreSQLSpecConfig `yaml:"postgres"`
+}
+
+// Storages represents the storage configurations
+type Storages struct {
+	S3 backupv1.S3SpecConfig `yaml:"s3"`
+}
+
+//+kubebuilder:rbac:groups=gobackup.io,resources=cronbackups,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=gobackup.io,resources=cronbackups/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=gobackup.io,resources=cronbackups/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -69,6 +101,97 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
 
+	config, err := clientcmd.BuildConfigFromFlags("", "/Users/payam/.kube/config")
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	examplepsql, err := utils.GetCRD(ctx, dynamicClient, "database.gobackup.io", "v1", "postgresqls", "gobackup-operator-test", "example-postgresql")
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	examples3, err := utils.GetCRD(ctx, dynamicClient, "storage.gobackup.io", "v1", "s3s", "gobackup-operator-test", "example-s3")
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	var postgreSQLSpec backupv1.PostgreSQLSpec
+
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(examplepsql.Object["spec"].(map[string]interface{}), &postgreSQLSpec); err != nil {
+		return ctrl.Result{}, err
+	}
+	postgreSQLSpec.Type = "postgresql"
+
+	var s3Spec backupv1.S3Spec
+
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(examples3.Object["spec"].(map[string]interface{}), &s3Spec); err != nil {
+		return ctrl.Result{}, err
+	}
+	s3Spec.Type = "s3"
+	backupConfig := BackupConfig{
+		Models: Models{
+			MyBackup: MyBackup{
+				Databases: Databases{
+					backupv1.PostgreSQLSpecConfig(postgreSQLSpec),
+				},
+				Storages: Storages{
+					backupv1.S3SpecConfig(s3Spec),
+				},
+			},
+		},
+	}
+
+	yamlData, err := yaml.Marshal(&backupConfig)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Write to gobackup.yaml
+	err = os.WriteFile("gobackup.yaml", yamlData, 0644)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "gobackup-secret",
+		},
+		StringData: map[string]string{
+			"gobackup.yml": string(yamlData),
+		},
+	}
+
+	// Create a clientset from the configuration
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Create the Secret in the specified namespace
+	_, err = clientset.CoreV1().Secrets("gobackup-operator-test").Create(ctx, secret, metav1.CreateOptions{})
+	if err != nil {
+		panic(err.Error())
+	}
+
+	fmt.Printf("-----model--->:\n%s\n", string(yamlData))
+
+	// secretData, _ := yaml.Marshal(backupConfig)
+	// secret := &corev1.Secret{
+	// 	ObjectMeta: metav1.ObjectMeta{
+	// 		Name:      secretName,
+	// 		Namespace: ns,
+	// 	},
+	// 	Data: map[string][]byte{
+	// 		"gobackup.yaml": secretData,
+	// 	},
+	// }
+
 	// TODO: Create a secret from goabckup config
 	// for _, database := range cronBackup.DatabaseRefs {
 	// TODO: Fetch the database type instance for example: example-postgres
@@ -80,7 +203,7 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	// }
 
 	// Create job with the given BackupModel to run 'gobackup perform'
-	_, err := r.createBackupJob(ctx)
+	_, err = r.createBackupJob(ctx, config, "gobackup-operator-test")
 	if err != nil {
 		fmt.Println("Err: ", err)
 	}
@@ -96,13 +219,13 @@ func (r *CronBackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // createBackupJob creates a job to run the 'gobackup perform'
-func (r *CronBackupReconciler) createBackupJob(ctx context.Context) (*batchv1.Job, error) {
+func (r *CronBackupReconciler) createBackupJob(ctx context.Context, config *rest.Config, namespace string) (*batchv1.Job, error) {
 	_ = log.FromContext(ctx)
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gobackup-job",
-			Namespace: "default",
+			Namespace: namespace,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
@@ -137,11 +260,6 @@ func (r *CronBackupReconciler) createBackupJob(ctx context.Context) (*batchv1.Jo
 		},
 	}
 
-	config, err := clientcmd.BuildConfigFromFlags("", "/Users/payam/.kube/config")
-	if err != nil {
-		return nil, err
-	}
-
 	// Create a clientset from the configuration
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -149,7 +267,7 @@ func (r *CronBackupReconciler) createBackupJob(ctx context.Context) (*batchv1.Jo
 	}
 
 	// Create the Job
-	_, err = clientset.BatchV1().Jobs("default").Create(ctx, job, metav1.CreateOptions{})
+	_, err = clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -159,13 +277,13 @@ func (r *CronBackupReconciler) createBackupJob(ctx context.Context) (*batchv1.Jo
 
 // nolint
 // createBackupCronJob creates a cronjob to run the 'gobackup perform'
-func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context) (*batchv1.CronJob, error) {
+func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, namespace string) (*batchv1.CronJob, error) {
 	_ = log.FromContext(ctx)
 
 	cronJob := &batchv1.CronJob{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gobackup-cronjob",
-			Namespace: "default",
+			Namespace: namespace,
 		},
 		Spec: batchv1.CronJobSpec{
 			Schedule: "*/1 * * * *", // Runs every minute
@@ -217,7 +335,7 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context) (*batchv
 	}
 
 	// Create the CronJob
-	_, err = clientset.BatchV1().CronJobs("default").Create(ctx, cronJob, metav1.CreateOptions{})
+	_, err = clientset.BatchV1().CronJobs(namespace).Create(ctx, cronJob, metav1.CreateOptions{})
 	if err != nil {
 		panic(err)
 	}

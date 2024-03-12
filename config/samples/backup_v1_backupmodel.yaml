@@ -1,12 +1,12 @@
-apiVersion: backup.github.com/v1
+apiVersion: gobackup.io/v1
 kind: BackupModel
 metadata:
   labels:
     app.kubernetes.io/name: backupmodel
     app.kubernetes.io/instance: backupmodel-sample
-    app.kubernetes.io/part-of: backup-operator
+    app.kubernetes.io/part-of: gobackup-operator
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: backup-operator
+    app.kubernetes.io/created-by: gobackup-operator
   name: backupmodel-sample
 spec:
   description: "This is an example BackupModel"
