@@ -1,3 +1,9 @@
+<p align="center">
+
+<img src="https://github.com/gobackup/gobackup-operator/assets/25246658/a9e1e736-d073-4b65-a2a2-081613cc9e3b" width="500" />
+
+</p>
+
 # gobackup-operator
 
 **Please note:** This project is currently under active development.
