@@ -1,0 +1,9 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gobackup-operator-cluster-role
+  namespace: gobackup-operator-test
+rules:
+- apiGroups: [""]
+  resources: ["*"]
+  verbs: ["*"]
