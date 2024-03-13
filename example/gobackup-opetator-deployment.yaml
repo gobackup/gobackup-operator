@@ -1,31 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: postgres-deployment
+  name: gobackup-operator
+  labels:
+    app: gobackup-operator
 spec:
+  replicas: 1
   selector:
     matchLabels:
-      app: postgres
-  replicas: 1
+      app: gobackup-operator
   template:
     metadata:
       labels:
-        app: postgres
+        app: gobackup-operator
     spec:
+      serviceAccountName: gobackup-operator-service-account
       containers:
-      - name: postgres
-        image: docker.arvancloud.ir/postgres:latest
+      - name: gobackup-operator
+        image: payamqorbanpour/gobackup-operator:v0.1.0
+        imagePullPolicy: IfNotPresent
         env:
-        - name: POSTGRES_USER
-          value: ""
-        - name: POSTGRES_PASSWORD
-          value: ""
-        - name: PGDATA
-          value: "/var/lib/postgresql/data/pgdata"
-        volumeMounts:
-        - mountPath: /var/lib/postgresql/data
-          name: postgredb
-      volumes:
-      - name: postgredb
-        persistentVolumeClaim:
-          claimName: postgres-pvc
+          - name: gobackup-operator-test
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
