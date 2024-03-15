@@ -179,19 +179,6 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		panic(err.Error())
 	}
 
-	fmt.Printf("-----model--->:\n%s\n", string(yamlData))
-
-	// secretData, _ := yaml.Marshal(backupConfig)
-	// secret := &corev1.Secret{
-	// 	ObjectMeta: metav1.ObjectMeta{
-	// 		Name:      secretName,
-	// 		Namespace: ns,
-	// 	},
-	// 	Data: map[string][]byte{
-	// 		"gobackup.yaml": secretData,
-	// 	},
-	// }
-
 	// TODO: Create a secret from goabckup config
 	// for _, database := range cronBackup.DatabaseRefs {
 	// TODO: Fetch the database type instance for example: example-postgres
@@ -203,7 +190,7 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	// }
 
 	// Create job with the given BackupModel to run 'gobackup perform'
-	_, err = r.createBackupJob(ctx, config, "gobackup-operator-test")
+	_, err = r.createBackupCronJob(ctx, config, "gobackup-operator-test")
 	if err != nil {
 		fmt.Println("Err: ", err)
 	}
@@ -218,66 +205,8 @@ func (r *CronBackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// createBackupJob creates a job to run the 'gobackup perform'
-func (r *CronBackupReconciler) createBackupJob(ctx context.Context, config *rest.Config, namespace string) (*batchv1.Job, error) {
-	_ = log.FromContext(ctx)
-
-	job := &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "gobackup-job",
-			Namespace: namespace,
-		},
-		Spec: batchv1.JobSpec{
-			Template: corev1.PodTemplateSpec{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:            "gobackup",
-							Image:           "huacnlee/gobackup",
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Command:         []string{"/bin/sh", "-c", "gobackup perform"},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "gobackup-secret-volume",
-									MountPath: "/root/.gobackup",
-								},
-							},
-						},
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "gobackup-secret-volume",
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: "gobackup-secret",
-								},
-							},
-						},
-					},
-					RestartPolicy: corev1.RestartPolicyNever,
-				},
-			},
-		},
-	}
-
-	// Create a clientset from the configuration
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create the Job
-	_, err = clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	return job, nil
-}
-
-// nolint
 // createBackupCronJob creates a cronjob to run the 'gobackup perform'
-func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, namespace string) (*batchv1.CronJob, error) {
+func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, config *rest.Config, namespace string) (*batchv1.CronJob, error) {
 	_ = log.FromContext(ctx)
 
 	cronJob := &batchv1.CronJob{
@@ -321,11 +250,6 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, namespac
 				},
 			},
 		},
-	}
-
-	config, err := clientcmd.BuildConfigFromFlags("", "/Users/payam/.kube/config")
-	if err != nil {
-		return nil, err
 	}
 
 	// Create a clientset from the configuration
