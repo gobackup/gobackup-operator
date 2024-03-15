@@ -19,23 +19,22 @@ package controller
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"gopkg.in/yaml.v2"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
-	"github.com/gobackup/gobackup-operator/pkg/utils"
 )
 
 // CronBackupReconciler reconciles a CronBackup object
@@ -101,7 +100,8 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
 
-	config, err := clientcmd.BuildConfigFromFlags("", "/Users/payam/.kube/config")
+	// Create config to use the ServiceAccount's token, CA cert, and API server address
+	config, err := rest.InClusterConfig()
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -111,12 +111,12 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
-	examplepsql, err := utils.GetCRD(ctx, dynamicClient, "database.gobackup.io", "v1", "postgresqls", "gobackup-operator-test", "example-postgresql")
+	examplepsql, err := GetCRD(ctx, dynamicClient, "database.gobackup.io", "v1", "postgresqls", "gobackup-operator-test", "example-postgresql")
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	examples3, err := utils.GetCRD(ctx, dynamicClient, "storage.gobackup.io", "v1", "s3s", "gobackup-operator-test", "example-s3")
+	examples3, err := GetCRD(ctx, dynamicClient, "storage.gobackup.io", "v1", "s3s", "gobackup-operator-test", "example-s3")
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -148,12 +148,6 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	yamlData, err := yaml.Marshal(&backupConfig)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	// Write to gobackup.yaml
-	err = os.WriteFile("gobackup.yaml", yamlData, 0644)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -265,4 +259,18 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, config *
 	}
 
 	return cronJob, nil
+}
+
+// nolint
+// GetCRD fetches a CRD instance.
+func GetCRD(ctx context.Context, dynamicClient dynamic.Interface, group, version, resource, namespace, name string) (*unstructured.Unstructured, error) {
+	gvr := schema.GroupVersionResource{Group: group, Version: version, Resource: resource}
+
+	// Fetch the instance
+	crdObj, err := dynamicClient.Resource(gvr).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch CRD %s in namespace %s: %w", name, namespace, err)
+	}
+
+	return crdObj, nil
 }
