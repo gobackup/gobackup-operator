@@ -23,8 +23,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -36,6 +36,9 @@ import (
 type BackupReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+
+	Clientset     *kubernetes.Clientset
+	DynamicClient *dynamic.DynamicClient
 }
 
 // +kubebuilder:rbac:groups=gobackup.gobackup.io,resources=backups,verbs=get;list;watch;create;update;patch;delete
@@ -58,7 +61,7 @@ func (r *BackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 // nolint
 // createBackupJob creates a job to run the 'gobackup perform'
-func (r *BackupReconciler) createBackupJob(ctx context.Context, config *rest.Config, namespace string) (*batchv1.Job, error) {
+func (r *BackupReconciler) createBackupJob(ctx context.Context, namespace string) (*batchv1.Job, error) {
 	_ = log.FromContext(ctx)
 
 	job := &batchv1.Job{
@@ -99,14 +102,8 @@ func (r *BackupReconciler) createBackupJob(ctx context.Context, config *rest.Con
 		},
 	}
 
-	// Create a clientset from the configuration
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
 	// Create the Job
-	_, err = clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
+	_, err := r.Clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}

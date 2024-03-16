@@ -24,23 +24,24 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
+	"github.com/gobackup/gobackup-operator/pkg/utils"
 )
 
 // CronBackupReconciler reconciles a CronBackup object
 type CronBackupReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+
+	Clientset     *kubernetes.Clientset
+	DynamicClient *dynamic.DynamicClient
 }
 
 // BackupConfig represents the configuration for backups
@@ -70,19 +71,9 @@ type Storages struct {
 	S3 backupv1.S3SpecConfig `yaml:"s3"`
 }
 
-//+kubebuilder:rbac:groups=gobackup.io,resources=cronbackups,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=gobackup.io,resources=cronbackups/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=gobackup.io,resources=cronbackups/finalizers,verbs=update
-
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the CronBackup object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
+// +kubebuilder:rbac:groups=gobackup.io,resources=cronbackups,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=gobackup.io,resources=cronbackups/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=gobackup.io,resources=cronbackups/finalizers,verbs=update
 func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
@@ -100,23 +91,12 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
 
-	// Create config to use the ServiceAccount's token, CA cert, and API server address
-	config, err := rest.InClusterConfig()
+	examplepsql, err := utils.GetCRD(ctx, r.DynamicClient, "database.gobackup.io", "v1", "postgresqls", "gobackup-operator-test", "example-postgresql")
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	dynamicClient, err := dynamic.NewForConfig(config)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	examplepsql, err := GetCRD(ctx, dynamicClient, "database.gobackup.io", "v1", "postgresqls", "gobackup-operator-test", "example-postgresql")
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	examples3, err := GetCRD(ctx, dynamicClient, "storage.gobackup.io", "v1", "s3s", "gobackup-operator-test", "example-s3")
+	examples3, err := utils.GetCRD(ctx, r.DynamicClient, "storage.gobackup.io", "v1", "s3s", "gobackup-operator-test", "example-s3")
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -134,6 +114,7 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 	s3Spec.Type = "s3"
+
 	backupConfig := BackupConfig{
 		Models: Models{
 			MyBackup: MyBackup{
@@ -161,14 +142,8 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		},
 	}
 
-	// Create a clientset from the configuration
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	// Create the Secret in the specified namespace
-	_, err = clientset.CoreV1().Secrets("gobackup-operator-test").Create(ctx, secret, metav1.CreateOptions{})
+	_, err = r.Clientset.CoreV1().Secrets("gobackup-operator-test").Create(ctx, secret, metav1.CreateOptions{})
 	if err != nil {
 		panic(err.Error())
 	}
@@ -184,7 +159,7 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	// }
 
 	// Create job with the given BackupModel to run 'gobackup perform'
-	_, err = r.createBackupCronJob(ctx, config, "gobackup-operator-test")
+	_, err = r.createBackupCronJob(ctx, "gobackup-operator-test")
 	if err != nil {
 		fmt.Println("Err: ", err)
 	}
@@ -200,7 +175,7 @@ func (r *CronBackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // createBackupCronJob creates a cronjob to run the 'gobackup perform'
-func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, config *rest.Config, namespace string) (*batchv1.CronJob, error) {
+func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, namespace string) (*batchv1.CronJob, error) {
 	_ = log.FromContext(ctx)
 
 	cronJob := &batchv1.CronJob{
@@ -246,31 +221,11 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, config *
 		},
 	}
 
-	// Create a clientset from the configuration
-	clientset, err := kubernetes.NewForConfig(config)
+	// Create the CronJob
+	_, err := r.Clientset.BatchV1().CronJobs(namespace).Create(ctx, cronJob, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	// Create the CronJob
-	_, err = clientset.BatchV1().CronJobs(namespace).Create(ctx, cronJob, metav1.CreateOptions{})
-	if err != nil {
-		panic(err)
-	}
-
 	return cronJob, nil
-}
-
-// nolint
-// GetCRD fetches a CRD instance.
-func GetCRD(ctx context.Context, dynamicClient dynamic.Interface, group, version, resource, namespace, name string) (*unstructured.Unstructured, error) {
-	gvr := schema.GroupVersionResource{Group: group, Version: version, Resource: resource}
-
-	// Fetch the instance
-	crdObj, err := dynamicClient.Resource(gvr).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch CRD %s in namespace %s: %w", name, namespace, err)
-	}
-
-	return crdObj, nil
 }
