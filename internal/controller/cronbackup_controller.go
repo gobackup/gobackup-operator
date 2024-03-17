@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	"gopkg.in/yaml.v2"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
-	"github.com/gobackup/gobackup-operator/pkg/utils"
+	"github.com/gobackup/gobackup-operator/pkg/k8sutil"
 )
 
 // CronBackupReconciler reconciles a CronBackup object
@@ -42,33 +41,6 @@ type CronBackupReconciler struct {
 
 	Clientset     *kubernetes.Clientset
 	DynamicClient *dynamic.DynamicClient
-}
-
-// BackupConfig represents the configuration for backups
-type BackupConfig struct {
-	Models Models `yaml:"models,omitempty"`
-}
-
-// Models represents the different models for backup configuration
-type Models struct {
-	MyBackup MyBackup `yaml:"my_backup,omitempty"`
-}
-
-// MyBackup represents the configuration for "my_backup" model
-type MyBackup struct {
-	Databases Databases `yaml:"databases"`
-	Storages  Storages  `yaml:"storages"`
-	backupv1.BackupModelSpecConfig
-}
-
-// Databases represents the database configurations
-type Databases struct {
-	Postgres backupv1.PostgreSQLSpecConfig `yaml:"postgres"`
-}
-
-// Storages represents the storage configurations
-type Storages struct {
-	S3 backupv1.S3SpecConfig `yaml:"s3"`
 }
 
 // +kubebuilder:rbac:groups=gobackup.io,resources=cronbackups,verbs=get;list;watch;create;update;patch;delete
@@ -91,72 +63,7 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
 
-	examplepsql, err := utils.GetCRD(ctx, r.DynamicClient, "database.gobackup.io", "v1", "postgresqls", "gobackup-operator-test", "example-postgresql")
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	examples3, err := utils.GetCRD(ctx, r.DynamicClient, "storage.gobackup.io", "v1", "s3s", "gobackup-operator-test", "example-s3")
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	var postgreSQLSpec backupv1.PostgreSQLSpec
-
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(examplepsql.Object["spec"].(map[string]interface{}), &postgreSQLSpec); err != nil {
-		return ctrl.Result{}, err
-	}
-	postgreSQLSpec.Type = "postgresql"
-
-	var s3Spec backupv1.S3Spec
-
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(examples3.Object["spec"].(map[string]interface{}), &s3Spec); err != nil {
-		return ctrl.Result{}, err
-	}
-	s3Spec.Type = "s3"
-
-	backupConfig := BackupConfig{
-		Models: Models{
-			MyBackup: MyBackup{
-				Databases: Databases{
-					backupv1.PostgreSQLSpecConfig(postgreSQLSpec),
-				},
-				Storages: Storages{
-					backupv1.S3SpecConfig(s3Spec),
-				},
-			},
-		},
-	}
-
-	yamlData, err := yaml.Marshal(&backupConfig)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "gobackup-secret",
-		},
-		StringData: map[string]string{
-			"gobackup.yml": string(yamlData),
-		},
-	}
-
-	// Create the Secret in the specified namespace
-	_, err = r.Clientset.CoreV1().Secrets("gobackup-operator-test").Create(ctx, secret, metav1.CreateOptions{})
-	if err != nil {
-		panic(err.Error())
-	}
-
-	// TODO: Create a secret from goabckup config
-	// for _, database := range cronBackup.DatabaseRefs {
-	// TODO: Fetch the database type instance for example: example-postgres
-	// and add it to the gobackup config file
-	// }
-	// for _, storage := range cronBackup.StorageRefs {
-	// TODO: Fetch the storage type instance for example: example-s3
-	// and add it to the gobackup config file
-	// }
+	err := k8sutil.CreateSecret(ctx, cronBackup.Model, r.Clientset, r.DynamicClient, cronBackup.Namespace)
 
 	// Create job with the given BackupModel to run 'gobackup perform'
 	_, err = r.createBackupCronJob(ctx, "gobackup-operator-test")

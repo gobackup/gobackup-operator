@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -30,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
+	"github.com/gobackup/gobackup-operator/pkg/k8sutil"
 )
 
 // BackupReconciler reconciles a Backup object
@@ -47,7 +49,27 @@ type BackupReconciler struct {
 func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	// Define a Backup object
+	backup := &backupv1.Backup{}
+
+	// Fetch the Backup instance
+	if err := r.Get(ctx, req.NamespacedName, backup); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	// Ensure Storage and Database CRDs existence
+	// TODO: Extend this by checking every storage and database
+	if len(backup.StorageRefs) == 0 || len(backup.DatabaseRefs) == 0 {
+		return ctrl.Result{}, client.IgnoreNotFound(nil)
+	}
+
+	err := k8sutil.CreateSecret(ctx, backup.Model, r.Clientset, r.DynamicClient, backup.Namespace)
+
+	// Create job with the given BackupModel to run 'gobackup perform'
+	_, err = r.createBackupJob(ctx, "gobackup-operator-test")
+	if err != nil {
+		fmt.Println("Err: ", err)
+	}
 
 	return ctrl.Result{}, nil
 }

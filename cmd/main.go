@@ -22,10 +22,8 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/rest"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -37,6 +35,7 @@ import (
 
 	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
 	"github.com/gobackup/gobackup-operator/internal/controller"
+	"github.com/gobackup/gobackup-operator/pkg/k8sutil"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -50,37 +49,6 @@ func init() {
 
 	utilruntime.Must(backupv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
-}
-
-func NewClient() (*kubernetes.Clientset, error) {
-	// Create config to use the ServiceAccount's token, CA cert, and API server address
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a clientset from the configuration
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-	return clientset, nil
-}
-
-func NewDynamicClient() (*dynamic.DynamicClient, error) {
-	// Create config to use the ServiceAccount's token, CA cert, and API server address
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a clientset from the configuration
-	dynamicClient, err := dynamic.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return dynamicClient, nil
 }
 
 func main() {
@@ -131,16 +99,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	clientset, err := NewClient()
+	clientset, err := k8sutil.NewClient()
 	if err != nil {
 		setupLog.Error(err, "unable to create kubernetes client")
 		os.Exit(1)
 	}
 
+	dynamicClient, err := k8sutil.NewDynamicClient()
+	if err != nil {
+		setupLog.Error(err, "unable to create kubernetes dynamicClient")
+		os.Exit(1)
+	}
+
 	if err = (&controller.CronBackupReconciler{
-		Client:    mgr.GetClient(),
-		Scheme:    mgr.GetScheme(),
-		Clientset: clientset,
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		Clientset:     clientset,
+		DynamicClient: dynamicClient,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CronBackup")
 		os.Exit(1)
@@ -160,8 +135,10 @@ func main() {
 		os.Exit(1)
 	}
 	if err = (&controller.BackupReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		Clientset:     clientset,
+		DynamicClient: dynamicClient,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Backup")
 		os.Exit(1)

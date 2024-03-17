@@ -44,12 +44,12 @@ type Storages struct {
 }
 
 // CreateSecret creates secret from config.
-func CreateSecret(ctx context.Context, cronBackup backupv1.CronBackup, clientset *kubernetes.Clientset, dynamicClient *dynamic.DynamicClient) error {
+func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernetes.Clientset, dynamicClient *dynamic.DynamicClient, namespace string) error {
 	var postgreSQLSpec backupv1.PostgreSQLSpec
 	var s3Spec backupv1.S3Spec
 
-	for _, database := range cronBackup.DatabaseRefs {
-		databaseCRD, err := GetCRD(ctx, dynamicClient, "database.gobackup.io", "v1", database.Type, cronBackup.Namespace, database.Name)
+	for _, database := range model.DatabaseRefs {
+		databaseCRD, err := GetCRD(ctx, dynamicClient, "database.gobackup.io", "v1", database.Type, namespace, database.Name)
 		if err != nil {
 			return err
 		}
@@ -61,8 +61,8 @@ func CreateSecret(ctx context.Context, cronBackup backupv1.CronBackup, clientset
 		postgreSQLSpec.Type = "postgresql"
 	}
 
-	for _, storage := range cronBackup.StorageRefs {
-		storageCRD, err := GetCRD(ctx, dynamicClient, "storage.gobackup.io", "v1", storage.Type, cronBackup.Namespace, storage.Name)
+	for _, storage := range model.StorageRefs {
+		storageCRD, err := GetCRD(ctx, dynamicClient, "storage.gobackup.io", "v1", storage.Type, namespace, storage.Name)
 		if err != nil {
 			return err
 		}
@@ -70,6 +70,7 @@ func CreateSecret(ctx context.Context, cronBackup backupv1.CronBackup, clientset
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(storageCRD.Object["spec"].(map[string]interface{}), &s3Spec); err != nil {
 			return err
 		}
+
 		s3Spec.Type = "s3"
 	}
 

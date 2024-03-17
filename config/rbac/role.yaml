@@ -5,32 +5,6 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - gobackup.gobackup.io
-  resources:
-  - backups
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - gobackup.gobackup.io
-  resources:
-  - backups/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - gobackup.gobackup.io
-  resources:
-  - backups/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
   - gobackup.io
   resources:
   - backupmodels
@@ -52,32 +26,6 @@ rules:
   - gobackup.io
   resources:
   - backupmodels/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - gobackup.io
-  resources:
-  - cronbackups
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - gobackup.io
-  resources:
-  - cronbackups/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - gobackup.io
-  resources:
-  - cronbackups/status
   verbs:
   - get
   - patch

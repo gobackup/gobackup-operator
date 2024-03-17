@@ -14,11 +14,7 @@ func NewClient() (*kubernetes.Clientset, error) {
 	}
 
 	// Create a clientset from the configuration
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-	return clientset, nil
+	return kubernetes.NewForConfig(config)
 }
 
 func NewDynamicClient() (*dynamic.DynamicClient, error) {
@@ -28,11 +24,6 @@ func NewDynamicClient() (*dynamic.DynamicClient, error) {
 		return nil, err
 	}
 
-	// Create a clientset from the configuration
-	dynamicClient, err := dynamic.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return dynamicClient, nil
+	// Create a dynamicClient from the configuration
+	return dynamic.NewForConfig(config)
 }
