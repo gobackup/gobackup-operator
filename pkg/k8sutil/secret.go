@@ -2,13 +2,10 @@ package k8sutil
 
 import (
 	"context"
-	"fmt"
-	"reflect"
 
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -49,7 +46,7 @@ func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernet
 	var s3Spec backupv1.S3Spec
 
 	for _, database := range model.DatabaseRefs {
-		databaseCRD, err := GetCRD(ctx, dynamicClient, "database.gobackup.io", "v1", database.Type, namespace, database.Name)
+		databaseCRD, err := GetCRD(ctx, dynamicClient, "database.gobackup.io", "v1", "postgresqls", namespace, database.Name)
 		if err != nil {
 			return err
 		}
@@ -62,7 +59,7 @@ func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernet
 	}
 
 	for _, storage := range model.StorageRefs {
-		storageCRD, err := GetCRD(ctx, dynamicClient, "storage.gobackup.io", "v1", storage.Type, namespace, storage.Name)
+		storageCRD, err := GetCRD(ctx, dynamicClient, "storage.gobackup.io", "v1", "s3s", namespace, storage.Name)
 		if err != nil {
 			return err
 		}
@@ -94,7 +91,7 @@ func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernet
 
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			//TODO: Change name of secret to something uniq like concatenate it with namespace
+			//TODO: Change name of secret to something unique
 			Name: "gobackup-secret",
 		},
 		StringData: map[string]string{
@@ -109,55 +106,3 @@ func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernet
 	}
 	return nil
 }
-
-// CreateConfig creates config instance for gobackup commands.
-func CreateConfig(ctx context.Context) {
-
-}
-
-func processResources(ctx context.Context, dynamicClient dynamic.Interface, namespace string, crdObject *unstructured.Unstructured, resources ...interface{}) error {
-	var postgreSQLSpec backupv1.PostgreSQLSpec
-	var s3Spec backupv1.S3Spec
-
-	for _, resource := range resources {
-		switch spec := resource.(type) {
-		case *backupv1.PostgreSQLSpec:
-			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(crdObject.Object["spec"].(map[string]interface{}), &postgreSQLSpec); err != nil {
-				return err
-			}
-
-			postgreSQLSpec.Type = "postgresql"
-
-		case *backupv1.S3Spec:
-			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(crdObject.Object["spec"].(map[string]interface{}), spec); err != nil {
-				return err
-			}
-
-			s3Spec.Type = "s3"
-
-		default:
-			return fmt.Errorf("unsupported resource type: %v", reflect.TypeOf(resource))
-		}
-	}
-	return nil
-}
-
-// func convertCRDSpec(ctx context.Context, dynamicClient dynamic.Interface, group, version, resourceType, namespace, name, typeString string, targetSpec interface{}) error {
-// 	crdObject, err := GetCRD(ctx, dynamicClient, group, version, resourceType, namespace, name)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(crdObject.Object["spec"].(map[string]interface{}), targetSpec); err != nil {
-// 		return err
-// 	}
-
-// 	// If a typeString is provided, set the Type field dynamically.
-// 	// This assumes that the target spec has a 'Type' field of string type.
-// 	if typeString != "" {
-// 		// Use reflection to set the Type field dynamically.
-// 		reflect.ValueOf(targetSpec).Elem().FieldByName("Type").SetString(typeString)
-// 	}
-
-// 	return nil
-// }
