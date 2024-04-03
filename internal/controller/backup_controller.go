@@ -18,7 +18,6 @@ package controller
 
 import (
 	"context"
-	"fmt"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -64,11 +63,14 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	err := k8sutil.CreateSecret(ctx, backup.Model, r.Clientset, r.DynamicClient, backup.Namespace)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Create job with the given BackupModel to run 'gobackup perform'
-	_, err = r.createBackupJob(ctx, "gobackup-operator-test")
+	_, err = r.createBackupJob(ctx, backup.Namespace)
 	if err != nil {
-		fmt.Println("Err: ", err)
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil

@@ -2,6 +2,7 @@ package k8sutil
 
 import (
 	"context"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -46,7 +47,9 @@ func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernet
 	var s3Spec backupv1.S3Spec
 
 	for _, database := range model.DatabaseRefs {
-		databaseCRD, err := GetCRD(ctx, dynamicClient, "database.gobackup.io", "v1", "postgresqls", namespace, database.Name)
+		version := strings.ToLower(database.Type) + "s"
+
+		databaseCRD, err := GetCRD(ctx, dynamicClient, database.APIGroup, "v1", version, namespace, database.Name)
 		if err != nil {
 			return err
 		}
@@ -55,11 +58,13 @@ func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernet
 			return err
 		}
 
-		postgreSQLSpec.Type = "postgresql"
+		postgreSQLSpec.Type = strings.ToLower(database.Type)
 	}
 
 	for _, storage := range model.StorageRefs {
-		storageCRD, err := GetCRD(ctx, dynamicClient, "storage.gobackup.io", "v1", "s3s", namespace, storage.Name)
+		version := strings.ToLower(storage.Type) + "s"
+
+		storageCRD, err := GetCRD(ctx, dynamicClient, storage.APIGroup, "v1", version, namespace, storage.Name)
 		if err != nil {
 			return err
 		}
@@ -68,7 +73,7 @@ func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernet
 			return err
 		}
 
-		s3Spec.Type = "s3"
+		s3Spec.Type = strings.ToLower(storage.Type)
 	}
 
 	backupConfig := BackupConfig{
