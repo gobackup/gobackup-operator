@@ -83,7 +83,6 @@ func (r *BackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// nolint
 // createBackupJob creates a job to run the 'gobackup perform'
 func (r *BackupReconciler) createBackupJob(ctx context.Context, namespace string) (*batchv1.Job, error) {
 	_ = log.FromContext(ctx)

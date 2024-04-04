@@ -2,6 +2,7 @@ package k8sutil
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -43,7 +44,9 @@ type Storages struct {
 }
 
 // CreateSecret creates secret from config.
-func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernetes.Clientset, dynamicClient *dynamic.DynamicClient, namespace string) error {
+func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernetes.Clientset,
+	dynamicClient *dynamic.DynamicClient, namespace string) error {
+
 	var postgreSQLSpec backupv1.PostgreSQLSpec
 	var s3Spec backupv1.S3Spec
 
@@ -55,7 +58,12 @@ func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernet
 			return err
 		}
 
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(databaseCRD.Object["spec"].(map[string]interface{}), &postgreSQLSpec); err != nil {
+		specMap, ok := databaseCRD.Object["spec"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("spec is not a valid map[string]interface{}")
+		}
+
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(specMap, &postgreSQLSpec); err != nil {
 			return err
 		}
 
@@ -70,7 +78,12 @@ func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernet
 			return err
 		}
 
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(storageCRD.Object["spec"].(map[string]interface{}), &s3Spec); err != nil {
+		specMap, ok := storageCRD.Object["spec"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("spec is not a valid map[string]interface{}")
+		}
+
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(specMap, &s3Spec); err != nil {
 			return err
 		}
 
