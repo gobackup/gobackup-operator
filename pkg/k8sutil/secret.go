@@ -21,6 +21,7 @@ type BackupConfig struct {
 
 // Models represents the different models for backup configuration
 type Models struct {
+	// TODO: change my_backup to users backup name
 	MyBackup MyBackup `yaml:"my_backup,omitempty"`
 }
 
@@ -96,8 +97,7 @@ func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernet
 
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			//TODO: Change name of secret to something unique
-			Name: "gobackup-secret",
+			Name: model.BackupModelRef.Name,
 		},
 		StringData: map[string]string{
 			"gobackup.yml": string(yamlData),
@@ -105,7 +105,7 @@ func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernet
 	}
 
 	// Create the Secret in the specified namespace
-	_, err = clientset.CoreV1().Secrets("gobackup-operator-test").Create(ctx, secret, metav1.CreateOptions{})
+	_, err = clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
 	if err != nil {
 		panic(err.Error())
 	}
