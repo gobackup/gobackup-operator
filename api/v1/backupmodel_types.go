@@ -71,6 +71,12 @@ type BackupModel struct {
 	Status BackupModelStatus `json:"status,omitempty"`
 }
 
+type Model struct {
+	BackupModelRef BackupModelRef `json:"backupModelRef,omitempty"`
+	StorageRefs    []StorageRef   `json:"storageRefs,omitempty"`
+	DatabaseRefs   []DatabaseRef  `json:"databaseRefs,omitempty"`
+}
+
 //+kubebuilder:object:root=true
 
 // BackupModelList contains a list of BackupModel

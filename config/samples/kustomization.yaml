@@ -4,4 +4,5 @@ resources:
 - backup_v1_cronbackup.yaml
 - backup_v1_s3.yaml
 - backup_v1_postgresql.yaml
+- backup_v1_backup.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
