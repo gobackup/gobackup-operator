@@ -89,11 +89,11 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, cronback
 
 	cronJob := &batchv1.CronJob{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "gobackup-cronjob",
+			Name:      cronbackup.Name,
 			Namespace: cronbackup.Namespace,
 		},
 		Spec: batchv1.CronJobSpec{
-			Schedule: "*/1 * * * *", // Runs every minute
+			Schedule: cronbackup.BackupModelRef.Schedule.Cron,
 			JobTemplate: batchv1.JobTemplateSpec{
 				Spec: batchv1.JobSpec{
 					Template: corev1.PodTemplateSpec{
@@ -106,7 +106,7 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, cronback
 									Command:         []string{"/bin/sh", "-c", "gobackup perform"},
 									VolumeMounts: []corev1.VolumeMount{
 										{
-											Name:      "gobackup-secret-volume",
+											Name:      "config",
 											MountPath: "/root/.gobackup",
 										},
 									},
@@ -114,7 +114,7 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, cronback
 							},
 							Volumes: []corev1.Volume{
 								{
-									Name: "gobackup-secret-volume",
+									Name: "config",
 									VolumeSource: corev1.VolumeSource{
 										Secret: &corev1.SecretVolumeSource{
 											SecretName: cronbackup.BackupModelRef.Name,

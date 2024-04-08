@@ -89,7 +89,7 @@ func (r *BackupReconciler) createBackupJob(ctx context.Context, backup *backupv1
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "gobackup-job",
+			Name:      backup.Name,
 			Namespace: backup.Namespace,
 		},
 		Spec: batchv1.JobSpec{
@@ -103,7 +103,7 @@ func (r *BackupReconciler) createBackupJob(ctx context.Context, backup *backupv1
 							Command:         []string{"/bin/sh", "-c", "gobackup perform"},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "gobackup-secret-volume",
+									Name:      "config",
 									MountPath: "/root/.gobackup",
 								},
 							},
@@ -111,7 +111,7 @@ func (r *BackupReconciler) createBackupJob(ctx context.Context, backup *backupv1
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: "gobackup-secret-volume",
+							Name: "config",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
 									SecretName: backup.BackupModelRef.Name,
