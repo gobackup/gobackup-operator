@@ -68,7 +68,7 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	// Create job with the given BackupModel to run 'gobackup perform'
-	_, err = r.createBackupCronJob(ctx, cronBackup.Namespace)
+	_, err = r.createBackupCronJob(ctx, cronBackup)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -84,13 +84,13 @@ func (r *CronBackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // createBackupCronJob creates a cronjob to run the 'gobackup perform'
-func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, namespace string) (*batchv1.CronJob, error) {
+func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, cronbackup *backupv1.CronBackup) (*batchv1.CronJob, error) {
 	_ = log.FromContext(ctx)
 
 	cronJob := &batchv1.CronJob{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gobackup-cronjob",
-			Namespace: namespace,
+			Namespace: cronbackup.Namespace,
 		},
 		Spec: batchv1.CronJobSpec{
 			Schedule: "*/1 * * * *", // Runs every minute
@@ -117,7 +117,7 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, namespac
 									Name: "gobackup-secret-volume",
 									VolumeSource: corev1.VolumeSource{
 										Secret: &corev1.SecretVolumeSource{
-											SecretName: "gobackup-secret",
+											SecretName: cronbackup.BackupModelRef.Name,
 										},
 									},
 								},
@@ -131,7 +131,7 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, namespac
 	}
 
 	// Create the CronJob
-	_, err := r.Clientset.BatchV1().CronJobs(namespace).Create(ctx, cronJob, metav1.CreateOptions{})
+	_, err := r.Clientset.BatchV1().CronJobs(cronbackup.Namespace).Create(ctx, cronJob, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}

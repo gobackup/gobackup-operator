@@ -68,7 +68,7 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Create job with the given BackupModel to run 'gobackup perform'
-	_, err = r.createBackupJob(ctx, backup.Namespace)
+	_, err = r.createBackupJob(ctx, backup)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -84,13 +84,13 @@ func (r *BackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // createBackupJob creates a job to run the 'gobackup perform'
-func (r *BackupReconciler) createBackupJob(ctx context.Context, namespace string) (*batchv1.Job, error) {
+func (r *BackupReconciler) createBackupJob(ctx context.Context, backup *backupv1.Backup) (*batchv1.Job, error) {
 	_ = log.FromContext(ctx)
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gobackup-job",
-			Namespace: namespace,
+			Namespace: backup.Namespace,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
@@ -114,7 +114,7 @@ func (r *BackupReconciler) createBackupJob(ctx context.Context, namespace string
 							Name: "gobackup-secret-volume",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName: "gobackup-secret",
+									SecretName: backup.BackupModelRef.Name,
 								},
 							},
 						},
@@ -126,7 +126,7 @@ func (r *BackupReconciler) createBackupJob(ctx context.Context, namespace string
 	}
 
 	// Create the Job
-	_, err := r.Clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
+	_, err := r.Clientset.BatchV1().Jobs(backup.Namespace).Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
