@@ -4,9 +4,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.13.0
-  name: s3s.gobackup.io
+  name: s3s.storage.gobackup.io
 spec:
-  group: gobackup.io
+  group: storage.gobackup.io
   names:
     kind: S3
     listKind: S3List
