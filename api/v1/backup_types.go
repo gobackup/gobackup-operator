@@ -49,7 +49,7 @@ type Backup struct {
 	Spec   BackupSpec   `json:"spec,omitempty"`
 	Status BackupStatus `json:"status,omitempty"`
 
-	Model
+	Model `json:"model,omitempty"`
 }
 
 //+kubebuilder:object:root=true

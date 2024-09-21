@@ -67,7 +67,7 @@ type CronBackup struct {
 	Spec   CronBackupSpec   `json:"spec,omitempty"`
 	Status CronBackupStatus `json:"status,omitempty"`
 
-	Model
+	Model `json:"model,omitempty"`
 }
 
 //+kubebuilder:object:root=true
