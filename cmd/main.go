@@ -22,6 +22,7 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,6 +35,7 @@ import (
 
 	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
 	"github.com/gobackup/gobackup-operator/internal/controller"
+	"github.com/gobackup/gobackup-operator/pkg/k8sutil"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -96,9 +98,24 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "BackupModel")
 		os.Exit(1)
 	}
+
+	clientset, err := k8sutil.NewClient()
+	if err != nil {
+		setupLog.Error(err, "unable to create kubernetes client")
+		os.Exit(1)
+	}
+
+	dynamicClient, err := k8sutil.NewDynamicClient()
+	if err != nil {
+		setupLog.Error(err, "unable to create kubernetes dynamicClient")
+		os.Exit(1)
+	}
+
 	if err = (&controller.CronBackupReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		Clientset:     clientset,
+		DynamicClient: dynamicClient,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CronBackup")
 		os.Exit(1)
@@ -115,6 +132,15 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "PostgreSQL")
+		os.Exit(1)
+	}
+	if err = (&controller.BackupReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		Clientset:     clientset,
+		DynamicClient: dynamicClient,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Backup")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

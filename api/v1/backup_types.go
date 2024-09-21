@@ -23,35 +23,17 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// CronBackupSpec defines the desired state of CronBackup
-type CronBackupSpec struct {
+// BackupSpec defines the desired state of Backup
+type BackupSpec struct {
+	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+
+	// Foo is an example field of Backup. Edit backup_types.go to remove/update
+	Foo string `json:"foo,omitempty"`
 }
 
-type Schedule struct {
-	Cron string `json:"cron,omitempty"`
-}
-
-type BackupModelRef struct {
-	Name     string   `json:"name,omitempty"`
-	Schedule Schedule `json:"schedule,omitempty"`
-}
-
-type StorageRef struct {
-	APIGroup string `json:"apiGroup,omitempty"`
-	Type     string `json:"type,omitempty"`
-	Name     string `json:"name,omitempty"`
-	Keep     int    `json:"keep,omitempty"`
-	Timeout  int    `json:"timeout,omitempty"`
-}
-
-type DatabaseRef struct {
-	APIGroup string `json:"apiGroup,omitempty"`
-	Type     string `json:"type,omitempty"`
-	Name     string `json:"name,omitempty"`
-}
-
-// CronBackupStatus defines the observed state of CronBackup
-type CronBackupStatus struct {
+// BackupStatus defines the observed state of Backup
+type BackupStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -59,26 +41,26 @@ type CronBackupStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// CronBackup is the Schema for the cronbackups API
-type CronBackup struct {
+// Backup is the Schema for the backups API
+type Backup struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CronBackupSpec   `json:"spec,omitempty"`
-	Status CronBackupStatus `json:"status,omitempty"`
+	Spec   BackupSpec   `json:"spec,omitempty"`
+	Status BackupStatus `json:"status,omitempty"`
 
 	Model `json:"model,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// CronBackupList contains a list of CronBackup
-type CronBackupList struct {
+// BackupList contains a list of Backup
+type BackupList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []CronBackup `json:"items"`
+	Items           []Backup `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&CronBackup{}, &CronBackupList{})
+	SchemeBuilder.Register(&Backup{}, &BackupList{})
 }

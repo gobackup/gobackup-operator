@@ -4,20 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.13.0
-  name: cronbackups.gobackup.io
+  name: backups.gobackup.io
 spec:
   group: gobackup.io
   names:
-    kind: CronBackup
-    listKind: CronBackupList
-    plural: cronbackups
-    singular: cronbackup
+    kind: Backup
+    listKind: BackupList
+    plural: backups
+    singular: backup
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: CronBackup is the Schema for the cronbackups API
+        description: Backup is the Schema for the backups API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -71,10 +71,15 @@ spec:
                 type: array
             type: object
           spec:
-            description: CronBackupSpec defines the desired state of CronBackup
+            description: BackupSpec defines the desired state of Backup
+            properties:
+              foo:
+                description: Foo is an example field of Backup. Edit backup_types.go
+                  to remove/update
+                type: string
             type: object
           status:
-            description: CronBackupStatus defines the observed state of CronBackup
+            description: BackupStatus defines the observed state of Backup
             type: object
         type: object
     served: true

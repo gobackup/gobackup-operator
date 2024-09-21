@@ -29,24 +29,52 @@ A Kubernetes operator for backing up various storages, including Etcd, based on 
 make install
 ```
 
-**Run the operator:**
+### To Test the Operator on the cluster
+
+**Create instances of database and storage**
 
 ```sh
-make run
+kubectl apply -k example/gobackup-opetator-database/*
+kubectl apply -k example/gobackup-opetator-storage/*
 ```
 
-**Create instances of your solution**
-You can apply the samples (examples) from the config/sample:
+**Create a test database deployment**
 
 ```sh
-kubectl apply -k config/samples/
+kubectl apply -k example/gobackup-opetator-postgres-deployment.yaml
+```
+
+**Create environment with required access**
+
+```sh
+kubectl apply -k example/gobackup-opetator-clusterrole.yaml
+kubectl apply -k example/gobackup-opetator-clusterrolebinding.yaml
+kubectl apply -k example/gobackup-opetator-namespace.yaml
+kubectl apply -k example/gobackup-opetator-pvc.yaml
+kubectl apply -k example/gobackup-opetator-service.yaml
+kubectl apply -k example/gobackup-opetator-serviceaccount.yaml
+```
+
+**Deploy the Operator**
+
+```sh
+kubectl apply -k example/gobackup-opetator-deployment.yaml
+```
+
+**Create model and backup instances**
+
+This will trigger the Operator to run a backup command
+
+```sh
+kubectl apply -k example/gobackup-opetator/gobackup-opetator-backupmodel.yaml
+kubectl apply -k example/gobackup-opetator/gobackup-opetator-backup.yaml
 ```
 
 ### To Uninstall
 **Delete the instances (CRs) from the cluster:**
 
 ```sh
-kubectl delete -k config/samples/
+kubectl delete -k example/*
 ```
 
 **Delete the APIs(CRDs) from the cluster:**
@@ -54,18 +82,6 @@ kubectl delete -k config/samples/
 ```sh
 make uninstall
 ```
-
-## ToDo
-- [ ] Add Github Actions
-- [ ] Create a kubernetes secret from goabckup config file
-- [ ] Config validations
-- [ ] Add backup cronjob
-
-
-## Releases
-### gobackup-operator 0.1.0-alpha:
-
-This release enables users to backup from PostgreSQL database and push it to S3 storage
 
 ## Contributing
 

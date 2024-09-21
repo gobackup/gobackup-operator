@@ -1,4 +1,4 @@
-package utils
+package k8sutil
 
 import (
 	"context"
@@ -10,10 +10,15 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-// nolint
 // GetCRD fetches a CRD instance.
-func GetCRD(ctx context.Context, dynamicClient dynamic.Interface, group, version, resource, namespace, name string) (*unstructured.Unstructured, error) {
-	gvr := schema.GroupVersionResource{Group: group, Version: version, Resource: resource}
+func GetCRD(ctx context.Context, dynamicClient dynamic.Interface,
+	group, version, resource, namespace, name string) (*unstructured.Unstructured, error) {
+
+	gvr := schema.GroupVersionResource{
+		Group:    group,
+		Version:  version,
+		Resource: resource,
+	}
 
 	// Fetch the instance
 	crdObj, err := dynamicClient.Resource(gvr).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})

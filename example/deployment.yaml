@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gobackup-operator
+  labels:
+    app: gobackup-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gobackup-operator
+  template:
+    metadata:
+      labels:
+        app: gobackup-operator
+    spec:
+      serviceAccountName: gobackup-operator-service-account
+      containers:
+      - name: gobackup-operator
+        image: payamqorbanpour/gobackup-operator:v0.1.0
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: gobackup-operator-test
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
