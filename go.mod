@@ -1,6 +1,6 @@
 module gobackup.io/gobackup/gobackup-operator
 
-go 1.22.5
+go 1.22
 
 require (
 	github.com/gobackup/gobackup-operator v0.0.0-20240921110257-71a6316b0fcb

@@ -36,4 +36,22 @@ resources:
   kind: Backup
   path: gobackup.io/gobackup/gobackup-operator/api/v1
   version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: gobackup.io
+  group: database
+  kind: PostgreSQL
+  path: gobackup.io/gobackup/gobackup-operator/api/database/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: gobackup.io
+  group: storage
+  kind: S3
+  path: gobackup.io/gobackup/gobackup-operator/api/storage/v1
+  version: v1
 version: "3"

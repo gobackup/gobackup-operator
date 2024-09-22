@@ -1,0 +1,23 @@
+# permissions for end users to view s3s.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: gobackup-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: storage-s3-viewer-role
+rules:
+- apiGroups:
+  - storage.gobackup.io
+  resources:
+  - s3s
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - storage.gobackup.io
+  resources:
+  - s3s/status
+  verbs:
+  - get

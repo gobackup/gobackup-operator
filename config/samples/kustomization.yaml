@@ -5,4 +5,6 @@ resources:
 - backup_v1_s3.yaml
 - backup_v1_postgresql.yaml
 - backup_v1_backup.yaml
+- database_v1_postgresql.yaml
+- storage_v1_s3.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

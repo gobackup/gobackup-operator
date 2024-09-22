@@ -5,6 +5,32 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - database.gobackup.io
+  resources:
+  - postgresqls
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - database.gobackup.io
+  resources:
+  - postgresqls/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - database.gobackup.io
+  resources:
+  - postgresqls/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - gobackup.io
   resources:
   - backupmodels
@@ -52,6 +78,32 @@ rules:
   - gobackup.io
   resources:
   - postgresqls/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - storage.gobackup.io
+  resources:
+  - s3s
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - storage.gobackup.io
+  resources:
+  - s3s/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - storage.gobackup.io
+  resources:
+  - s3s/status
   verbs:
   - get
   - patch

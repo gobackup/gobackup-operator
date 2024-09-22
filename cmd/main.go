@@ -34,7 +34,12 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
+
+	databasev1 "gobackup.io/gobackup/gobackup-operator/api/database/v1"
+	storagev1 "gobackup.io/gobackup/gobackup-operator/api/storage/v1"
 	"gobackup.io/gobackup/gobackup-operator/internal/controller"
+	databasecontroller "gobackup.io/gobackup/gobackup-operator/internal/controller/database"
+	storagecontroller "gobackup.io/gobackup/gobackup-operator/internal/controller/storage"
 	"gobackup.io/gobackup/gobackup-operator/pkg/k8sutil"
 	//+kubebuilder:scaffold:imports
 )
@@ -48,6 +53,8 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(backupv1.AddToScheme(scheme))
+	utilruntime.Must(databasev1.AddToScheme(scheme))
+	utilruntime.Must(storagev1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -127,6 +134,20 @@ func main() {
 		DynamicClient: dynamicClient,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Backup")
+		os.Exit(1)
+	}
+	if err = (&databasecontroller.PostgreSQLReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "PostgreSQL")
+		os.Exit(1)
+	}
+	if err = (&storagecontroller.S3Reconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "S3")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
