@@ -120,20 +120,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "CronBackup")
 		os.Exit(1)
 	}
-	if err = (&controller.S3Reconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "S3")
-		os.Exit(1)
-	}
-	if err = (&controller.PostgreSQLReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "PostgreSQL")
-		os.Exit(1)
-	}
 	if err = (&controller.BackupReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
