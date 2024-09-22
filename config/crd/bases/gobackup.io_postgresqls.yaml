@@ -11,6 +11,8 @@ spec:
     kind: PostgreSQL
     listKind: PostgreSQLList
     plural: postgresqls
+    shortNames:
+    - postgresql
     singular: postgresql
   scope: Namespaced
   versions:
