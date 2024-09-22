@@ -59,6 +59,7 @@ type Encode struct {
 	Type     string `json:"type"`
 }
 
+//+kubebuilder:resource:shortName=backupmodel
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 

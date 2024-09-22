@@ -11,6 +11,8 @@ spec:
     kind: CronBackup
     listKind: CronBackupList
     plural: cronbackups
+    shortNames:
+    - cronbackup
     singular: cronbackup
   scope: Namespaced
   versions:

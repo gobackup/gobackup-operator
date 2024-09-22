@@ -11,6 +11,8 @@ spec:
     kind: S3
     listKind: S3List
     plural: s3s
+    shortNames:
+    - s3
     singular: s3
   scope: Namespaced
   versions:
