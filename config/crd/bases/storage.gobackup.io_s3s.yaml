@@ -4,20 +4,22 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.13.0
-  name: postgresqls.database.gobackup.io
+  name: s3s.storage.gobackup.io
 spec:
-  group: database.gobackup.io
+  group: storage.gobackup.io
   names:
-    kind: PostgreSQL
-    listKind: PostgreSQLList
-    plural: postgresqls
-    singular: postgresql
+    kind: S3
+    listKind: S3List
+    plural: s3s
+    shortNames:
+    - s3
+    singular: s3
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: PostgreSQL is the Schema for the postgresqls API
+        description: S3 is the Schema for the s3s API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -32,33 +34,33 @@ spec:
           metadata:
             type: object
           spec:
-            description: PostgreSQLSpec defines the desired state of PostgreSQL
+            description: S3Spec defines the desired state of S3
             properties:
-              additionalOptions:
+              accessKeyID:
                 type: string
-              database:
+              bucket:
                 type: string
-              excludeTables:
-                items:
-                  type: string
-                type: array
-              host:
+              endpoint:
                 type: string
-              password:
-                type: string
-              port:
+              forcePathStyle:
+                type: boolean
+              maxRetries:
                 type: integer
-              tables:
-                items:
-                  type: string
-                type: array
+              path:
+                type: string
+              region:
+                type: string
+              secretAccessKey:
+                type: string
+              storageClass:
+                type: string
               type:
                 type: string
-              username:
-                type: string
+            required:
+            - storageClass
             type: object
           status:
-            description: PostgreSQLStatus defines the observed state of PostgreSQL
+            description: S3Status defines the observed state of S3
             type: object
         type: object
     served: true

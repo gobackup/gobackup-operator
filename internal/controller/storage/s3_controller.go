@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controller
+package storage
 
 import (
 	"context"
@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
+	storagev1 "gobackup.io/gobackup/gobackup-operator/api/storage/v1"
 )
 
 // S3Reconciler reconciles a S3 object
@@ -33,9 +33,9 @@ type S3Reconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=gobackup.io,resources=s3s,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=gobackup.io,resources=s3s/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=gobackup.io,resources=s3s/finalizers,verbs=update
+// +kubebuilder:rbac:groups=storage.gobackup.io,resources=s3s,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=storage.gobackup.io,resources=s3s/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=storage.gobackup.io,resources=s3s/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -45,7 +45,7 @@ type S3Reconciler struct {
 // the user.
 //
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.2/pkg/reconcile
 func (r *S3Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
@@ -57,6 +57,6 @@ func (r *S3Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Re
 // SetupWithManager sets up the controller with the Manager.
 func (r *S3Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&backupv1.S3{}).
+		For(&storagev1.S3{}).
 		Complete(r)
 }
