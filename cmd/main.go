@@ -34,8 +34,8 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
-	"github.com/gobackup/gobackup-operator/internal/controller"
-	"github.com/gobackup/gobackup-operator/pkg/k8sutil"
+	"gobackup.io/gobackup/gobackup-operator/internal/controller"
+	"gobackup.io/gobackup/gobackup-operator/pkg/k8sutil"
 	//+kubebuilder:scaffold:imports
 )
 
