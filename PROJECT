@@ -5,6 +5,7 @@
 domain: gobackup.io
 layout:
 - go.kubebuilder.io/v4
+multigroup: true
 projectName: gobackup-operator
 repo: gobackup.io/gobackup/gobackup-operator
 resources:
