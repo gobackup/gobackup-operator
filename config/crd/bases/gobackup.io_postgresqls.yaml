@@ -4,15 +4,15 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.13.0
-  name: postgresqls.database.gobackup.io
+  name: postgresqls.gobackup.io
 spec:
-  group: database.gobackup.io
+  group: gobackup.io
   names:
     kind: PostgreSQL
     listKind: PostgreSQLList
     plural: postgresqls
     shortNames:
-    - postgresql
+    - psql
     singular: postgresql
   scope: Namespaced
   versions:

@@ -11,6 +11,8 @@ spec:
     kind: BackupModel
     listKind: BackupModelList
     plural: backupmodels
+    shortNames:
+    - backupmodel
     singular: backupmodel
   scope: Namespaced
   versions:
