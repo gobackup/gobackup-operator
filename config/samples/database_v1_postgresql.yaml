@@ -1,0 +1,9 @@
+apiVersion: database.gobackup.io/v1
+kind: PostgreSQL
+metadata:
+  labels:
+    app.kubernetes.io/name: gobackup-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: postgresql-sample
+spec:
+  # TODO(user): Add fields here

@@ -3,16 +3,12 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/instance: s3-viewer-role
-    app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: gobackup-operator
-    app.kubernetes.io/part-of: gobackup-operator
+    app.kubernetes.io/name: gobackup-operator
     app.kubernetes.io/managed-by: kustomize
-  name: s3-viewer-role
+  name: storage-s3-viewer-role
 rules:
 - apiGroups:
-  - gobackup.io
+  - storage.gobackup.io
   resources:
   - s3s
   verbs:
@@ -20,7 +16,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - gobackup.io
+  - storage.gobackup.io
   resources:
   - s3s/status
   verbs:
