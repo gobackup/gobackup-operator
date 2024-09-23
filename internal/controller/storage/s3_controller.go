@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	storagev1 "gobackup.io/gobackup/gobackup-operator/api/storage/v1"
+	storagev1 "github.com/gobackup/gobackup-operator/api/storage/v1"
 )
 
 // S3Reconciler reconciles a S3 object

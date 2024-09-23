@@ -7,7 +7,7 @@ layout:
 - go.kubebuilder.io/v4
 multigroup: true
 projectName: gobackup-operator
-repo: gobackup.io/gobackup/gobackup-operator
+repo: github.com/gobackup/gobackup-operator
 resources:
 - api:
     crdVersion: v1
@@ -16,7 +16,7 @@ resources:
   domain: gobackup.io
   group: gobackup
   kind: BackupModel
-  path: gobackup.io/gobackup/gobackup-operator/api/v1
+  path: github.com/gobackup/gobackup-operator/api/v1
   version: v1
 - api:
     crdVersion: v1
@@ -25,7 +25,7 @@ resources:
   domain: gobackup.io
   group: gobackup
   kind: CronBackup
-  path: gobackup.io/gobackup/gobackup-operator/api/v1
+  path: github.com/gobackup/gobackup-operator/api/v1
   version: v1
 - api:
     crdVersion: v1
@@ -34,7 +34,7 @@ resources:
   domain: gobackup.io
   group: gobackup
   kind: Backup
-  path: gobackup.io/gobackup/gobackup-operator/api/v1
+  path: github.com/gobackup/gobackup-operator/api/v1
   version: v1
 - api:
     crdVersion: v1
@@ -43,7 +43,7 @@ resources:
   domain: gobackup.io
   group: database
   kind: PostgreSQL
-  path: gobackup.io/gobackup/gobackup-operator/api/database/v1
+  path: github.com/gobackup/gobackup-operator/api/database/v1
   version: v1
 - api:
     crdVersion: v1
@@ -52,6 +52,6 @@ resources:
   domain: gobackup.io
   group: storage
   kind: S3
-  path: gobackup.io/gobackup/gobackup-operator/api/storage/v1
+  path: github.com/gobackup/gobackup-operator/api/storage/v1
   version: v1
 version: "3"

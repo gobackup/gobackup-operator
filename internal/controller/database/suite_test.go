@@ -32,7 +32,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	databasev1 "gobackup.io/gobackup/gobackup-operator/api/database/v1"
+	databasev1 "github.com/gobackup/gobackup-operator/api/database/v1"
 	// +kubebuilder:scaffold:imports
 )
 

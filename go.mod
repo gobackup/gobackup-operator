@@ -1,9 +1,8 @@
-module gobackup.io/gobackup/gobackup-operator
+module github.com/gobackup/gobackup-operator
 
 go 1.22
 
 require (
-	github.com/gobackup/gobackup-operator v0.0.0-20240921110257-71a6316b0fcb
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.10
 	gopkg.in/yaml.v2 v2.4.0

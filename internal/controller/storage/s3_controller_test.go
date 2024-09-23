@@ -27,7 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	storagev1 "gobackup.io/gobackup/gobackup-operator/api/storage/v1"
+	storagev1 "github.com/gobackup/gobackup-operator/api/storage/v1"
 )
 
 var _ = Describe("S3 Controller", func() {

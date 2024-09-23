@@ -33,14 +33,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	databasev1 "github.com/gobackup/gobackup-operator/api/database/v1"
+	storagev1 "github.com/gobackup/gobackup-operator/api/storage/v1"
 	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
-
-	databasev1 "gobackup.io/gobackup/gobackup-operator/api/database/v1"
-	storagev1 "gobackup.io/gobackup/gobackup-operator/api/storage/v1"
-	"gobackup.io/gobackup/gobackup-operator/internal/controller"
-	databasecontroller "gobackup.io/gobackup/gobackup-operator/internal/controller/database"
-	storagecontroller "gobackup.io/gobackup/gobackup-operator/internal/controller/storage"
-	"gobackup.io/gobackup/gobackup-operator/pkg/k8sutil"
+	"github.com/gobackup/gobackup-operator/internal/controller"
+	databasecontroller "github.com/gobackup/gobackup-operator/internal/controller/database"
+	storagecontroller "github.com/gobackup/gobackup-operator/internal/controller/storage"
+	"github.com/gobackup/gobackup-operator/pkg/k8sutil"
 	//+kubebuilder:scaffold:imports
 )
 
