@@ -27,7 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	databasev1 "gobackup.io/gobackup/gobackup-operator/api/database/v1"
+	databasev1 "github.com/gobackup/gobackup-operator/api/database/v1"
 )
 
 var _ = Describe("PostgreSQL Controller", func() {

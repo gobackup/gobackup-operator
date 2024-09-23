@@ -12,6 +12,8 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 
+	databasev1 "github.com/gobackup/gobackup-operator/api/database/v1"
+	storagev1 "github.com/gobackup/gobackup-operator/api/storage/v1"
 	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
 )
 
@@ -35,20 +37,19 @@ type MyBackup struct {
 
 // Databases represents the database configurations
 type Databases struct {
-	Postgres backupv1.PostgreSQLSpecConfig `yaml:"postgres"`
+	Postgres databasev1.PostgreSQLSpecConfig `yaml:"postgres"`
 }
 
 // Storages represents the storage configurations
 type Storages struct {
-	S3 backupv1.S3SpecConfig `yaml:"s3"`
+	S3 storagev1.S3SpecConfig `yaml:"s3"`
 }
 
 // CreateSecret creates secret from config.
 func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernetes.Clientset,
 	dynamicClient *dynamic.DynamicClient, namespace string) error {
-
-	var postgreSQLSpec backupv1.PostgreSQLSpec
-	var s3Spec backupv1.S3Spec
+	var postgreSQLSpec databasev1.PostgreSQLSpec
+	var s3Spec storagev1.S3Spec
 
 	for _, database := range model.DatabaseRefs {
 		version := strings.ToLower(database.Type) + "s"
@@ -94,10 +95,10 @@ func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernet
 		Models: Models{
 			MyBackup: MyBackup{
 				Databases: Databases{
-					backupv1.PostgreSQLSpecConfig(postgreSQLSpec),
+					databasev1.PostgreSQLSpecConfig(postgreSQLSpec),
 				},
 				Storages: Storages{
-					backupv1.S3SpecConfig(s3Spec),
+					storagev1.S3SpecConfig(s3Spec),
 				},
 			},
 		},
@@ -122,5 +123,6 @@ func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernet
 	if err != nil {
 		panic(err.Error())
 	}
+
 	return nil
 }

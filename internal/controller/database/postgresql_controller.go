@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	databasev1 "gobackup.io/gobackup/gobackup-operator/api/database/v1"
+	databasev1 "github.com/gobackup/gobackup-operator/api/database/v1"
 )
 
 // PostgreSQLReconciler reconciles a PostgreSQL object
