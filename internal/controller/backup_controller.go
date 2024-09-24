@@ -21,6 +21,7 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
@@ -62,7 +63,17 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
 
-	err := k8sutil.CreateSecret(ctx, backup.Model, r.Clientset, r.DynamicClient, backup.Namespace)
+	_, err := k8sutil.GetCRD(ctx, r.DynamicClient, "gobackup.io", "v1", "backups", backup.Namespace, backup.BackupModelRef.Name)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Log.Info("BackupModel not found", "BackupModelRef", backup.BackupModelRef)
+			return ctrl.Result{}, nil
+		}
+
+		return ctrl.Result{}, err
+	}
+
+	err = k8sutil.CreateSecret(ctx, backup.Model, r.Clientset, r.DynamicClient, backup.Namespace)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
