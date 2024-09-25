@@ -18,6 +18,8 @@ package controller
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -63,7 +65,12 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
 
-	_, err := k8sutil.GetCRD(ctx, r.DynamicClient, "gobackup.io", "v1", "backups", backup.Namespace, backup.BackupModelRef.Name)
+	apiversionSplited := strings.Split(backup.APIVersion, "/")
+	if len(apiversionSplited) == 0 {
+		return ctrl.Result{}, fmt.Errorf("failed to parse APIVersion: %s", backup.APIVersion)
+	}
+
+	_, err := k8sutil.GetCRD(ctx, r.DynamicClient, apiversionSplited[0], apiversionSplited[1], "backupmodels", backup.Namespace, backup.BackupModelRef.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			log.Log.Error(err, "BackupModel not found")
