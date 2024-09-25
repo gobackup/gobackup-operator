@@ -66,7 +66,7 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	_, err := k8sutil.GetCRD(ctx, r.DynamicClient, "gobackup.io", "v1", "backups", backup.Namespace, backup.BackupModelRef.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			log.Log.Error(err, "BackupModel not found", backup.BackupModelRef)
+			log.Log.Error(err, "BackupModel not found")
 			return ctrl.Result{}, nil
 		}
 
