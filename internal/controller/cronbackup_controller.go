@@ -62,7 +62,7 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
 
-	err := k8sutil.CreateSecret(ctx, cronBackup.Model, r.Clientset, r.DynamicClient, cronBackup.Namespace)
+	err := k8sutil.CreateSecret(ctx, cronBackup.Model, r.Clientset, r.DynamicClient, cronBackup.Namespace, cronBackup.Name)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -117,7 +117,7 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, cronback
 									Name: "config",
 									VolumeSource: corev1.VolumeSource{
 										Secret: &corev1.SecretVolumeSource{
-											SecretName: cronbackup.BackupModelRef.Name,
+											SecretName: cronbackup.Name,
 										},
 									},
 								},

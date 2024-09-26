@@ -70,6 +70,7 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, fmt.Errorf("failed to parse APIVersion: %s", backup.APIVersion)
 	}
 
+	// Check if the BackupModel exists
 	_, err := k8sutil.GetCRD(ctx, r.DynamicClient, apiversionSplited[0], apiversionSplited[1], "backupmodels", backup.Namespace, backup.BackupModelRef.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -80,7 +81,7 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	err = k8sutil.CreateSecret(ctx, backup.Model, r.Clientset, r.DynamicClient, backup.Namespace)
+	err = k8sutil.CreateSecret(ctx, backup.Model, r.Clientset, r.DynamicClient, backup.Namespace, backup.Name)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -132,7 +133,7 @@ func (r *BackupReconciler) createBackupJob(ctx context.Context, backup *backupv1
 							Name: "config",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName: backup.BackupModelRef.Name,
+									SecretName: backup.Name,
 								},
 							},
 						},
