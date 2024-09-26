@@ -18,6 +18,8 @@ package controller
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -63,7 +65,13 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
 
-	_, err := k8sutil.GetCRD(ctx, r.DynamicClient, "gobackup.io", "v1", "backups", backup.Namespace, backup.BackupModelRef.Name)
+	apiversionSplited := strings.Split(backup.APIVersion, "/")
+	if len(apiversionSplited) == 0 {
+		return ctrl.Result{}, fmt.Errorf("failed to parse APIVersion: %s", backup.APIVersion)
+	}
+
+	// Check if the BackupModel exists
+	_, err := k8sutil.GetCRD(ctx, r.DynamicClient, apiversionSplited[0], apiversionSplited[1], "backupmodels", backup.Namespace, backup.BackupModelRef.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			log.Log.Error(err, "BackupModel not found")
@@ -73,7 +81,7 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	err = k8sutil.CreateSecret(ctx, backup.Model, r.Clientset, r.DynamicClient, backup.Namespace)
+	err = k8sutil.CreateSecret(ctx, backup.Model, r.Clientset, r.DynamicClient, backup.Namespace, backup.Name)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -125,7 +133,7 @@ func (r *BackupReconciler) createBackupJob(ctx context.Context, backup *backupv1
 							Name: "config",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName: backup.BackupModelRef.Name,
+									SecretName: backup.Name,
 								},
 							},
 						},

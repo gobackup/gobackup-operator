@@ -47,7 +47,7 @@ type Storages struct {
 
 // CreateSecret creates secret from config.
 func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernetes.Clientset,
-	dynamicClient *dynamic.DynamicClient, namespace string) error {
+	dynamicClient *dynamic.DynamicClient, namespace, name string) error {
 	var postgreSQLSpec databasev1.PostgreSQLSpec
 	var s3Spec storagev1.S3Spec
 
@@ -111,7 +111,7 @@ func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernet
 
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: model.BackupModelRef.Name,
+			Name: name,
 		},
 		StringData: map[string]string{
 			"gobackup.yml": string(yamlData),
