@@ -117,20 +117,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.CronBackupReconciler{
-		Client:        mgr.GetClient(),
-		Scheme:        mgr.GetScheme(),
+	k8s := &k8sutil.K8s{
 		Clientset:     clientset,
 		DynamicClient: dynamicClient,
+	}
+
+	if err = (&controller.CronBackupReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		K8s:    k8s,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CronBackup")
 		os.Exit(1)
 	}
 	if err = (&controller.BackupReconciler{
-		Client:        mgr.GetClient(),
-		Scheme:        mgr.GetScheme(),
-		Clientset:     clientset,
-		DynamicClient: dynamicClient,
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		K8s:    k8s,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Backup")
 		os.Exit(1)

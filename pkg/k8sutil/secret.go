@@ -9,8 +9,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 
 	databasev1 "github.com/gobackup/gobackup-operator/api/database/v1"
 	storagev1 "github.com/gobackup/gobackup-operator/api/storage/v1"
@@ -46,15 +44,14 @@ type Storages struct {
 }
 
 // CreateSecret creates secret from config.
-func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernetes.Clientset,
-	dynamicClient *dynamic.DynamicClient, namespace, name string) error {
+func (k *K8s) CreateSecret(ctx context.Context, model backupv1.Model, namespace, name string) error {
 	var postgreSQLSpec databasev1.PostgreSQLSpec
 	var s3Spec storagev1.S3Spec
 
 	for _, database := range model.DatabaseRefs {
 		version := strings.ToLower(database.Type) + "s"
 
-		databaseCRD, err := GetCRD(ctx, dynamicClient, database.APIGroup, "v1", version, namespace, database.Name)
+		databaseCRD, err := k.GetCRD(ctx, database.APIGroup, "v1", version, namespace, database.Name)
 		if err != nil {
 			return err
 		}
@@ -74,7 +71,7 @@ func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernet
 	for _, storage := range model.StorageRefs {
 		version := strings.ToLower(storage.Type) + "s"
 
-		storageCRD, err := GetCRD(ctx, dynamicClient, storage.APIGroup, "v1", version, namespace, storage.Name)
+		storageCRD, err := k.GetCRD(ctx, storage.APIGroup, "v1", version, namespace, storage.Name)
 		if err != nil {
 			return err
 		}
@@ -119,7 +116,7 @@ func CreateSecret(ctx context.Context, model backupv1.Model, clientset *kubernet
 	}
 
 	// Create the Secret in the specified namespace
-	_, err = clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
+	_, err = k.Clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
 	if err != nil {
 		panic(err.Error())
 	}

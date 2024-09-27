@@ -6,6 +6,11 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+type K8s struct {
+	Clientset     *kubernetes.Clientset
+	DynamicClient *dynamic.DynamicClient
+}
+
 func NewClient() (*kubernetes.Clientset, error) {
 	// Create config to use the ServiceAccount's token, CA cert, and API server address
 	config, err := rest.InClusterConfig()

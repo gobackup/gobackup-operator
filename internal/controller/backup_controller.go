@@ -26,8 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -40,9 +38,7 @@ import (
 type BackupReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
-
-	Clientset     *kubernetes.Clientset
-	DynamicClient *dynamic.DynamicClient
+	K8s    *k8sutil.K8s
 }
 
 // +kubebuilder:rbac:groups=gobackup.gobackup.io,resources=backups,verbs=get;list;watch;create;update;patch;delete
@@ -71,7 +67,7 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Check if the BackupModel exists
-	_, err := k8sutil.GetCRD(ctx, r.DynamicClient, apiversionSplited[0], apiversionSplited[1], "backupmodels", backup.Namespace, backup.BackupModelRef.Name)
+	_, err := r.K8s.GetCRD(ctx, apiversionSplited[0], apiversionSplited[1], "backupmodels", backup.Namespace, backup.BackupModelRef.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			log.Log.Error(err, "BackupModel not found")
@@ -81,7 +77,7 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	err = k8sutil.CreateSecret(ctx, backup.Model, r.Clientset, r.DynamicClient, backup.Namespace, backup.Name)
+	err = r.K8s.CreateSecret(ctx, backup.Model, backup.Namespace, backup.Name)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -145,7 +141,7 @@ func (r *BackupReconciler) createBackupJob(ctx context.Context, backup *backupv1
 	}
 
 	// Create the Job
-	_, err := r.Clientset.BatchV1().Jobs(backup.Namespace).Create(ctx, job, metav1.CreateOptions{})
+	_, err := r.K8s.Clientset.BatchV1().Jobs(backup.Namespace).Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}

@@ -23,8 +23,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -37,9 +35,7 @@ import (
 type CronBackupReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
-
-	Clientset     *kubernetes.Clientset
-	DynamicClient *dynamic.DynamicClient
+	K8s    *k8sutil.K8s
 }
 
 // +kubebuilder:rbac:groups=gobackup.io,resources=cronbackups,verbs=get;list;watch;create;update;patch;delete
@@ -62,7 +58,7 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
 
-	err := k8sutil.CreateSecret(ctx, cronBackup.Model, r.Clientset, r.DynamicClient, cronBackup.Namespace, cronBackup.Name)
+	err := r.K8s.CreateSecret(ctx, cronBackup.Model, cronBackup.Namespace, cronBackup.Name)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -131,7 +127,7 @@ func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, cronback
 	}
 
 	// Create the CronJob
-	_, err := r.Clientset.BatchV1().CronJobs(cronbackup.Namespace).Create(ctx, cronJob, metav1.CreateOptions{})
+	_, err := r.K8s.Clientset.BatchV1().CronJobs(cronbackup.Namespace).Create(ctx, cronJob, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
