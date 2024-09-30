@@ -18,9 +18,12 @@ package controller
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -58,7 +61,23 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
 
-	err := r.K8s.CreateSecret(ctx, cronBackup.Model, cronBackup.Namespace, cronBackup.Name)
+	apiversionSplited := strings.Split(cronBackup.APIVersion, "/")
+	if len(apiversionSplited) == 0 {
+		return ctrl.Result{}, fmt.Errorf("failed to parse APIVersion: %s", cronBackup.APIVersion)
+	}
+
+	// Check if the BackupModel exists
+	_, err := r.K8s.GetCRD(ctx, apiversionSplited[0], apiversionSplited[1], "backupmodels", cronBackup.Namespace, cronBackup.BackupModelRef.Name)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Log.Error(err, "BackupModel not found")
+			return ctrl.Result{}, nil
+		}
+
+		return ctrl.Result{}, err
+	}
+
+	err = r.K8s.CreateSecret(ctx, cronBackup.Model, cronBackup.Namespace, cronBackup.Name)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
