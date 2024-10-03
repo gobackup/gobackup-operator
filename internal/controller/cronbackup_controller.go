@@ -60,7 +60,7 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, fmt.Errorf("failed to parse APIVersion: %s", cronBackup.APIVersion)
 	}
 
-	// Check if the Backup exists
+	// Check if the CronBackup exists
 	exsistingBackup, err := r.K8s.GetCRD(ctx, apiversionSplited[0], apiversionSplited[1], "cronbackups", cronBackup.Namespace, cronBackup.Name)
 	if err != nil {
 		return ctrl.Result{}, err

@@ -61,11 +61,11 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Check if the Backup exists
-	exsistingBackup, err := r.K8s.GetCRD(ctx, apiversionSplited[0], apiversionSplited[1], "backups", backup.Namespace, backup.Name)
+	existingBackup, err := r.K8s.GetCRD(ctx, apiversionSplited[0], apiversionSplited[1], "backups", backup.Namespace, backup.Name)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	if exsistingBackup != nil {
+	if existingBackup != nil {
 		return ctrl.Result{}, nil
 	}
 
@@ -105,6 +105,25 @@ func (r *BackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&backupv1.Backup{}).
 		Complete(r)
+}
+
+func (r *BackupReconciler) updateBackupJob(ctx context.Context, backup *backupv1.Backup) error {
+	err := r.K8s.DeleteSecret(ctx, backup.Namespace, backup.Name)
+	if err != nil {
+		return err
+	}
+
+	err = r.K8s.DeleteJob(ctx, backup.Namespace, backup.Name)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.createBackupJob(ctx, backup)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // createBackupJob creates a job to run the 'gobackup perform'
