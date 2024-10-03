@@ -55,19 +55,28 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	apiversionSplited := strings.Split(backup.APIVersion, "/")
+	if len(apiversionSplited) == 0 {
+		return ctrl.Result{}, fmt.Errorf("failed to parse APIVersion: %s", backup.APIVersion)
+	}
+
+	// Check if the Backup exists
+	exsistingBackup, err := r.K8s.GetCRD(ctx, apiversionSplited[0], apiversionSplited[1], "backups", backup.Namespace, backup.Name)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if exsistingBackup != nil {
+		return ctrl.Result{}, nil
+	}
+
 	// Ensure Storage and Database CRDs existence
 	// TODO: Extend this by checking every storage and database
 	if len(backup.StorageRefs) == 0 || len(backup.DatabaseRefs) == 0 {
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
 
-	apiversionSplited := strings.Split(backup.APIVersion, "/")
-	if len(apiversionSplited) == 0 {
-		return ctrl.Result{}, fmt.Errorf("failed to parse APIVersion: %s", backup.APIVersion)
-	}
-
 	// Check if the BackupModel exists
-	_, err := r.K8s.GetCRD(ctx, apiversionSplited[0], apiversionSplited[1], "backupmodels", backup.Namespace, backup.BackupModelRef.Name)
+	_, err = r.K8s.GetCRD(ctx, apiversionSplited[0], apiversionSplited[1], "backupmodels", backup.Namespace, backup.BackupModelRef.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			log.Log.Error(err, "BackupModel not found")
