@@ -123,3 +123,14 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.Model, namespace,
 
 	return nil
 }
+
+// CreateSecret creates secret from config.
+func (k *K8s) DeleteSecret(ctx context.Context, namespace, name string) error {
+	// Create the Secret in the specified namespace
+	err := k.Clientset.CoreV1().Secrets(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return nil
+}
