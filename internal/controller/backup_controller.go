@@ -60,13 +60,17 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, fmt.Errorf("failed to parse APIVersion: %s", backup.APIVersion)
 	}
 
-	// Check if the Backup exists
-	existingBackup, err := r.K8s.GetCRD(ctx, apiversionSplited[0], apiversionSplited[1], "backups", backup.Namespace, backup.Name)
-	if err != nil {
+	job, err := r.K8s.Clientset.BatchV1().Jobs(backup.Namespace).Get(ctx, backup.Name, metav1.GetOptions{})
+	if err != nil && !errors.IsNotFound(err) {
 		return ctrl.Result{}, err
 	}
-	if existingBackup != nil {
-		return ctrl.Result{}, nil
+
+	for _, condition := range job.Status.Conditions {
+		if condition.Type == batchv1.JobComplete && condition.Status == corev1.ConditionTrue {
+			err := r.deleteBackup(ctx, backup)
+
+			return ctrl.Result{}, err
+		}
 	}
 
 	// Ensure Storage and Database CRDs existence
@@ -107,7 +111,7 @@ func (r *BackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *BackupReconciler) updateBackupJob(ctx context.Context, backup *backupv1.Backup) error {
+func (r *BackupReconciler) deleteBackup(ctx context.Context, backup *backupv1.Backup) error {
 	err := r.K8s.DeleteSecret(ctx, backup.Namespace, backup.Name)
 	if err != nil {
 		return err
@@ -118,7 +122,7 @@ func (r *BackupReconciler) updateBackupJob(ctx context.Context, backup *backupv1
 		return err
 	}
 
-	_, err = r.createBackupJob(ctx, backup)
+	err = r.Delete(ctx, backup, &client.DeleteOptions{})
 	if err != nil {
 		return err
 	}
