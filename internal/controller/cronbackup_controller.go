@@ -107,6 +107,25 @@ func (r *CronBackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+func (r *BackupReconciler) deleteCronBackup(ctx context.Context, cronBackup *backupv1.CronBackup) error {
+	err := r.K8s.DeleteSecret(ctx, cronBackup.Namespace, cronBackup.Name)
+	if err != nil {
+		return err
+	}
+
+	err = r.K8s.DeleteJob(ctx, cronBackup.Namespace, cronBackup.Name)
+	if err != nil {
+		return err
+	}
+
+	err = r.Delete(ctx, cronBackup, &client.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // createBackupCronJob creates a cronjob to run the 'gobackup perform'
 func (r *CronBackupReconciler) createBackupCronJob(ctx context.Context, cronbackup *backupv1.CronBackup) (*batchv1.CronJob, error) {
 	_ = log.FromContext(ctx)
