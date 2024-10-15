@@ -45,7 +45,7 @@ type CronBackupReconciler struct {
 // +kubebuilder:rbac:groups=gobackup.io,resources=cronbackups/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=gobackup.io,resources=cronbackups/finalizers,verbs=update
 func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
 	// Define a CronBackup object
 	cronBackup := &backupv1.CronBackup{}
@@ -79,7 +79,7 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	_, err = r.K8s.GetCRD(ctx, apiversionSplited[0], apiversionSplited[1], "backupmodels", cronBackup.Namespace, cronBackup.BackupModelRef.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			log.Log.Error(err, "BackupModel not found")
+			logger.Error(err, "cronbackup > GetCRD > BackupModel not found")
 			return ctrl.Result{}, nil
 		}
 
