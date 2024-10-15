@@ -45,7 +45,7 @@ type BackupReconciler struct {
 // +kubebuilder:rbac:groups=gobackup.gobackup.io,resources=backups/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=gobackup.gobackup.io,resources=backups/finalizers,verbs=update
 func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
 	// Define a Backup object
 	backup := &backupv1.Backup{}
@@ -83,7 +83,7 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	_, err = r.K8s.GetCRD(ctx, apiversionSplited[0], apiversionSplited[1], "backupmodels", backup.Namespace, backup.BackupModelRef.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			log.Log.Error(err, "BackupModel not found")
+			logger.Error(err, "backup > GetCRD")
 			return ctrl.Result{}, nil
 		}
 
