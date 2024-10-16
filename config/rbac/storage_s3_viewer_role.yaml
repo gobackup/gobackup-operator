@@ -8,7 +8,7 @@ metadata:
   name: storage-s3-viewer-role
 rules:
 - apiGroups:
-  - storage.gobackup.io
+  - gobackup.io
   resources:
   - s3s
   verbs:
@@ -16,7 +16,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - storage.gobackup.io
+  - gobackup.io
   resources:
   - s3s/status
   verbs:

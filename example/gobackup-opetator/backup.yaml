@@ -6,12 +6,12 @@ metadata:
 backupModelRef:
   name: "example-backupmodel"
 storageRefs:
-  - apiGroup: "storage.gobackup.io"
+  - apiGroup: "gobackup.io"
     type: "S3"
     name: "example-s3"
     keep: 5
     timeout: 30
 databaseRefs:
-  - apiGroup: "database.gobackup.io"
+  - apiGroup: "gobackup.io"
     type: "PostgreSQL"
     name: "example-postgresql"

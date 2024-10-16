@@ -89,9 +89,9 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: scps.storage.gobackup.io
+  name: scps.gobackup.io
 spec:
-  group: storage.gobackup.io
+  group: gobackup.io
   versions:
   - name: v1
     served: true
@@ -143,9 +143,9 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: ftpes.storage.gobackup.io
+  name: ftpes.gobackup.io
 spec:
-  group: storage.gobackup.io
+  group: gobackup.io
   versions:
   - name: v1
     served: true
@@ -190,9 +190,9 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: sftpes.storage.gobackup.io
+  name: sftpes.gobackup.io
 spec:
-  group: storage.gobackup.io
+  group: gobackup.io
   versions:
   - name: v1
     served: true
@@ -237,9 +237,9 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: s3s.storage.gobackup.io
+  name: s3s.gobackup.io
 spec:
-  group: storage.gobackup.io
+  group: gobackup.io
   versions:
   - name: v1
     served: true
@@ -286,9 +286,9 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: azures.storage.gobackup.io
+  name: azures.gobackup.io
 spec:
-  group: storage.gobackup.io
+  group: gobackup.io
   versions:
   - name: v1
     served: true
@@ -326,9 +326,9 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: gcses.storage.gobackup.io
+  name: gcses.gobackup.io
 spec:
-  group: storage.gobackup.io
+  group: gobackup.io
   versions:
   - name: v1
     served: true
@@ -362,9 +362,9 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: webdavs.storage.gobackup.io
+  name: webdavs.gobackup.io
 spec:
-  group: storage.gobackup.io
+  group: gobackup.io
   versions:
   - name: v1
     served: true
@@ -396,9 +396,9 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: etcds.database.gobackup.io
+  name: etcds.gobackup.io
 spec:
-  group: database.gobackup.io
+  group: gobackup.io
   versions:
   - name: v1
     served: true
@@ -430,9 +430,9 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: influxdbs.database.gobackup.io
+  name: influxdbs.gobackup.io
 spec:
-  group: database.gobackup.io
+  group: gobackup.io
   versions:
   - name: v1
     served: true
@@ -475,9 +475,9 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: mariadbs.database.gobackup.io
+  name: mariadbs.gobackup.io
 spec:
-  group: database.gobackup.io
+  group: gobackup.io
   versions:
   - name: v1
     served: true
@@ -517,9 +517,9 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: mongodbs.database.gobackup.io
+  name: mongodbs.gobackup.io
 spec:
-  group: database.gobackup.io
+  group: gobackup.io
   versions:
   - name: v1
     served: true
@@ -568,9 +568,9 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: mssqls.database.gobackup.io
+  name: mssqls.gobackup.io
 spec:
-  group: database.gobackup.io
+  group: gobackup.io
   versions:
   - name: v1
     served: true
@@ -613,9 +613,9 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: mysqls.database.gobackup.io
+  name: mysqls.gobackup.io
 spec:
-  group: database.gobackup.io
+  group: gobackup.io
   versions:
   - name: v1
     served: true
@@ -663,9 +663,9 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: postgresqls.database.gobackup.io
+  name: postgresqls.gobackup.io
 spec:
-  group: database.gobackup.io
+  group: gobackup.io
   versions:
   - name: v1
     served: true
@@ -715,9 +715,9 @@ spec:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: redises.database.gobackup.io
+  name: redises.gobackup.io
 spec:
-  group: database.gobackup.io
+  group: gobackup.io
   versions:
   - name: v1
     served: true

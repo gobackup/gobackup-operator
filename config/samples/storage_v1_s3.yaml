@@ -1,4 +1,4 @@
-apiVersion: storage.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: S3
 metadata:
   labels:

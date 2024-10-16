@@ -10,8 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	databasev1 "github.com/gobackup/gobackup-operator/api/database/v1"
-	storagev1 "github.com/gobackup/gobackup-operator/api/storage/v1"
 	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
 )
 
@@ -35,18 +33,18 @@ type MyBackup struct {
 
 // Databases represents the database configurations
 type Databases struct {
-	Postgres databasev1.PostgreSQLSpecConfig `yaml:"postgres"`
+	Postgres backupv1.PostgreSQLSpecConfig `yaml:"postgres"`
 }
 
 // Storages represents the storage configurations
 type Storages struct {
-	S3 storagev1.S3SpecConfig `yaml:"s3"`
+	S3 backupv1.S3SpecConfig `yaml:"s3"`
 }
 
 // CreateSecret creates secret from config.
 func (k *K8s) CreateSecret(ctx context.Context, model backupv1.Model, namespace, name string) error {
-	var postgreSQLSpec databasev1.PostgreSQLSpec
-	var s3Spec storagev1.S3Spec
+	var postgreSQLSpec backupv1.PostgreSQLSpec
+	var s3Spec backupv1.S3Spec
 
 	for _, database := range model.DatabaseRefs {
 		version := strings.ToLower(database.Type) + "s"
@@ -92,10 +90,10 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.Model, namespace,
 		Models: Models{
 			MyBackup: MyBackup{
 				Databases: Databases{
-					databasev1.PostgreSQLSpecConfig(postgreSQLSpec),
+					backupv1.PostgreSQLSpecConfig(postgreSQLSpec),
 				},
 				Storages: Storages{
-					storagev1.S3SpecConfig(s3Spec),
+					backupv1.S3SpecConfig(s3Spec),
 				},
 			},
 		},

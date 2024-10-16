@@ -8,7 +8,7 @@ metadata:
   name: database-postgresql-editor-role
 rules:
 - apiGroups:
-  - database.gobackup.io
+  - gobackup.io
   resources:
   - postgresqls
   verbs:
@@ -20,7 +20,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - database.gobackup.io
+  - gobackup.io
   resources:
   - postgresqls/status
   verbs:
