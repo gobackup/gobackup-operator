@@ -18,7 +18,7 @@ spec:
   beforeScript: "echo 'Starting backup'"
   afterScript: "echo 'Backup completed'"
 ---
-apiVersion: storage.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: SCP
 metadata:
   name: example-scp
@@ -32,7 +32,7 @@ spec:
   username: "test"
   password: "testpassword"
 ---
-apiVersion: storage.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: FTP
 metadata:
   name: example-ftp
@@ -48,7 +48,7 @@ spec:
   explicitTLS: false
   noCheckCertificate: false
 ---
-apiVersion: storage.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: SFTP
 metadata:
   name: example-sftp
@@ -62,7 +62,7 @@ spec:
   username: "your-username"
   # password: "your-password"
 ---
-apiVersion: storage.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: S3
 metadata:
   name: example-s3
@@ -77,7 +77,7 @@ spec:
   forcePathStyle: false
   endpoint: "s3.amazonaws.com"
 ---
-apiVersion: storage.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: Azure
 metadata:
   name: example-azure
@@ -89,7 +89,7 @@ spec:
   clientID: "your-client-id"
   clientSecret: "your-client-secret"
 ---
-apiVersion: storage.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: GCS
 metadata:
   name: example-gcs
@@ -100,7 +100,7 @@ spec:
   # credentials: "your-credentials"
   credentialsSecret: "your-credentials-secret"
 ---
-apiVersion: storage.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: WebDAV
 metadata:
   name: example-webdav
@@ -110,7 +110,7 @@ spec:
   username: "your-username"
   password: "your-password"
 ---
-apiVersion: database.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: ETCD
 metadata:
   name: example-etcd
@@ -123,7 +123,7 @@ spec:
     - "--username=myuser"
     - "--password=mypassword"
 ---
-apiVersion: database.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: InfluxDB
 metadata:
   name: example-influxdb
@@ -138,7 +138,7 @@ spec:
   skipVerify: false
   httpDebug: false
 ---
-apiVersion: database.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: MariaDB
 metadata:
   name: example-mariadb
@@ -151,7 +151,7 @@ spec:
   database: "your-database"
   additionalOptions: "your-additional-options"
 ---
-apiVersion: database.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: MongoDB
 metadata:
   name: example-mongodb
@@ -169,7 +169,7 @@ spec:
   oplog: false
   additionalOptions: "your-additional-options"
 ---
-apiVersion: database.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: MSSQL
 metadata:
   name: example-mssql
@@ -183,7 +183,7 @@ spec:
   trustServerCertificate: false
   additionalOptions: "your-additional-options"
 ---
-apiVersion: database.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: MySQL
 metadata:
   name: example-mysql
@@ -202,7 +202,7 @@ spec:
     - "table4"
   additionalOptions: "your-additional-options"
 ---
-apiVersion: database.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: PostgreSQL
 metadata:
   name: example-postgresql
@@ -221,7 +221,7 @@ spec:
     - "table4"
   additionalOptions: "your-additional-options"
 ---
-apiVersion: database.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: Redis
 metadata:
   name: example-redis
@@ -243,13 +243,13 @@ backupModelRef:
     # every: "day"
     # at: "00:00"
 storageRefs:
-  - apiGroup: "storage.gobackup.io"
+  - apiGroup: "gobackup.io"
     type: "S3"
     name: "example-s3"
     keep: 5
     timeout: 30
 databaseRefs:
-  - apiGroup: "database.gobackup.io"
+  - apiGroup: "gobackup.io"
     type: "MySQL"
     name: "example-mysql"
 ---
@@ -261,13 +261,13 @@ metadata:
 backupModelRef:
   name: "your-backup-model"
 storageRefs:
-  - apiGroup: "storage.gobackup.io"
+  - apiGroup: "gobackup.io"
     type: "S3"
     name: "example-s3"
     keep: 5
     timeout: 30
 databaseRefs:
-  - apiGroup: "database.gobackup.io"
+  - apiGroup: "gobackup.io"
     type: "MySQL"
     name: "example-mysql"
 

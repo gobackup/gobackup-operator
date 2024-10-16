@@ -8,7 +8,7 @@ metadata:
   name: storage-s3-editor-role
 rules:
 - apiGroups:
-  - storage.gobackup.io
+  - gobackup.io
   resources:
   - s3s
   verbs:
@@ -20,7 +20,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - storage.gobackup.io
+  - gobackup.io
   resources:
   - s3s/status
   verbs:

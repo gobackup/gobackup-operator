@@ -1,4 +1,4 @@
-apiVersion: database.gobackup.io/v1
+apiVersion: gobackup.io/v1
 kind: PostgreSQL
 metadata:
   name: example-postgresql

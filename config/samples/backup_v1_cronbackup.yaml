@@ -16,12 +16,12 @@ backupModelRef:
     # every: "day"
     # at: "00:00"
 storageRefs:
-  - apiGroup: "storage.gobackup.io"
+  - apiGroup: "gobackup.io"
     type: "S3"
     name: "example-s3"
     keep: 5
     timeout: 30
 databaseRefs:
-  - apiGroup: "database.gobackup.io"
+  - apiGroup: "gobackup.io"
     type: "MySQL"
     name: "example-mysql"

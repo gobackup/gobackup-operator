@@ -5,8 +5,8 @@ resources:
 - bases/gobackup.io_backupmodels.yaml
 - bases/gobackup.io_cronbackups.yaml
 - bases/gobackup.io_backups.yaml
-- bases/database.gobackup.io_postgresqls.yaml
-- bases/storage.gobackup.io_s3s.yaml
+- bases/gobackup.io_postgresqls.yaml
+- bases/gobackup.io_s3s.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patches:
