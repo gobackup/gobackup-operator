@@ -83,7 +83,7 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	_, err = r.K8s.GetCRD(ctx, apiversionSplited[0], apiversionSplited[1], "backupmodels", backup.Namespace, backup.BackupModelRef.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			logger.Error(err, "backup > GetCRD")
+			logger.Error(err, "backup > GetCRD > BackupModel not found")
 			return ctrl.Result{}, nil
 		}
 

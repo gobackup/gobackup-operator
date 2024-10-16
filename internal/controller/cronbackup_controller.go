@@ -45,7 +45,7 @@ type CronBackupReconciler struct {
 // +kubebuilder:rbac:groups=gobackup.io,resources=cronbackups/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=gobackup.io,resources=cronbackups/finalizers,verbs=update
 func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
 	// Define a CronBackup object
 	cronBackup := &backupv1.CronBackup{}
@@ -60,15 +60,6 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, fmt.Errorf("failed to parse APIVersion: %s", cronBackup.APIVersion)
 	}
 
-	// Check if the CronBackup exists
-	exsistingBackup, err := r.K8s.GetCRD(ctx, apiversionSplited[0], apiversionSplited[1], "cronbackups", cronBackup.Namespace, cronBackup.Name)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if exsistingBackup != nil {
-		return ctrl.Result{}, nil
-	}
-
 	// Ensure Storage and Database CRDs existence
 	// TODO: Extend this by checking every storage and database
 	if len(cronBackup.StorageRefs) == 0 || len(cronBackup.DatabaseRefs) == 0 {
@@ -76,10 +67,10 @@ func (r *CronBackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	// Check if the BackupModel exists
-	_, err = r.K8s.GetCRD(ctx, apiversionSplited[0], apiversionSplited[1], "backupmodels", cronBackup.Namespace, cronBackup.BackupModelRef.Name)
+	_, err := r.K8s.GetCRD(ctx, apiversionSplited[0], apiversionSplited[1], "backupmodels", cronBackup.Namespace, cronBackup.BackupModelRef.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			log.Log.Error(err, "BackupModel not found")
+			logger.Error(err, "cronbackup > GetCRD > BackupModel not found")
 			return ctrl.Result{}, nil
 		}
 
