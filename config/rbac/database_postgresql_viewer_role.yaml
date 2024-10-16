@@ -8,7 +8,7 @@ metadata:
   name: database-postgresql-viewer-role
 rules:
 - apiGroups:
-  - database.gobackup.io
+  - gobackup.io
   resources:
   - postgresqls
   verbs:
@@ -16,7 +16,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - database.gobackup.io
+  - gobackup.io
   resources:
   - postgresqls/status
   verbs:
