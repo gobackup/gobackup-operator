@@ -74,7 +74,7 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Ensure Storage and Database CRDs existence
-	// TODO: Extend this by checking every storage and database
+	// TODO: Extend this by checking every storage and database..
 	if len(backup.StorageRefs) == 0 || len(backup.DatabaseRefs) == 0 {
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
