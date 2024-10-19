@@ -3,17 +3,18 @@ kind: CronBackup
 metadata:
   name: example-cronbackup
   namespace: gobackup-operator-test
-backupModelRef:
-  name: "example-backupmodel"
-  schedule:
-    cron: "* * * * *"
-storageRefs:
-  - apiGroup: "gobackup.io"
-    type: "S3"
-    name: "example-s3"
-    keep: 5
-    timeout: 30
-databaseRefs:
-  - apiGroup: "gobackup.io"
-    type: "PostgreSQL"
-    name: "example-postgresql"
+model:
+  backupModelRef:
+    name: "example-backupmodel"
+    schedule:
+      cron: "* * * * *"
+  storageRefs:
+    - apiGroup: "gobackup.io"
+      type: "S3"
+      name: "example-s3"
+      keep: 5
+      timeout: 30
+  databaseRefs:
+    - apiGroup: "gobackup.io"
+      type: "PostgreSQL"
+      name: "example-postgresql"
