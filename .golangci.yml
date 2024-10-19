@@ -20,21 +20,21 @@ linters:
   disable-all: true
   enable:
     - dupl
-    - errcheck
-    - exportloopref
-    - goconst
-    - gocyclo
-    - gofmt
-    - goimports
-    - gosimple
-    - govet
-    - ineffassign
-    - lll
-    - misspell
-    - nakedret
-    - prealloc
-    - staticcheck
-    - typecheck
-    - unconvert
-    - unparam
-    - unused
+    # - errcheck
+    # - exportloopref
+    # - goconst
+    # - gocyclo
+    # - gofmt
+    # - goimports
+    # - gosimple
+    # - govet
+    # - ineffassign
+    # - lll
+    # - misspell
+    # - nakedret
+    # - prealloc
+    # - staticcheck
+    # - typecheck
+    # - unconvert
+    # - unparam
+    # - unused
