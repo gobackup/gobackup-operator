@@ -35,6 +35,8 @@ type S3Spec struct {
 	ForcePathStyle  bool   `json:"forcePathStyle,omitempty" yaml:"forcePathStyle,omitempty"`
 	StorageClass    string `json:"storageClass" yaml:"storageClass"`
 	MaxRetries      int    `json:"maxRetries,omitempty" yaml:"maxRetries,omitempty"`
+	Keep            int    `json:"keep,omitempty" yaml:"keep,omitempty"`
+	Timeout         int    `json:"timeout,omitempty" yaml:"timeout,omitempty"`
 }
 
 // S3SpecConfig duplicates S3Spec for gobackup config file
@@ -49,6 +51,8 @@ type S3SpecConfig struct {
 	ForcePathStyle  bool   `json:"force_path_style,omitempty" yaml:"force_path_style,omitempty"`
 	StorageClass    string `json:"storage_class" yaml:"storage_class"`
 	MaxRetries      int    `json:"max_retries,omitempty" yaml:"max_retries,omitempty"`
+	Keep            int    `json:"keep,omitempty" yaml:"keep,omitempty"`
+	Timeout         int    `json:"timeout,omitempty" yaml:"timeout,omitempty"`
 }
 
 // S3Status defines the observed state of S3

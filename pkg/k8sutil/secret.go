@@ -66,7 +66,7 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.Model, namespace,
 		postgreSQLSpec.Type = strings.ToLower(database.Type)
 	}
 
-	for _, storage := range model.StorageRefs {
+	for i, storage := range model.StorageRefs {
 		version := strings.ToLower(storage.Type) + "s"
 
 		storageCRD, err := k.GetCRD(ctx, storage.APIGroup, "v1", version, namespace, storage.Name)
@@ -84,6 +84,8 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.Model, namespace,
 		}
 
 		s3Spec.Type = strings.ToLower(storage.Type)
+		s3Spec.Keep = model.StorageRefs[i].Keep
+		s3Spec.Timeout = model.StorageRefs[i].Timeout
 	}
 
 	backupConfig := BackupConfig{
