@@ -20,6 +20,8 @@ resources:
 # default, aiding admins in cluster management. Those roles are
 # not used by the Project itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
+- mysql_editor_role.yaml
+- mysql_viewer_role.yaml
 - storage_s3_editor_role.yaml
 - storage_s3_viewer_role.yaml
 - database_postgresql_editor_role.yaml

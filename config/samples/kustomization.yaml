@@ -7,4 +7,5 @@ resources:
 - backup_v1_backup.yaml
 - database_v1_postgresql.yaml
 - storage_v1_s3.yaml
+- v1_mysql.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
