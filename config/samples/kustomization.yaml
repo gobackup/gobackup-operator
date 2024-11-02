@@ -8,4 +8,5 @@ resources:
 - database_v1_postgresql.yaml
 - storage_v1_s3.yaml
 - v1_mysql.yaml
+- v1_redis.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
