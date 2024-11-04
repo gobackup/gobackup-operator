@@ -9,4 +9,5 @@ resources:
 - storage_v1_s3.yaml
 - v1_mysql.yaml
 - v1_redis.yaml
+- v1_mongodb.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

@@ -9,6 +9,7 @@ resources:
 - bases/gobackup.io_s3s.yaml
 - bases/gobackup.io_mysqls.yaml
 - bases/gobackup.io_redis.yaml
+- bases/gobackup.io_mongodbs.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patches:
@@ -28,6 +29,7 @@ patches:
 #- path: patches/cainjection_in_storage_s3s.yaml
 #- path: patches/cainjection_in_mysqls.yaml
 #- path: patches/cainjection_in_redis.yaml
+#- path: patches/cainjection_in_mongodbs.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # [WEBHOOK] To enable webhook, uncomment the following section
