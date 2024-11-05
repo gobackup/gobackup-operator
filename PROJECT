@@ -75,4 +75,11 @@ resources:
   kind: MongoDB
   path: github.com/gobackup/gobackup-operator/api/v1
   version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: gobackup.io
+  kind: InfluxDB
+  path: github.com/gobackup/gobackup-operator/api/v1
+  version: v1
 version: "3"
