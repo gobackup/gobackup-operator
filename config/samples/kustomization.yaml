@@ -12,4 +12,5 @@ resources:
 - v1_mongodb.yaml
 - v1_influxdb.yaml
 - v1_mariadb.yaml
+- v1_etcd.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
