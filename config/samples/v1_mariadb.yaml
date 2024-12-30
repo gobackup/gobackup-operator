@@ -1,0 +1,9 @@
+apiVersion: gobackup.io/v1
+kind: MariaDB
+metadata:
+  labels:
+    app.kubernetes.io/name: gobackup-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: mariadb-sample
+spec:
+  # TODO(user): Add fields here

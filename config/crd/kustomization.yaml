@@ -11,6 +11,7 @@ resources:
 - bases/gobackup.io_redis.yaml
 - bases/gobackup.io_mongodbs.yaml
 - bases/gobackup.io_influxdbs.yaml
+- bases/gobackup.io_mariadbs.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patches:
@@ -32,6 +33,7 @@ patches:
 #- path: patches/cainjection_in_redis.yaml
 #- path: patches/cainjection_in_mongodbs.yaml
 #- path: patches/cainjection_in_influxdbs.yaml
+#- path: patches/cainjection_in_mariadbs.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # [WEBHOOK] To enable webhook, uncomment the following section
