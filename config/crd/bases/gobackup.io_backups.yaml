@@ -79,6 +79,25 @@ spec:
                 description: Foo is an example field of Backup. Edit backup_types.go
                   to remove/update
                 type: string
+              schedule:
+                description: Schedule specifies the schedule for the backup
+                properties:
+                  cron:
+                    description: The cron expression defining the schedule
+                    type: string
+                  startingDeadlineSeconds:
+                    description: Optional deadline in seconds for starting the job if it misses scheduled time for any reason
+                    type: integer
+                  suspend:
+                    description: This flag tells the controller to suspend subsequent executions
+                    type: boolean
+                  successfulJobsHistoryLimit:
+                    description: The number of successful finished jobs to retain
+                    type: integer
+                  failedJobsHistoryLimit:
+                    description: The number of failed finished jobs to retain
+                    type: integer
+                type: object
             type: object
           status:
             description: BackupStatus defines the observed state of Backup
