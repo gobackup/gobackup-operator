@@ -34,71 +34,120 @@ spec:
           metadata:
             type: object
           model:
-            properties:
-              backupModelRef:
+            databaseRefs:
+              items:
                 properties:
+                  apiGroup:
+                    type: string
+                    description: API group of the database
                   name:
                     type: string
-                  schedule:
-                    properties:
-                      cron:
-                        type: string
-                    type: object
-                type: object
-              databaseRefs:
-                items:
-                  properties:
-                    apiGroup:
-                      type: string
-                    name:
-                      type: string
-                    type:
-                      type: string
-                  type: object
-                type: array
-              storageRefs:
-                items:
-                  properties:
-                    apiGroup:
-                      type: string
-                    keep:
-                      type: integer
-                    name:
-                      type: string
-                    timeout:
-                      type: integer
-                    type:
-                      type: string
-                  type: object
-                type: array
-            type: object
-          spec:
-            description: BackupSpec defines the desired state of Backup
-            properties:
-              foo:
-                description: Foo is an example field of Backup. Edit backup_types.go
-                  to remove/update
-                type: string
-              schedule:
-                description: Schedule specifies the schedule for the backup
-                properties:
-                  cron:
-                    description: The cron expression defining the schedule
+                    description: Name of the database
+                  type:
                     type: string
-                  startingDeadlineSeconds:
-                    description: Optional deadline in seconds for starting the job if it misses scheduled time for any reason
-                    type: integer
-                  suspend:
-                    description: This flag tells the controller to suspend subsequent executions
-                    type: boolean
-                  successfulJobsHistoryLimit:
-                    description: The number of successful finished jobs to retain
-                    type: integer
-                  failedJobsHistoryLimit:
-                    description: The number of failed finished jobs to retain
-                    type: integer
+                    description: Type of the database
                 type: object
-            type: object
+              type: array
+            storageRefs:
+              items:
+                properties:
+                  apiGroup:
+                    type: string
+                    description: API group of the storage
+                  keep:
+                    type: integer
+                    description: Number of backups to keep
+                    minimum: 1
+                  name:
+                    type: string
+                    description: Name of the storage
+                  timeout:
+                    type: integer
+                    description: Timeout for the storage operation
+                    minimum: 1
+                  type:
+                    type: string
+                    description: Type of the storage
+                type: object
+              type: array
+            afterScript:
+              type: string
+              description: Script to run after the backup
+            beforeScript:
+              type: string
+              description: Script to run before the backup
+            compressWith:
+              properties:
+                type:
+                  type: string
+                  description: Compression type
+              required:
+              - type
+              type: object
+            description:
+              type: string
+              description: Description of the backup model
+            encodeWith:
+              properties:
+                args:
+                  type: string
+                  description: Arguments for encoding
+                base64:
+                  type: boolean
+                  description: Use base64 encoding
+                  default: false
+                cipher:
+                  type: string
+                  description: Cipher for encoding
+                openssl:
+                  type: boolean
+                  description: Use OpenSSL for encoding
+                  default: false
+                password:
+                  type: string
+                  description: Password for encoding
+                salt:
+                  type: boolean
+                  description: Use salt for encoding
+                  default: false
+                type:
+                  type: string
+                  description: Encoding type
+              required:
+              - args
+              - base64
+              - cipher
+              - openssl
+              - password
+              - salt
+              - type
+              type: object
+            schedule:
+              description: Schedule specifies the schedule for the backup
+              properties:
+                cron:
+                  description: The cron expression defining the schedule
+                  type: string
+                  pattern: '^(\*|([0-5]?\d)) (\*|([01]?\d|2[0-3])) (\*|([01]?\d|2[0-3])) (\*|([01]?\d|2[0-3])) (\*|([01]?\d|2[0-3]))$'
+                startingDeadlineSeconds:
+                  description: Optional deadline in seconds for starting the job if it misses scheduled time for any reason
+                  type: integer
+                  minimum: 1
+                suspend:
+                  description: This flag tells the controller to suspend subsequent executions
+                  type: boolean
+                  default: false
+                successfulJobsHistoryLimit:
+                  description: The number of successful finished jobs to retain
+                  type: integer
+                  default: 3
+                  minimum: 1
+                failedJobsHistoryLimit:
+                  description: The number of failed finished jobs to retain
+                  type: integer
+                  default: 1
+                  minimum: 1
+              type: object
           status:
             description: BackupStatus defines the observed state of Backup
             type: object
