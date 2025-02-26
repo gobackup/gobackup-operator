@@ -1,0 +1,33 @@
+apiVersion: gobackup.io/v1
+kind: Backup
+metadata:
+  name: my-backup
+  namespace: default
+spec:
+  compressWith:
+    type: tgz
+  storageRefs:
+    - apiGroup: storage.gobackup.io
+      name: local-storage
+      type: local
+      keep: 5
+      timeout: 300
+  databaseRefs:
+    - apiGroup: database.gobackup.io
+      name: my-database
+      type: mysql
+  schedule:
+    cron: "0 2 * * *"
+    startingDeadlineSeconds: 60
+    suspend: false
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 1
+  beforeScript: "/path/to/before_script.sh"
+  afterScript: "/path/to/after_script.sh"
+  encodeWith:
+    type: aes256
+    password: "my-secret-password"
+    salt: true
+    openssl: true
+    base64: false
+    args: "-pbkdf2"

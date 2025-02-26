@@ -2,17 +2,7 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-- bases/gobackup.io_backupmodels.yaml
-- bases/gobackup.io_cronbackups.yaml
 - bases/gobackup.io_backups.yaml
-- bases/gobackup.io_postgresqls.yaml
-- bases/gobackup.io_s3s.yaml
-- bases/gobackup.io_mysqls.yaml
-- bases/gobackup.io_redis.yaml
-- bases/gobackup.io_mongodbs.yaml
-- bases/gobackup.io_influxdbs.yaml
-- bases/gobackup.io_mariadbs.yaml
-- bases/gobackup.io_etcds.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patches:

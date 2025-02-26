@@ -1,16 +1,4 @@
 ## Append samples of your project ##
 resources:
-- backup_v1_backupmodel.yaml
-- backup_v1_cronbackup.yaml
-- backup_v1_s3.yaml
-- backup_v1_postgresql.yaml
 - backup_v1_backup.yaml
-- database_v1_postgresql.yaml
-- storage_v1_s3.yaml
-- v1_mysql.yaml
-- v1_redis.yaml
-- v1_mongodb.yaml
-- v1_influxdb.yaml
-- v1_mariadb.yaml
-- v1_etcd.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

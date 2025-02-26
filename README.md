@@ -16,10 +16,30 @@ A Kubernetes operator for backing up various storages, including Etcd, based on 
 ## Getting Started
 
 ### Prerequisites
-- go version v1.20.0+
-- docker version 17.03+.
-- kubectl version v1.11.3+.
-- Access to a Kubernetes v1.11.3+ cluster.
+- Golang
+- Docker
+- Kubectl
+- Access to a Kubernetes cluster
+
+## Structure
+
+gobackup-operator/
+├── .github/               # CI/CD workflows (GitHub Actions)
+├── api/                   # API definitions (CustomResourceDefinitions)
+├── build/                 # Build artifacts
+├── cmd/                   # Entry point for the operator
+├── config/
+│   ├── crd/               # Custom Resource Definitions (CRDs)
+│   ├── default/           # Default manifests (e.g., manager deployment, cluster roles, RBAC)
+│   ├── manager/           # Operator deployment manifests (e.g., Deployment.yaml, Service.yaml)
+│   ├── rbac/              # RBAC permissions (e.g., ClusterRole.yaml, Role.yaml, RoleBinding.yaml)
+│   ├── samples/           # Example custom resources (CRs) to test your operator
+├── internal/
+│   ├──controller/           # Controller logic
+├── pkg/                   # internal utils
+├── Makefile               # Automation scripts (build, deploy, test)
+├── PROJECT                # Operator SDK/Kubebuilder metadata
+├── README.md              # Documentation
 
 ### To Deploy on the cluster
 
