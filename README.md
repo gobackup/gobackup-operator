@@ -23,6 +23,7 @@ A Kubernetes operator for backing up various storages, including Etcd, based on 
 
 ## Structure
 
+```
 gobackup-operator/
 ├── .github/               # CI/CD workflows (GitHub Actions)
 ├── api/                   # API definitions (CustomResourceDefinitions)
@@ -40,6 +41,7 @@ gobackup-operator/
 ├── Makefile               # Automation scripts (build, deploy, test)
 ├── PROJECT                # Operator SDK/Kubebuilder metadata
 ├── README.md              # Documentation
+```
 
 ### To Deploy on the cluster
 
