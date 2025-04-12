@@ -1,4 +1,3 @@
-
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
@@ -81,6 +80,48 @@ lint: golangci-lint ## Run golangci-lint linter & yamllint
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
+
+.PHONY: kind-run
+kind-run: fmt vet kustomize ## Run the operator on a local kind cluster
+	@echo "Setting up and running the operator on a kind cluster"
+	@# Check if Docker is running
+	@if ! $(CONTAINER_TOOL) info > /dev/null 2>&1; then \
+		echo "Error: Docker daemon is not running. Please start Docker first."; \
+		exit 1; \
+	fi
+	@if ! command -v kind > /dev/null; then \
+		echo "Error: kind is not installed. Install it from https://kind.sigs.k8s.io/docs/user/quick-start/"; \
+		exit 1; \
+	fi
+	@if ! kind get clusters | grep -q gobackup-operator; then \
+		echo "Creating gobackup-operator kind cluster..."; \
+		kind create cluster --name gobackup-operator; \
+	else \
+		echo "Using existing gobackup-operator kind cluster"; \
+	fi
+	@echo "Building operator image using Dockerfile from build directory..."
+	$(CONTAINER_TOOL) build -t gobackup-operator:dev -f build/Dockerfile .
+	@echo "Loading image into kind cluster..."
+	kind load docker-image gobackup-operator:dev --name gobackup-operator
+	@echo "Installing CRDs..."
+	@if [ -d "config/crd/bases" ]; then \
+		echo "Using existing CRD files in config/crd/bases"; \
+		$(KUBECTL) apply -f config/crd/bases; \
+	else \
+		echo "Warning: CRD directory not found. Trying to generate CRDs (may fail)..."; \
+		$(MAKE) manifests || { \
+			echo "CRD generation failed. Please run 'make manifests' separately before running this command."; \
+			echo "Continuing with deployment without CRDs..."; \
+		}; \
+		if [ -d "config/crd/bases" ]; then \
+			$(KUBECTL) apply -f config/crd/bases; \
+		fi; \
+	fi
+	@echo "Deploying operator..."
+	cd config/manager && $(KUSTOMIZE) edit set image controller=gobackup-operator:dev
+	$(KUSTOMIZE) build config/default | $(KUBECTL) apply -f -
+	@echo "Operator is running on kind cluster"
+	@echo "Use 'kubectl get pods -n gobackup-system' to verify the deployment"
 
 ##@ Build
 
@@ -185,3 +226,33 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+.PHONY: kind-delete
+kind-delete: ## Delete the gobackup-operator kind cluster
+	@echo "Deleting gobackup-operator kind cluster..."
+	@if kind get clusters | grep -q gobackup-operator; then \
+		kind delete cluster --name gobackup-operator; \
+		echo "Cluster deleted."; \
+	else \
+		echo "No gobackup-operator cluster found."; \
+	fi
+
+.PHONY: kind-restart
+kind-restart: ## Restart the operator service in the kind cluster
+	@echo "Restarting gobackup-operator deployment..."
+	@if kubectl get namespace gobackup-operator-system >/dev/null 2>&1; then \
+		kubectl -n gobackup-operator-system rollout restart deployment gobackup-operator-controller-manager; \
+		echo "Operator service restarted. Watching rollout status..."; \
+		kubectl -n gobackup-operator-system rollout status deployment gobackup-operator-controller-manager; \
+	else \
+		echo "gobackup-system namespace not found. Has the operator been deployed?"; \
+	fi
+
+.PHONY: kind-rebuild
+kind-rebuild: ## Rebuild and redeploy the operator to kind cluster
+	@echo "Rebuilding and redeploying operator to kind cluster..."
+	$(CONTAINER_TOOL) build -t gobackup-operator:dev -f build/Dockerfile .
+	kind load docker-image gobackup-operator:dev --name gobackup-operator
+	kubectl -n gobackup-operator-system rollout restart deployment gobackup-operator-controller-manager
+	@echo "Watching rollout status..."
+	kubectl -n gobackup-operator-system rollout status deployment gobackup-operator-controller-manager
