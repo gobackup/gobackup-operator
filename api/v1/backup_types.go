@@ -25,11 +25,66 @@ import (
 
 // BackupSpec defines the desired state of Backup
 type BackupSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// DatabaseRefs represents the list of databases to backup
+	DatabaseRefs []DatabaseRef `json:"databaseRefs,omitempty"`
 
-	// Foo is an example field of Backup. Edit backup_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// StorageRefs represents the list of storages to backup to
+	StorageRefs []StorageRef `json:"storageRefs,omitempty"`
+
+	// AfterScript is the script to run after the backup
+	AfterScript string `json:"afterScript,omitempty"`
+
+	// BeforeScript is the script to run before the backup
+	BeforeScript string `json:"beforeScript,omitempty"`
+
+	// CompressWith defines the compression to use
+	CompressWith *Compress `json:"compressWith,omitempty"`
+
+	// EncodeWith defines the encoding to use
+	EncodeWith *Encode `json:"encodeWith,omitempty"`
+
+	// Schedule defines when the backup should run
+	Schedule *BackupSchedule `json:"schedule,omitempty"`
+}
+
+// BackupSchedule defines the schedule for the backup
+type BackupSchedule struct {
+	// The cron expression defining the schedule
+	Cron string `json:"cron,omitempty"`
+
+	// Optional deadline in seconds for starting the job if it misses scheduled time for any reason
+	StartingDeadlineSeconds *int64 `json:"startingDeadlineSeconds,omitempty"`
+
+	// This flag tells the controller to suspend subsequent executions
+	Suspend *bool `json:"suspend,omitempty"`
+
+	// The number of successful finished jobs to retain
+	SuccessfulJobsHistoryLimit *int32 `json:"successfulJobsHistoryLimit,omitempty"`
+
+	// The number of failed finished jobs to retain
+	FailedJobsHistoryLimit *int32 `json:"failedJobsHistoryLimit,omitempty"`
+}
+
+type StorageRef struct {
+	APIGroup string `json:"apiGroup,omitempty"`
+	Type     string `json:"type,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Keep     int    `json:"keep,omitempty"`
+	Timeout  int    `json:"timeout,omitempty"`
+}
+
+type DatabaseRef struct {
+	APIGroup string `json:"apiGroup,omitempty"`
+	Type     string `json:"type,omitempty"`
+	Name     string `json:"name,omitempty"`
+}
+
+type Compress struct {
+	Type string `json:"type,omitempty"`
+}
+
+type Encode struct {
+	Type string `json:"type,omitempty"`
 }
 
 // BackupStatus defines the observed state of Backup
@@ -49,8 +104,6 @@ type Backup struct {
 
 	Spec   BackupSpec   `json:"spec,omitempty"`
 	Status BackupStatus `json:"status,omitempty"`
-
-	Model `json:"model,omitempty"`
 }
 
 //+kubebuilder:object:root=true

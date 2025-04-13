@@ -28,7 +28,7 @@ type Models struct {
 type MyBackup struct {
 	Databases Databases `yaml:"databases"`
 	Storages  Storages  `yaml:"storages"`
-	backupv1.BackupModelSpecConfig
+	backupv1.BackupSpec
 }
 
 // Databases represents the database configurations
@@ -41,8 +41,9 @@ type Storages struct {
 	S3 backupv1.S3SpecConfig `yaml:"s3"`
 }
 
+// FIXME: Change creating secret based on new backup type.
 // CreateSecret creates secret from config.
-func (k *K8s) CreateSecret(ctx context.Context, model backupv1.Model, namespace, name string) error {
+func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, namespace, name string) error {
 	var postgreSQLSpec backupv1.PostgreSQLSpec
 	var s3Spec backupv1.S3Spec
 

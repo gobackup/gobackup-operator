@@ -36,7 +36,7 @@ gobackup-operator/
 │   ├── rbac/              # RBAC permissions (e.g., ClusterRole.yaml, Role.yaml, RoleBinding.yaml)
 │   ├── samples/           # Example custom resources (CRs) to test your operator
 ├── internal/
-│   ├──controller/           # Controller logic
+│   ├──controller/         # Controller logic
 ├── pkg/                   # internal utils
 ├── Makefile               # Automation scripts (build, deploy, test)
 ├── PROJECT                # Operator SDK/Kubebuilder metadata

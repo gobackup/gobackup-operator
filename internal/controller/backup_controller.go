@@ -45,7 +45,7 @@ type BackupReconciler struct {
 // +kubebuilder:rbac:groups=gobackup.gobackup.io,resources=backups/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=gobackup.gobackup.io,resources=backups/finalizers,verbs=update
 func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	_ = log.FromContext(ctx)
 
 	// Define a Backup object
 	backup := &backupv1.Backup{}
@@ -75,22 +75,11 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Ensure Storage and Database CRDs existence
 	// TODO: Extend this by checking every storage and database..
-	if len(backup.StorageRefs) == 0 || len(backup.DatabaseRefs) == 0 {
+	if len(backup.Spec.StorageRefs) == 0 || len(backup.Spec.DatabaseRefs) == 0 {
 		return ctrl.Result{}, client.IgnoreNotFound(nil)
 	}
 
-	// Check if the BackupModel exists
-	_, err = r.K8s.GetCRD(ctx, apiversionSplited[0], apiversionSplited[1], "backupmodels", backup.Namespace, backup.BackupModelRef.Name)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			logger.Error(err, "backup > GetCRD > BackupModel not found")
-			return ctrl.Result{}, nil
-		}
-
-		return ctrl.Result{}, err
-	}
-
-	err = r.K8s.CreateSecret(ctx, backup.Model, backup.Namespace, backup.Name)
+	err = r.K8s.CreateSecret(ctx, backup.Spec, backup.Namespace, backup.Name)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
