@@ -8,105 +8,160 @@ import (
 	yaml "gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 
 	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
 )
 
 // BackupConfig represents the configuration for backups
 type BackupConfig struct {
-	Models Models `yaml:"models,omitempty"`
+	Models map[string]Model `yaml:"models"`
 }
 
-// Models represents the different models for backup configuration
-type Models struct {
-	// TODO: change my_backup to users backup name
-	MyBackup MyBackup `yaml:"my_backup,omitempty"`
+// Model represents the configuration for a backup model
+type Model struct {
+	Databases map[string]interface{} `yaml:"databases"`
+	Storages  map[string]interface{} `yaml:"storages"`
+
+	// Optional fields
+	BeforeScript string `yaml:"before_script,omitempty"`
+	AfterScript  string `yaml:"after_script,omitempty"`
+
+	// Compression and encryption
+	Compress string `yaml:"compress_with,omitempty"`
+	Encode   string `yaml:"encode_with,omitempty"`
 }
 
-// MyBackup represents the configuration for "my_backup" model
-type MyBackup struct {
-	Databases Databases `yaml:"databases"`
-	Storages  Storages  `yaml:"storages"`
-	backupv1.BackupSpec
-}
-
-// Databases represents the database configurations
-type Databases struct {
-	Postgres backupv1.PostgreSQLSpecConfig `yaml:"postgres"`
-}
-
-// Storages represents the storage configurations
-type Storages struct {
-	S3 backupv1.S3SpecConfig `yaml:"s3"`
-}
-
-// FIXME: Change creating secret based on new backup type.
-// CreateSecret creates secret from config.
+// CreateSecret creates a secret containing the gobackup.yml configuration file
 func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, namespace, name string) error {
-	var postgreSQLSpec backupv1.PostgreSQLSpec
-	var s3Spec backupv1.S3Spec
+	databases := make(map[string]interface{})
+	storages := make(map[string]interface{})
 
+	// Process database references
 	for _, database := range model.DatabaseRefs {
-		version := strings.ToLower(database.Type) + "s"
+		dbType := strings.ToLower(database.Type)
+		version := dbType + "s"
 
+		// Fetch the database CRD
 		databaseCRD, err := k.GetCRD(ctx, database.APIGroup, "v1", version, namespace, database.Name)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get %s database: %w", dbType, err)
 		}
 
+		// Extract the database spec
 		specMap, ok := databaseCRD.Object["spec"].(map[string]interface{})
 		if !ok {
-			return fmt.Errorf("spec is not a valid map[string]interface{}")
+			return fmt.Errorf("database spec for %s is not a valid map", database.Name)
 		}
 
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(specMap, &postgreSQLSpec); err != nil {
-			return err
+		// Convert field names to the format expected by gobackup (snake_case)
+		dbConfig := make(map[string]interface{})
+		for key, value := range specMap {
+			// Convert camelCase to snake_case for applicable fields
+			if key == "excludeTables" {
+				dbConfig["exclude_tables"] = value
+			} else if key == "additionalOptions" {
+				dbConfig["additional_options"] = value
+			} else {
+				dbConfig[key] = value
+			}
 		}
 
-		postgreSQLSpec.Type = strings.ToLower(database.Type)
+		// Set the database type explicitly
+		dbConfig["type"] = dbType
+
+		// Add to databases map
+		databases[database.Name] = dbConfig
 	}
 
-	for i, storage := range model.StorageRefs {
-		version := strings.ToLower(storage.Type) + "s"
+	// Process storage references
+	for _, storage := range model.StorageRefs {
+		storageType := strings.ToLower(storage.Type)
+		version := storageType + "s"
 
+		// Fetch the storage CRD
 		storageCRD, err := k.GetCRD(ctx, storage.APIGroup, "v1", version, namespace, storage.Name)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get %s storage: %w", storageType, err)
 		}
 
+		// Extract the storage spec
 		specMap, ok := storageCRD.Object["spec"].(map[string]interface{})
 		if !ok {
-			return fmt.Errorf("spec is not a valid map[string]interface{}")
+			return fmt.Errorf("storage spec for %s is not a valid map", storage.Name)
 		}
 
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(specMap, &s3Spec); err != nil {
-			return err
+		// Convert field names to the format expected by gobackup (snake_case)
+		storageConfig := make(map[string]interface{})
+		for key, value := range specMap {
+			// Convert camelCase to snake_case for applicable fields
+			if key == "accessKeyID" {
+				storageConfig["access_key_id"] = value
+			} else if key == "secretAccessKey" {
+				storageConfig["secret_access_key"] = value
+			} else if key == "forcePathStyle" {
+				storageConfig["force_path_style"] = value
+			} else if key == "storageClass" {
+				storageConfig["storage_class"] = value
+			} else if key == "maxRetries" {
+				storageConfig["max_retries"] = value
+			} else {
+				storageConfig[key] = value
+			}
 		}
 
-		s3Spec.Type = strings.ToLower(storage.Type)
-		s3Spec.Keep = model.StorageRefs[i].Keep
-		s3Spec.Timeout = model.StorageRefs[i].Timeout
+		// Set the storage type explicitly
+		storageConfig["type"] = storageType
+
+		// Override with values from the StorageRef if provided
+		if storage.Keep > 0 {
+			storageConfig["keep"] = storage.Keep
+		}
+		if storage.Timeout > 0 {
+			storageConfig["timeout"] = storage.Timeout
+		}
+
+		// Add to storages map
+		storages[storage.Name] = storageConfig
 	}
 
+	// Create the model
+	backupModel := Model{
+		Databases: databases,
+		Storages:  storages,
+	}
+
+	// Add optional fields if provided
+	if model.BeforeScript != "" {
+		backupModel.BeforeScript = model.BeforeScript
+	}
+	if model.AfterScript != "" {
+		backupModel.AfterScript = model.AfterScript
+	}
+
+	// Add compression if specified
+	if model.CompressWith != nil && model.CompressWith.Type != "" {
+		backupModel.Compress = model.CompressWith.Type
+	}
+
+	// Add encoding if specified
+	if model.EncodeWith != nil && model.EncodeWith.Type != "" {
+		backupModel.Encode = model.EncodeWith.Type
+	}
+
+	// Create the backup config
 	backupConfig := BackupConfig{
-		Models: Models{
-			MyBackup: MyBackup{
-				Databases: Databases{
-					backupv1.PostgreSQLSpecConfig(postgreSQLSpec),
-				},
-				Storages: Storages{
-					backupv1.S3SpecConfig(s3Spec),
-				},
-			},
+		Models: map[string]Model{
+			name: backupModel,
 		},
 	}
 
+	// Marshal to YAML
 	yamlData, err := yaml.Marshal(&backupConfig)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal backup config: %w", err)
 	}
 
+	// Create the Secret
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -116,21 +171,20 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, names
 		},
 	}
 
-	// Create the Secret in the specified namespace
+	// Create or update the Secret in the specified namespace
 	_, err = k.Clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
 	if err != nil {
-		panic(err.Error())
+		return fmt.Errorf("failed to create secret: %w", err)
 	}
 
 	return nil
 }
 
-// CreateSecret creates secret from config.
+// DeleteSecret deletes a secret
 func (k *K8s) DeleteSecret(ctx context.Context, namespace, name string) error {
-	// Create the Secret in the specified namespace
 	err := k.Clientset.CoreV1().Secrets(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 	if err != nil {
-		panic(err.Error())
+		return fmt.Errorf("failed to delete secret: %w", err)
 	}
 
 	return nil
