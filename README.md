@@ -162,6 +162,10 @@ spec:
 
 ## Testing
 
+The operator follows best practices from well-known operators like prometheus-operator and ArgoCD operator, with comprehensive testing at multiple levels.
+
+### Quick Test
+
 A test script is provided to quickly test the operator functionality:
 
 ```sh
@@ -173,6 +177,68 @@ This script will:
 2. Create example database and storage CRDs
 3. Create both immediate and scheduled backup jobs
 4. Display the status of the created resources
+
+### Comprehensive Testing
+
+The operator includes a three-tier testing strategy:
+
+#### 1. Unit Tests
+
+Fast unit tests that don't require a Kubernetes API server:
+
+```sh
+make test-unit
+```
+
+#### 2. Integration Tests
+
+Integration tests using envtest (requires test binaries):
+
+```sh
+make test-integration
+```
+
+#### 3. End-to-End Tests
+
+E2E tests that run against a real Kubernetes cluster:
+
+```sh
+# Using an existing cluster
+make test-e2e
+
+# Or using kind (local cluster)
+make kind-run
+make test-e2e
+```
+
+### Running All Tests
+
+Run all tests including integration tests:
+
+```sh
+make test
+```
+
+### Test Coverage
+
+Generate a test coverage report:
+
+```sh
+make test-coverage
+```
+
+This generates `cover.html` which you can open in a browser to see coverage details.
+
+### Testing Best Practices
+
+The test suite follows operator best practices:
+
+- **Isolation**: Each test is independent and doesn't rely on other tests
+- **Cleanup**: Resources are properly cleaned up after each test
+- **Fixtures**: Helper functions create test resources consistently
+- **Coverage**: Comprehensive test coverage for critical paths
+
+For more detailed testing information, see [test/README.md](test/README.md).
 
 ## Structure
 

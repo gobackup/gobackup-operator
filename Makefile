@@ -62,8 +62,29 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
+test: manifests generate fmt vet envtest ## Run unit and integration tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
+
+.PHONY: test-unit
+test-unit: manifests generate fmt vet envtest ## Run only unit tests (faster, no envtest).
+	go test ./pkg/... -v
+
+.PHONY: test-integration
+test-integration: manifests generate fmt vet envtest ## Run integration tests (slower, requires envtest).
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./internal/controller/... -v -coverprofile cover.out
+
+.PHONY: test-e2e
+test-e2e: ## Run end-to-end tests (requires a Kubernetes cluster).
+	@if ! kubectl cluster-info &> /dev/null; then \
+		echo "Error: Cannot connect to Kubernetes cluster. Please ensure kubectl is configured."; \
+		exit 1; \
+	fi
+	./test/e2e/e2e_test.sh
+
+.PHONY: test-coverage
+test-coverage: test ## Generate test coverage report.
+	go tool cover -html=cover.out -o cover.html
+	@echo "Coverage report generated: cover.html"
 
 GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
 GOLANGCI_LINT_VERSION ?= v1.54.2
