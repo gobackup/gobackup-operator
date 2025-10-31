@@ -93,14 +93,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.BackupModelReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "BackupModel")
-		os.Exit(1)
-	}
-
 	clientset, err := k8sutil.NewClient()
 	if err != nil {
 		setupLog.Error(err, "unable to create kubernetes client")
@@ -118,14 +110,6 @@ func main() {
 		DynamicClient: dynamicClient,
 	}
 
-	if err = (&controller.CronBackupReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		K8s:    k8s,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "CronBackup")
-		os.Exit(1)
-	}
 	if err = (&controller.BackupReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

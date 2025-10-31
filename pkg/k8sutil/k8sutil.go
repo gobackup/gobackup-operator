@@ -4,6 +4,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 type K8s struct {
@@ -11,9 +12,23 @@ type K8s struct {
 	DynamicClient *dynamic.DynamicClient
 }
 
-func NewClient() (*kubernetes.Clientset, error) {
-	// Create config to use the ServiceAccount's token, CA cert, and API server address
+// getConfig attempts to get in-cluster config, falling back to kubeconfig for local development
+func getConfig() (*rest.Config, error) {
+	// Try in-cluster config first (when running in a pod)
 	config, err := rest.InClusterConfig()
+	if err == nil {
+		return config, nil
+	}
+
+	// Fall back to kubeconfig for local development
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	configOverrides := &clientcmd.ConfigOverrides{}
+	clientConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+	return clientConfig.ClientConfig()
+}
+
+func NewClient() (*kubernetes.Clientset, error) {
+	config, err := getConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -23,8 +38,7 @@ func NewClient() (*kubernetes.Clientset, error) {
 }
 
 func NewDynamicClient() (*dynamic.DynamicClient, error) {
-	// Create config to use the ServiceAccount's token, CA cert, and API server address
-	config, err := rest.InClusterConfig()
+	config, err := getConfig()
 	if err != nil {
 		return nil, err
 	}

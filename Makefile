@@ -62,8 +62,29 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
+test: manifests generate fmt vet envtest ## Run unit and integration tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
+
+.PHONY: test-unit
+test-unit: manifests generate fmt vet envtest ## Run only unit tests (faster, no envtest).
+	go test ./pkg/... -v
+
+.PHONY: test-integration
+test-integration: manifests generate fmt vet envtest ## Run integration tests (slower, requires envtest).
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./internal/controller/... -v -coverprofile cover.out
+
+.PHONY: test-e2e
+test-e2e: ## Run end-to-end tests (requires a Kubernetes cluster).
+	@if ! kubectl cluster-info &> /dev/null; then \
+		echo "Error: Cannot connect to Kubernetes cluster. Please ensure kubectl is configured."; \
+		exit 1; \
+	fi
+	./test/e2e/e2e_test.sh
+
+.PHONY: test-coverage
+test-coverage: test ## Generate test coverage report.
+	go tool cover -html=cover.out -o cover.html
+	@echo "Coverage report generated: cover.html"
 
 GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
 GOLANGCI_LINT_VERSION ?= v1.54.2
@@ -205,7 +226,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.2.1
-CONTROLLER_TOOLS_VERSION ?= v0.13.0
+CONTROLLER_TOOLS_VERSION ?= latest
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary. If wrong version is installed, it will be removed before downloading.
@@ -219,8 +240,8 @@ $(KUSTOMIZE): $(LOCALBIN)
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary. If wrong version is installed, it will be overwritten.
 $(CONTROLLER_GEN): $(LOCALBIN)
-	test -s $(LOCALBIN)/controller-gen && $(LOCALBIN)/controller-gen --version | grep -q $(CONTROLLER_TOOLS_VERSION) || \
-	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+	test -s $(LOCALBIN)/controller-gen || \
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@latest
 
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
@@ -256,3 +277,74 @@ kind-rebuild: ## Rebuild and redeploy the operator to kind cluster
 	kubectl -n gobackup-operator-system rollout restart deployment gobackup-operator-controller-manager
 	@echo "Watching rollout status..."
 	kubectl -n gobackup-operator-system rollout status deployment gobackup-operator-controller-manager
+
+##@ Testing Environment
+
+.PHONY: test-env-create
+test-env-create: ## Create a new kind cluster for testing
+	@echo "Creating test environment..."
+	@if kind get clusters | grep -q gobackup-test; then \
+		echo "Deleting existing gobackup-test cluster..."; \
+		kind delete cluster --name gobackup-test; \
+	fi
+	@echo "Creating new gobackup-test cluster..."
+	kind create cluster --name gobackup-test
+	@echo "Creating test namespace..."
+	kubectl create namespace gobackup-operator-test --dry-run=client -o yaml | kubectl apply -f -
+	@echo "Test environment created successfully!"
+
+.PHONY: test-env-delete
+test-env-delete: ## Delete the test kind cluster
+	@echo "Deleting test environment..."
+	@if kind get clusters | grep -q gobackup-test; then \
+		kind delete cluster --name gobackup-test; \
+		echo "Test environment deleted successfully!"; \
+	else \
+		echo "No gobackup-test cluster found."; \
+	fi
+
+.PHONY: test-env-deploy
+test-env-deploy: ## Deploy the operator and test resources to the test environment
+	@echo "Deploying operator and test resources..."
+	@# Install CRDs
+	$(KUBECTL) apply -f config/crd/bases
+	@# Deploy operator
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default | $(KUBECTL) apply -f -
+	@# Wait for operator to be ready
+	@echo "Waiting for operator to be ready..."
+	$(KUBECTL) wait --for=condition=available --timeout=60s deployment/gobackup-operator-controller-manager -n gobackup-operator-system
+	@# Deploy test resources
+	@echo "Deploying test resources..."
+	$(KUBECTL) apply -f example.local/database/postgresql.yaml
+	$(KUBECTL) apply -f example.local/backup-immediate.yaml
+	$(KUBECTL) apply -f example.local/backup-scheduled.yaml
+	@echo "Deployment completed!"
+
+.PHONY: test-env-clean
+test-env-clean: ## Clean up test resources (but keep the cluster)
+	@echo "Cleaning up test resources..."
+	$(KUBECTL) delete -f example.local/backup-scheduled.yaml --ignore-not-found=true
+	$(KUBECTL) delete -f example.local/backup-immediate.yaml --ignore-not-found=true
+	$(KUBECTL) delete -f example.local/database/postgresql.yaml --ignore-not-found=true
+	@echo "Test resources cleaned up!"
+
+.PHONY: test-env-status
+test-env-status: ## Show status of test environment
+	@echo "=== Cluster Status ==="
+	kind get clusters
+	@echo "\n=== Operator Status ==="
+	$(KUBECTL) get pods -n gobackup-operator-system
+	@echo "\n=== Test Resources ==="
+	$(KUBECTL) get postgresql -n gobackup-operator-test
+	$(KUBECTL) get backup -n gobackup-operator-test
+	$(KUBECTL) get jobs -n gobackup-operator-test
+	$(KUBECTL) get cronjobs -n gobackup-operator-test
+
+.PHONY: test-env-logs
+test-env-logs: ## Show operator logs
+	$(KUBECTL) logs -n gobackup-operator-system -l control-plane=controller-manager -c manager -f
+
+.PHONY: test-env-setup
+test-env-setup: test-env-create test-env-deploy ## Create and deploy complete test environment in one command
+	@echo "Test environment setup completed!"
