@@ -177,34 +177,54 @@ func (r *BackupReconciler) reconcileImmediateBackup(ctx context.Context, backup 
 	}
 
 	// Job exists, check its status
+	// Check if job succeeded by looking at succeeded count
+	if job.Status.Succeeded > 0 {
+		// Job completed successfully
+		logger.Info("Backup job completed successfully", "namespace", backup.Namespace, "name", backup.Name)
+		// Note: We preserve the Backup CR for history/status inspection
+		// The user can manually delete it or implement a cleanup policy
+		return ctrl.Result{}, nil
+	}
+
+	// Check if job failed by looking at failed count and conditions
+	if job.Status.Failed > 0 {
+		// Check conditions to confirm failure
+		for _, condition := range job.Status.Conditions {
+			if condition.Type == batchv1.JobFailed && condition.Status == corev1.ConditionTrue {
+				// Job failed
+				logger.Error(fmt.Errorf("backup job failed"), "Backup job failed", "namespace", backup.Namespace, "name", backup.Name)
+				// Note: We preserve the Backup CR for history/status inspection
+				// The user can manually delete it or implement a cleanup policy
+				return ctrl.Result{}, nil
+			}
+		}
+		// If failed count > 0 but no failed condition yet, job might be retrying
+		// Continue to check if still running
+	}
+
+	// Check conditions for completion (in case succeeded count hasn't updated yet)
 	for _, condition := range job.Status.Conditions {
 		if condition.Type == batchv1.JobComplete && condition.Status == corev1.ConditionTrue {
 			// Job completed successfully
 			logger.Info("Backup job completed successfully", "namespace", backup.Namespace, "name", backup.Name)
-
-			// Clean up
-			if err := r.deleteBackup(ctx, backup); err != nil {
-				logger.Error(err, "Failed to clean up backup")
-				return ctrl.Result{}, err
-			}
-
+			// Note: We preserve the Backup CR for history/status inspection
+			// The user can manually delete it or implement a cleanup policy
 			return ctrl.Result{}, nil
 		} else if condition.Type == batchv1.JobFailed && condition.Status == corev1.ConditionTrue {
 			// Job failed
 			logger.Error(fmt.Errorf("backup job failed"), "Backup job failed", "namespace", backup.Namespace, "name", backup.Name)
-
-			// Clean up (or implement retry logic or error reporting)
-			if err := r.deleteBackup(ctx, backup); err != nil {
-				logger.Error(err, "Failed to clean up backup after failure")
-				return ctrl.Result{}, err
-			}
-
+			// Note: We preserve the Backup CR for history/status inspection
+			// The user can manually delete it or implement a cleanup policy
 			return ctrl.Result{}, nil
 		}
 	}
 
-	// Job is still running
-	logger.Info("Backup job is still running", "namespace", backup.Namespace, "name", backup.Name)
+	// Job is still running (active > 0) or pending (no status yet)
+	if job.Status.Active > 0 {
+		logger.Info("Backup job is still running", "namespace", backup.Namespace, "name", backup.Name, "active", job.Status.Active)
+	} else {
+		logger.Info("Backup job is pending", "namespace", backup.Namespace, "name", backup.Name)
+	}
 	return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 }
 

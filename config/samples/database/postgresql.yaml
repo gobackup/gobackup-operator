@@ -4,7 +4,7 @@ metadata:
   name: example-postgresql
   namespace: gobackup-operator-test
 spec:
-  host: "postgres-service.default"
+  host: "host.docker.internal"
   port: 5432
   username: "postgres"
   password: "mysecretpassword"

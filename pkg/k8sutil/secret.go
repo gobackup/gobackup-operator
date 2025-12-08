@@ -7,6 +7,7 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
@@ -57,11 +58,12 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, names
 		dbConfig := make(map[string]interface{})
 		for key, value := range specMap {
 			// Convert camelCase to snake_case for applicable fields
-			if key == "excludeTables" {
+			switch key {
+			case "excludeTables":
 				dbConfig["exclude_tables"] = value
-			} else if key == "additionalOptions" {
+			case "additionalOptions":
 				dbConfig["additional_options"] = value
-			} else {
+			default:
 				dbConfig[key] = value
 			}
 		}
@@ -94,17 +96,18 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, names
 		storageConfig := make(map[string]interface{})
 		for key, value := range specMap {
 			// Convert camelCase to snake_case for applicable fields
-			if key == "accessKeyID" {
+			switch key {
+			case "accessKeyID":
 				storageConfig["access_key_id"] = value
-			} else if key == "secretAccessKey" {
+			case "secretAccessKey":
 				storageConfig["secret_access_key"] = value
-			} else if key == "forcePathStyle" {
+			case "forcePathStyle":
 				storageConfig["force_path_style"] = value
-			} else if key == "storageClass" {
+			case "storageClass":
 				storageConfig["storage_class"] = value
-			} else if key == "maxRetries" {
+			case "maxRetries":
 				storageConfig["max_retries"] = value
-			} else {
+			default:
 				storageConfig[key] = value
 			}
 		}
@@ -161,20 +164,36 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, names
 		return fmt.Errorf("failed to marshal backup config: %w", err)
 	}
 
-	// Create the Secret
+	// Create the Secret object
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
+			Namespace: namespace,
 		},
 		StringData: map[string]string{
 			"gobackup.yml": string(yamlData),
 		},
 	}
 
-	// Create or update the Secret in the specified namespace
-	_, err = k.Clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
+	// Check if the secret already exists
+	found, err := k.Clientset.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to create secret: %w", err)
+		if errors.IsNotFound(err) {
+			// Create the Secret
+			_, err = k.Clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to create secret: %w", err)
+			}
+			return nil
+		}
+		return fmt.Errorf("failed to get existing secret: %w", err)
+	}
+
+	// Update the existing secret
+	secret.ResourceVersion = found.ResourceVersion
+	_, err = k.Clientset.CoreV1().Secrets(namespace).Update(ctx, secret, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to update secret: %w", err)
 	}
 
 	return nil
