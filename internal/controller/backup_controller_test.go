@@ -168,6 +168,8 @@ var _ = Describe("Backup Controller", func() {
 			}, time.Second*5, time.Millisecond*500).Should(Succeed())
 
 			Expect(cronJob.Spec.Schedule).To(Equal("0 2 * * *"))
+			Expect(cronJob.Spec.ConcurrencyPolicy).To(Equal(batchv1.ForbidConcurrent))
+			Expect(cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers).To(HaveLen(1))
 			Expect(*cronJob.Spec.SuccessfulJobsHistoryLimit).To(Equal(int32(3)))
 			Expect(*cronJob.Spec.FailedJobsHistoryLimit).To(Equal(int32(1)))
 			Expect(cronJob.Spec.ConcurrencyPolicy).To(Equal(batchv1.ForbidConcurrent))

@@ -364,6 +364,9 @@ func (r *BackupReconciler) createCronJob(ctx context.Context, backup *backupv1.B
 	}
 
 	// Set default values for optional fields if not specified
+	// Set ConcurrencyPolicy to Forbid to prevent multiple backup jobs from running at the same time
+	cronJob.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
+
 	if cronJob.Spec.SuccessfulJobsHistoryLimit == nil {
 		var limit int32 = 3
 		cronJob.Spec.SuccessfulJobsHistoryLimit = &limit
