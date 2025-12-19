@@ -1,13 +1,13 @@
 apiVersion: gobackup.io/v1
 kind: S3
 metadata:
-  name: example-s3
-  namespace: gobackup-operator-test
+  name: test-s3
+  namespace: manual-test
 spec:
-  bucket: ""
+  bucket: "test-bucket"
   region: "us-east-1"
-  accessKeyID: "****"
-  secretAccessKey: "****"
+  accessKeyID: "test-key"
+  secretAccessKey: "test-secret"
   maxRetries: 3
   storageClass: ""
   forcePathStyle: false

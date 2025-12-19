@@ -1,33 +1,21 @@
 apiVersion: gobackup.io/v1
 kind: Backup
 metadata:
-  name: my-backup
-  namespace: default
+  name: my-first-backup
+  namespace: manual-test
 spec:
-  compressWith:
-    type: tgz
+  databaseRefs:
+    - apiGroup: gobackup.io
+      type: PostgreSQL
+      name: test-postgres
   storageRefs:
-    - apiGroup: storage.gobackup.io
-      name: local-storage
-      type: local
+    - apiGroup: gobackup.io
+      type: S3
+      name: test-s3
       keep: 5
       timeout: 300
-  databaseRefs:
-    - apiGroup: database.gobackup.io
-      name: my-database
-      type: mysql
+  compressWith:
+    type: gzip
+  # Schedule is omitted for immediate backup trigger
   schedule:
-    cron: "0 2 * * *"
-    startingDeadlineSeconds: 60
-    suspend: false
-    successfulJobsHistoryLimit: 3
-    failedJobsHistoryLimit: 1
-  beforeScript: "/path/to/before_script.sh"
-  afterScript: "/path/to/after_script.sh"
-  encodeWith:
-    type: aes256
-    password: "my-secret-password"
-    salt: true
-    openssl: true
-    base64: false
-    args: "-pbkdf2"
+    cron: "*/1 * * * *" # Run every minute for testing

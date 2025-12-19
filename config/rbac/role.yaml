@@ -7,7 +7,7 @@ rules:
 - apiGroups:
   - gobackup.io
   resources:
-  - backupmodels
+  - backups
   verbs:
   - create
   - delete
@@ -19,14 +19,50 @@ rules:
 - apiGroups:
   - gobackup.io
   resources:
-  - backupmodels/finalizers
+  - backups/finalizers
   verbs:
   - update
 - apiGroups:
   - gobackup.io
   resources:
-  - backupmodels/status
+  - backups/status
   verbs:
   - get
   - patch
   - update
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - update
+  - watch
+- apiGroups:
+  - gobackup.io
+  resources:
+  - postgresqls
+  - s3s
+  verbs:
+  - get
+  - list
+  - watch

@@ -19,11 +19,11 @@ package controller
 import (
 	"context"
 	"fmt"
-	"time"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -43,12 +43,16 @@ type BackupReconciler struct {
 	K8s    *k8sutil.K8s
 }
 
-// +kubebuilder:rbac:groups=gobackup.gobackup.io,resources=backups,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=gobackup.gobackup.io,resources=backups/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=gobackup.gobackup.io,resources=backups/finalizers,verbs=update
+// +kubebuilder:rbac:groups=gobackup.io,resources=backups,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=gobackup.io,resources=backups/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=gobackup.io,resources=backups/finalizers,verbs=update
+// +kubebuilder:rbac:groups=gobackup.io,resources=postgresqls,verbs=get;list;watch
+// +kubebuilder:rbac:groups=gobackup.io,resources=s3s,verbs=get;list;watch
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
 func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.Info("Reconciling Backup", "namespace", req.Namespace, "name", req.Name)
@@ -61,12 +65,21 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Check if this is a scheduled backup or an immediate one
-	if backup.Spec.Schedule != nil && backup.Spec.Schedule.Cron != "" {
-		return r.reconcileScheduledBackup(ctx, backup)
-	} else {
-		return r.reconcileImmediateBackup(ctx, backup)
+	// Reconcile PVC if persistence is enabled
+	if backup.Spec.Persistence != nil && backup.Spec.Persistence.Enabled {
+		if err := r.reconcilePVC(ctx, backup); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
+
+	// Check if this is a scheduled backup
+	if backup.Spec.Schedule == nil || backup.Spec.Schedule.Cron == "" {
+		// We only support scheduled backups now as per design decision
+		logger.Info("Backup has no schedule defined, ignoring", "name", backup.Name)
+		return ctrl.Result{}, nil
+	}
+
+	return r.reconcileScheduledBackup(ctx, backup)
 }
 
 // reconcileScheduledBackup handles backups with a schedule defined
@@ -100,7 +113,7 @@ func (r *BackupReconciler) reconcileScheduledBackup(ctx context.Context, backup 
 		// Create a new CronJob
 		logger.Info("Creating a new CronJob", "namespace", backup.Namespace, "name", backup.Name)
 
-		cronJob, err = r.createCronJob(ctx, backup)
+		_, err = r.createCronJob(ctx, backup)
 		if err != nil {
 			logger.Error(err, "Failed to create CronJob")
 			return ctrl.Result{}, err
@@ -109,26 +122,39 @@ func (r *BackupReconciler) reconcileScheduledBackup(ctx context.Context, backup 
 		// Update the existing CronJob if needed
 		logger.Info("Updating existing CronJob", "namespace", backup.Namespace, "name", backup.Name)
 
+		// Check for changes
+		var needsUpdate bool
+
 		if cronJob.Spec.Schedule != backup.Spec.Schedule.Cron {
 			cronJob.Spec.Schedule = backup.Spec.Schedule.Cron
+			needsUpdate = true
+		}
 
-			// Update other fields from the backup spec
-			if backup.Spec.Schedule.StartingDeadlineSeconds != nil {
-				cronJob.Spec.StartingDeadlineSeconds = backup.Spec.Schedule.StartingDeadlineSeconds
-			}
+		if backup.Spec.Schedule.StartingDeadlineSeconds != nil &&
+			(cronJob.Spec.StartingDeadlineSeconds == nil || *cronJob.Spec.StartingDeadlineSeconds != *backup.Spec.Schedule.StartingDeadlineSeconds) {
+			cronJob.Spec.StartingDeadlineSeconds = backup.Spec.Schedule.StartingDeadlineSeconds
+			needsUpdate = true
+		}
 
-			if backup.Spec.Schedule.SuccessfulJobsHistoryLimit != nil {
-				cronJob.Spec.SuccessfulJobsHistoryLimit = backup.Spec.Schedule.SuccessfulJobsHistoryLimit
-			}
+		if backup.Spec.Schedule.SuccessfulJobsHistoryLimit != nil &&
+			(cronJob.Spec.SuccessfulJobsHistoryLimit == nil || *cronJob.Spec.SuccessfulJobsHistoryLimit != *backup.Spec.Schedule.SuccessfulJobsHistoryLimit) {
+			cronJob.Spec.SuccessfulJobsHistoryLimit = backup.Spec.Schedule.SuccessfulJobsHistoryLimit
+			needsUpdate = true
+		}
 
-			if backup.Spec.Schedule.FailedJobsHistoryLimit != nil {
-				cronJob.Spec.FailedJobsHistoryLimit = backup.Spec.Schedule.FailedJobsHistoryLimit
-			}
+		if backup.Spec.Schedule.FailedJobsHistoryLimit != nil &&
+			(cronJob.Spec.FailedJobsHistoryLimit == nil || *cronJob.Spec.FailedJobsHistoryLimit != *backup.Spec.Schedule.FailedJobsHistoryLimit) {
+			cronJob.Spec.FailedJobsHistoryLimit = backup.Spec.Schedule.FailedJobsHistoryLimit
+			needsUpdate = true
+		}
 
-			if backup.Spec.Schedule.Suspend != nil {
-				cronJob.Spec.Suspend = backup.Spec.Schedule.Suspend
-			}
+		if backup.Spec.Schedule.Suspend != nil &&
+			(cronJob.Spec.Suspend == nil || *cronJob.Spec.Suspend != *backup.Spec.Schedule.Suspend) {
+			cronJob.Spec.Suspend = backup.Spec.Schedule.Suspend
+			needsUpdate = true
+		}
 
+		if needsUpdate {
 			if err := r.Update(ctx, cronJob); err != nil {
 				logger.Error(err, "Failed to update CronJob")
 				return ctrl.Result{}, err
@@ -139,93 +165,62 @@ func (r *BackupReconciler) reconcileScheduledBackup(ctx context.Context, backup 
 	return ctrl.Result{}, nil
 }
 
-// reconcileImmediateBackup handles backups without a schedule (immediate execution)
-func (r *BackupReconciler) reconcileImmediateBackup(ctx context.Context, backup *backupv1.Backup) (ctrl.Result, error) {
+// reconcilePVC ensures a PVC exists for the backup
+func (r *BackupReconciler) reconcilePVC(ctx context.Context, backup *backupv1.Backup) error {
 	logger := log.FromContext(ctx)
-	logger.Info("Reconciling immediate backup", "namespace", backup.Namespace, "name", backup.Name)
+	pvcName := backup.Name
 
-	// Validate the backup spec
-	if err := r.validateBackupSpec(backup); err != nil {
-		logger.Error(err, "Invalid backup specification")
-		return ctrl.Result{}, err
+	// Check if PVC exists
+	pvc := &corev1.PersistentVolumeClaim{}
+	err := r.Get(ctx, types.NamespacedName{Name: pvcName, Namespace: backup.Namespace}, pvc)
+	if err != nil && !errors.IsNotFound(err) {
+		logger.Error(err, "Failed to get PVC")
+		return err
 	}
 
-	// Check if a job already exists for this backup
-	job := &batchv1.Job{}
-	err := r.Get(ctx, types.NamespacedName{Name: backup.Name, Namespace: backup.Namespace}, job)
+	if errors.IsNotFound(err) {
+		logger.Info("Creating PVC for backup", "namespace", backup.Namespace, "name", pvcName)
 
-	if err != nil {
-		if !errors.IsNotFound(err) {
-			logger.Error(err, "Failed to get Job")
-			return ctrl.Result{}, err
+		storageClass := backup.Spec.Persistence.StorageClass
+		accessMode := corev1.PersistentVolumeAccessMode(backup.Spec.Persistence.AccessMode)
+		if accessMode == "" {
+			accessMode = corev1.ReadWriteOnce
 		}
 
-		// Job doesn't exist yet, create the secret and job
-		if err := r.K8s.CreateSecret(ctx, backup.Spec, backup.Namespace, backup.Name); err != nil {
-			logger.Error(err, "Failed to create secret")
-			return ctrl.Result{}, err
+		size := backup.Spec.Persistence.Size
+		if size == "" {
+			size = "100Mi"
+		}
+		storageSize := resource.MustParse(size)
+
+		pvc = &corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      pvcName,
+				Namespace: backup.Namespace,
+			},
+			Spec: corev1.PersistentVolumeClaimSpec{
+				AccessModes: []corev1.PersistentVolumeAccessMode{accessMode},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceStorage: storageSize,
+					},
+				},
+				StorageClassName: storageClass,
+			},
 		}
 
-		// Create the job
-		_, err = r.createBackupJob(ctx, backup)
-		if err != nil {
-			logger.Error(err, "Failed to create job")
-			return ctrl.Result{}, err
+		// Set controller reference
+		if err := controllerutil.SetControllerReference(backup, pvc, r.Scheme); err != nil {
+			return err
 		}
 
-		return ctrl.Result{}, nil
-	}
-
-	// Job exists, check its status
-	// Check if job succeeded by looking at succeeded count
-	if job.Status.Succeeded > 0 {
-		// Job completed successfully
-		logger.Info("Backup job completed successfully", "namespace", backup.Namespace, "name", backup.Name)
-		// Note: We preserve the Backup CR for history/status inspection
-		// The user can manually delete it or implement a cleanup policy
-		return ctrl.Result{}, nil
-	}
-
-	// Check if job failed by looking at failed count and conditions
-	if job.Status.Failed > 0 {
-		// Check conditions to confirm failure
-		for _, condition := range job.Status.Conditions {
-			if condition.Type == batchv1.JobFailed && condition.Status == corev1.ConditionTrue {
-				// Job failed
-				logger.Error(fmt.Errorf("backup job failed"), "Backup job failed", "namespace", backup.Namespace, "name", backup.Name)
-				// Note: We preserve the Backup CR for history/status inspection
-				// The user can manually delete it or implement a cleanup policy
-				return ctrl.Result{}, nil
-			}
-		}
-		// If failed count > 0 but no failed condition yet, job might be retrying
-		// Continue to check if still running
-	}
-
-	// Check conditions for completion (in case succeeded count hasn't updated yet)
-	for _, condition := range job.Status.Conditions {
-		if condition.Type == batchv1.JobComplete && condition.Status == corev1.ConditionTrue {
-			// Job completed successfully
-			logger.Info("Backup job completed successfully", "namespace", backup.Namespace, "name", backup.Name)
-			// Note: We preserve the Backup CR for history/status inspection
-			// The user can manually delete it or implement a cleanup policy
-			return ctrl.Result{}, nil
-		} else if condition.Type == batchv1.JobFailed && condition.Status == corev1.ConditionTrue {
-			// Job failed
-			logger.Error(fmt.Errorf("backup job failed"), "Backup job failed", "namespace", backup.Namespace, "name", backup.Name)
-			// Note: We preserve the Backup CR for history/status inspection
-			// The user can manually delete it or implement a cleanup policy
-			return ctrl.Result{}, nil
+		if err := r.Create(ctx, pvc); err != nil {
+			logger.Error(err, "Failed to create PVC")
+			return err
 		}
 	}
 
-	// Job is still running (active > 0) or pending (no status yet)
-	if job.Status.Active > 0 {
-		logger.Info("Backup job is still running", "namespace", backup.Namespace, "name", backup.Name, "active", job.Status.Active)
-	} else {
-		logger.Info("Backup job is pending", "namespace", backup.Namespace, "name", backup.Name)
-	}
-	return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+	return nil
 }
 
 // validateBackupSpec validates that the backup spec is correctly configured
@@ -246,7 +241,6 @@ func (r *BackupReconciler) validateBackupSpec(backup *backupv1.Backup) error {
 func (r *BackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&backupv1.Backup{}).
-		Owns(&batchv1.Job{}).
 		Owns(&batchv1.CronJob{}).
 		Complete(r)
 }
@@ -278,68 +272,58 @@ func (r *BackupReconciler) deleteBackup(ctx context.Context, backup *backupv1.Ba
 	return nil
 }
 
-// createBackupJob creates a job to run the 'gobackup perform'
-func (r *BackupReconciler) createBackupJob(ctx context.Context, backup *backupv1.Backup) (*batchv1.Job, error) {
+// createCronJob creates a CronJob for scheduled backups
+func (r *BackupReconciler) createCronJob(ctx context.Context, backup *backupv1.Backup) (*batchv1.CronJob, error) {
 	logger := log.FromContext(ctx)
-	logger.Info("Creating backup job", "namespace", backup.Namespace, "name", backup.Name)
+	logger.Info("Creating CronJob for scheduled backup", "namespace", backup.Namespace, "name", backup.Name)
 
-	job := &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      backup.Name,
-			Namespace: backup.Namespace,
-		},
-		Spec: batchv1.JobSpec{
-			Template: corev1.PodTemplateSpec{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:            "gobackup",
-							Image:           "huacnlee/gobackup",
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Command:         []string{"/bin/sh", "-c", "gobackup perform"},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "config",
-									MountPath: "/root/.gobackup",
-								},
-							},
-						},
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "config",
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: backup.Name,
-								},
-							},
-						},
-					},
-					RestartPolicy: corev1.RestartPolicyNever,
+	// Default configuration (no persistence)
+	imageName := "huacnlee/gobackup:latest"
+	command := []string{"/bin/sh", "-c", "gobackup perform"}
+	configMountPath := "/root/.gobackup"
+
+	volumes := []corev1.Volume{
+		{
+			Name: "config",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: backup.Name,
 				},
 			},
 		},
 	}
 
-	// Set the Backup instance as the owner of the Job
-	if err := controllerutil.SetControllerReference(backup, job, r.Scheme); err != nil {
-		logger.Error(err, "Failed to set controller reference for job")
-		return nil, err
+	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      "config",
+			MountPath: configMountPath,
+		},
 	}
 
-	// Create the Job
-	if err := r.Create(ctx, job); err != nil {
-		logger.Error(err, "Failed to create job")
-		return nil, err
+	// Adjust for persistence
+	if backup.Spec.Persistence != nil && backup.Spec.Persistence.Enabled {
+		configMountPath = "/etc/gobackup"
+		command = []string{"/bin/sh", "-c", "gobackup perform -c /etc/gobackup/gobackup.yml"}
+
+		// Update config mount path
+		volumeMounts[0].MountPath = configMountPath
+
+		// Add persistence volume
+		volumes = append(volumes, corev1.Volume{
+			Name: "persistence",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: backup.Name,
+				},
+			},
+		})
+
+		// Add persistence mount
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      "persistence",
+			MountPath: "/root/.gobackup",
+		})
 	}
-
-	return job, nil
-}
-
-// createCronJob creates a CronJob for scheduled backups
-func (r *BackupReconciler) createCronJob(ctx context.Context, backup *backupv1.Backup) (*batchv1.CronJob, error) {
-	logger := log.FromContext(ctx)
-	logger.Info("Creating CronJob for scheduled backup", "namespace", backup.Namespace, "name", backup.Name)
 
 	// Prepare the job template
 	jobTemplate := batchv1.JobTemplateSpec{
@@ -349,27 +333,13 @@ func (r *BackupReconciler) createCronJob(ctx context.Context, backup *backupv1.B
 					Containers: []corev1.Container{
 						{
 							Name:            "gobackup",
-							Image:           "huacnlee/gobackup",
+							Image:           imageName,
 							ImagePullPolicy: corev1.PullIfNotPresent,
-							Command:         []string{"/bin/sh", "-c", "gobackup perform"},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "config",
-									MountPath: "/root/.gobackup",
-								},
-							},
+							Command:         command,
+							VolumeMounts:    volumeMounts,
 						},
 					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "config",
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: backup.Name,
-								},
-							},
-						},
-					},
+					Volumes:       volumes,
 					RestartPolicy: corev1.RestartPolicyNever,
 				},
 			},

@@ -1,11 +1,11 @@
 apiVersion: gobackup.io/v1
 kind: PostgreSQL
 metadata:
-  name: example-postgresql
-  namespace: gobackup-operator-test
+  name: test-postgres
+  namespace: manual-test
 spec:
-  host: "host.docker.internal"
+  host: "postgres.example.com"
   port: 5432
-  username: "postgres"
-  password: "mysecretpassword"
-  database: "my_database"
+  username: "testuser"
+  password: "testpass"
+  database: "testdb"

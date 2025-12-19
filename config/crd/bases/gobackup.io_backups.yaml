@@ -71,6 +71,22 @@ spec:
                   type:
                     type: string
                 type: object
+              persistence:
+                description: Persistence defines the storage for gobackup state (cycler.json)
+                properties:
+                  accessMode:
+                    description: 'AccessMode for the PVC (default: ReadWriteOnce)'
+                    type: string
+                  enabled:
+                    description: Enabled determines if a PVC should be created
+                    type: boolean
+                  size:
+                    description: 'Size of the PVC (default: 100Mi)'
+                    type: string
+                  storageClass:
+                    description: StorageClass to use for the PVC
+                    type: string
+                type: object
               schedule:
                 description: Schedule defines when the backup should run
                 properties:
