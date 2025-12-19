@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -47,7 +48,7 @@ var _ = Describe("Backup Controller", func() {
 
 	BeforeEach(func() {
 		ctx, cancel = context.WithCancel(context.Background())
-		testNamespace = "test-" + time.Now().Format("20060102-150405")
+		testNamespace = fmt.Sprintf("test-%s-%d", time.Now().Format("20060102-150405"), time.Now().Nanosecond())
 
 		// Create test namespace
 		namespace := &corev1.Namespace{
