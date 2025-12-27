@@ -1,0 +1,11 @@
+---
+apiVersion: gobackup.io/v1
+kind: Storage
+metadata:
+  name: local-storage
+  namespace: default
+spec:
+  type: local
+  config:
+    path: /data/backups
+    keep: 10

@@ -1,0 +1,26 @@
+---
+apiVersion: gobackup.io/v1
+kind: Storage
+metadata:
+  name: sftp-storage
+  namespace: default
+spec:
+  type: sftp
+  config:
+    host: sftp.example.com
+    port: 22
+    username: sftpuser
+    # Option 1: Use password authentication
+    password_ref:
+      name: storage-credentials
+      key: sftp-password
+    # Option 2: Use SSH key authentication
+    # private_key_ref:
+    #   name: storage-credentials
+    #   key: ssh-private-key
+    # passphrase_ref:
+    #   name: storage-credentials
+    #   key: ssh-passphrase
+    path: /backups
+    keep: 20
+    timeout: 300

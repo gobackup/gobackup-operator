@@ -1,0 +1,21 @@
+---
+apiVersion: gobackup.io/v1
+kind: Storage
+metadata:
+  name: azure-storage
+  namespace: default
+spec:
+  type: azure
+  config:
+    account: myazurestorageaccount
+    container: backups
+    tenant_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    client_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    # Using SecretRef for client_secret
+    client_secret_ref:
+      name: storage-credentials
+      key: azure-client-secret
+    # Or use direct value:
+    # client_secret: YOUR_CLIENT_SECRET
+    keep: 30
+    timeout: 600

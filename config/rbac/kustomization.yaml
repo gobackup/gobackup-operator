@@ -32,8 +32,8 @@ resources:
 - redis_viewer_role.yaml
 - mysql_editor_role.yaml
 - mysql_viewer_role.yaml
-- storage_s3_editor_role.yaml
-- storage_s3_viewer_role.yaml
+- storage_editor_role.yaml
+- storage_viewer_role.yaml
 - database_postgresql_editor_role.yaml
 - database_postgresql_viewer_role.yaml
 

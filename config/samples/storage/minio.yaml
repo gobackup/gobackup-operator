@@ -1,0 +1,22 @@
+---
+apiVersion: gobackup.io/v1
+kind: Storage
+metadata:
+  name: minio-storage
+  namespace: default
+spec:
+  type: minio
+  config:
+    bucket: my-minio-bucket
+    endpoint: https://minio.example.com:9000
+    region: us-east-1
+    path: backups/myapp
+    access_key_id_ref:
+      name: storage-credentials
+      key: s3-access-key-id
+    secret_access_key_ref:
+      name: storage-credentials
+      key: s3-secret-access-key
+    keep: 20
+    timeout: 300
+    max_retries: 3

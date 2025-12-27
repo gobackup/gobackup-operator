@@ -1,0 +1,23 @@
+---
+apiVersion: gobackup.io/v1
+kind: Storage
+metadata:
+  name: scp-storage
+  namespace: default
+spec:
+  type: scp
+  config:
+    host: server.example.com
+    port: 22
+    username: scpuser
+    # Using SSH key authentication
+    private_key_ref:
+      name: storage-credentials
+      key: ssh-private-key
+    # If private key has a passphrase:
+    passphrase_ref:
+      name: storage-credentials
+      key: ssh-passphrase
+    path: /data/backups
+    keep: 15
+    timeout: 300

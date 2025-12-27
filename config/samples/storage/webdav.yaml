@@ -1,0 +1,16 @@
+---
+apiVersion: gobackup.io/v1
+kind: Storage
+metadata:
+  name: webdav-storage
+  namespace: default
+spec:
+  type: webdav
+  config:
+    root: http://webdav.example.com:8080
+    path: /backups
+    username: webdavuser
+    password_ref:
+      name: storage-credentials
+      key: ftp-password
+    keep: 10
