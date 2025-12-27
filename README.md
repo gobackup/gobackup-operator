@@ -29,6 +29,33 @@ It supports both immediate and scheduled backups, with configurable retention po
 - kubectl
 - make
 
+### CustomResourceDefinitions
+
+The Operator acts on the following [Custom Resource Definitions (CRDs)](https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions/):
+
+- `Backup`, which defines a backup operation configuration. It references one or more database resources and storage backends, and can be configured for immediate execution or scheduled backups using cron syntax. Supports compression, retention policies, and pre/post backup scripts.
+
+#### Database
+
+- `PostgreSQL`, which defines a PostgreSQL database connection configuration. It specifies connection details such as host, port, username, password, database name, and optional table inclusion/exclusion filters.
+- `MySQL`, which defines a MySQL database connection configuration. It specifies connection details such as host, port, username, password, database name, and optional table inclusion/exclusion filters.
+- `MariaDB`, which defines a MariaDB database connection configuration. It specifies connection details such as host, port, username, password, and database name.
+- `MongoDB`, which defines a MongoDB database connection configuration. It specifies connection details such as host, port, username, password, database name, authentication database, and optional oplog backup settings.
+- `Redis`, which defines a Redis database connection configuration. It specifies connection details such as host, port, and optional password.
+- `MSSQL`, which defines a Microsoft SQL Server database connection configuration. It specifies connection details such as host, port, username, password, database name, and optional trust server certificate settings.
+- `InfluxDB`, which defines an InfluxDB database connection configuration. It specifies connection details such as host, token, bucket, organization, and optional verification settings.
+- `ETCD`, which defines an etcd cluster connection configuration. It specifies endpoints and optional additional backup options.
+
+#### Storage
+
+- `S3`, which defines an S3-compatible storage backend configuration. It specifies bucket, region, credentials, path, and other S3-specific settings for storing backups.
+- `Azure`, which defines an Azure Blob Storage backend configuration. It specifies account, container, tenant ID, client ID, and client secret for authentication.
+- `GCS`, which defines a Google Cloud Storage backend configuration. It specifies bucket, path, and credentials (either directly or via a secret reference).
+- `WebDAV`, which defines a WebDAV storage backend configuration. It specifies root URL, username, and password for authentication.
+- `FTP`, which defines an FTP storage backend configuration. It specifies host, port, username, password, path, and optional TLS settings.
+- `SFTP`, which defines an SFTP storage backend configuration. It specifies host, port, username, and authentication via either password or private key with passphrase.
+- `SCP`, which defines an SCP storage backend configuration. It specifies host, port, username, and authentication via either password or private key with passphrase.
+
 ### Installation
 
 1. Install Custom Resource Definitions (CRDs):
