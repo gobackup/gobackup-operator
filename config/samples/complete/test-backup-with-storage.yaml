@@ -1,0 +1,93 @@
+---
+# Secret containing storage and database credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backup-credentials
+  namespace: default
+type: Opaque
+stringData:
+  s3-access-key-id: "AKIAIOSFODNN7EXAMPLE"
+  s3-secret-access-key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  postgres-password: "mysecretpassword"
+
+---
+# Storage resource using S3 with SecretRef
+apiVersion: gobackup.io/v1
+kind: Storage
+metadata:
+  name: production-s3
+  namespace: default
+spec:
+  type: s3
+  config:
+    bucket: my-production-backups
+    region: us-west-2
+    path: postgres-backups
+    access_key_id_ref:
+      name: backup-credentials
+      key: s3-access-key-id
+    secret_access_key_ref:
+      name: backup-credentials
+      key: s3-secret-access-key
+    storage_class: STANDARD_IA
+    keep: 30
+    timeout: 600
+    max_retries: 3
+
+---
+# Database resource for PostgreSQL
+apiVersion: gobackup.io/v1
+kind: Database
+metadata:
+  name: production-postgres
+  namespace: default
+spec:
+  type: postgresql
+  config:
+    host: postgres.example.com
+    port: 5432
+    database: production_db
+    username: backup_user
+    password: mysecretpassword
+    args: "--no-owner --no-acl"
+
+---
+# Backup resource combining database and storage
+apiVersion: gobackup.io/v1
+kind: Backup
+metadata:
+  name: production-backup
+  namespace: default
+spec:
+  schedule:
+    # Run backup daily at 2 AM
+    cron: "0 2 * * *"
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 1
+  
+  databaseRefs:
+    - apiGroup: gobackup.io
+      type: postgresql
+      name: production-postgres
+  
+  storageRefs:
+    - apiGroup: gobackup.io
+      type: s3
+      name: production-s3
+      keep: 30
+      timeout: 600
+  
+  compressWith:
+    type: tgz
+  
+  beforeScript: |
+    echo "Starting backup at $(date)"
+  
+  afterScript: |
+    echo "Backup completed at $(date)"
+  
+  persistence:
+    enabled: true
+    size: 100Mi
+    accessMode: ReadWriteOnce

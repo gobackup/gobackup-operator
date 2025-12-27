@@ -1,0 +1,18 @@
+---
+apiVersion: gobackup.io/v1
+kind: Storage
+metadata:
+  name: s3-direct
+  namespace: default
+spec:
+  type: s3
+  config:
+    bucket: my-backup-bucket
+    region: us-east-1
+    path: backups/myapp
+    access_key_id: YOUR_ACCESS_KEY_ID
+    secret_access_key: YOUR_SECRET_ACCESS_KEY
+    storage_class: STANDARD_IA
+    keep: 30
+    timeout: 600
+    max_retries: 3

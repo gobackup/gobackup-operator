@@ -1,0 +1,19 @@
+---
+apiVersion: gobackup.io/v1
+kind: Storage
+metadata:
+  name: gcs-storage
+  namespace: default
+spec:
+  type: gcs
+  config:
+    bucket: my-gcs-bucket
+    path: backups/myapp
+    # Option 1: Use credentials_ref to reference a Secret
+    credentials_ref:
+      name: storage-credentials
+      key: gcs-credentials
+    # Option 2: Use credentials_file path
+    # credentials_file: /path/to/credentials.json
+    keep: 30
+    timeout: 600
