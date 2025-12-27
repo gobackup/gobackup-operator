@@ -82,16 +82,18 @@ type BackupSchedule struct {
 
 type StorageRef struct {
 	APIGroup string `json:"apiGroup,omitempty"`
-	Type     string `json:"type,omitempty"`
-	Name     string `json:"name,omitempty"`
-	Keep     int    `json:"keep,omitempty"`
-	Timeout  int    `json:"timeout,omitempty"`
+	// Type is the storage backend type (s3, gcs, azure, local, ftp, etc.) matching the Storage resource's spec.type field
+	Type    string `json:"type,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Keep    int    `json:"keep,omitempty"`
+	Timeout int    `json:"timeout,omitempty"`
 }
 
 type DatabaseRef struct {
 	APIGroup string `json:"apiGroup,omitempty"`
-	Type     string `json:"type,omitempty"`
-	Name     string `json:"name,omitempty"`
+	// Type is the database backend type (postgresql, redis, etc.) matching the Database resource's spec.type field
+	Type string `json:"type,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 
 type Compress struct {
