@@ -1,0 +1,19 @@
+apiVersion: gobackup.io/v1
+kind: Database
+metadata:
+  name: example-postgresql
+spec:
+  type: postgresql
+  config:
+    host: localhost
+    port: 5432
+    socket: ""
+    database: exampledb
+    username: root
+    password: examplepassword
+    tables:
+      - table1
+      - table2
+    exclude_tables:
+      - table3
+    args: "--no-owner"
