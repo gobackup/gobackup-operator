@@ -3,6 +3,8 @@
 # It should be run by config/default
 resources:
 - bases/gobackup.io_backups.yaml
+- bases/gobackup.io_databases.yaml
+- bases/gobackup.io_storages.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patches:
