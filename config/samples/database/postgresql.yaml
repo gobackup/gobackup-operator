@@ -1,11 +1,19 @@
 apiVersion: gobackup.io/v1
-kind: PostgreSQL
+kind: Database
 metadata:
-  name: test-postgres
-  namespace: manual-test
+  name: example-postgresql
 spec:
-  host: "postgres.example.com"
-  port: 5432
-  username: "testuser"
-  password: "testpass"
-  database: "testdb"
+  type: postgresql
+  config:
+    host: localhost
+    port: 5432
+    socket: ""
+    database: exampledb
+    username: root
+    password: examplepassword
+    tables:
+      - table1
+      - table2
+    exclude_tables:
+      - table3
+    args: "--no-owner"
