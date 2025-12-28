@@ -3,7 +3,7 @@ apiVersion: gobackup.io/v1
 kind: Storage
 metadata:
   name: s3-direct
-  namespace: default
+  namespace: gobackup-operator-system
 spec:
   type: s3
   config:

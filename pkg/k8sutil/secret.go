@@ -40,10 +40,11 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, names
 	// Process database references
 	for _, database := range model.DatabaseRefs {
 		dbType := strings.ToLower(database.Type)
-		version := dbType + "s"
+		// Resource name is always "databases" (plural of Database kind), not type-specific
+		resource := "databases"
 
 		// Fetch the database CRD
-		databaseCRD, err := k.GetCRD(ctx, database.APIGroup, "v1", version, namespace, database.Name)
+		databaseCRD, err := k.GetCRD(ctx, database.APIGroup, "v1", resource, namespace, database.Name)
 		if err != nil {
 			return fmt.Errorf("failed to get %s database: %w", dbType, err)
 		}
@@ -54,9 +55,21 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, names
 			return fmt.Errorf("database spec for %s is not a valid map", database.Name)
 		}
 
+		// Extract config if it exists
+		configMap, ok := specMap["config"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("database config for %s is not a valid map", database.Name)
+		}
+
+		// Resolve secret references in the config
+		resolvedConfig, err := k.resolveSecretReferences(ctx, namespace, configMap)
+		if err != nil {
+			return fmt.Errorf("failed to resolve secret references for database %s: %w", database.Name, err)
+		}
+
 		// Convert field names to the format expected by gobackup (snake_case)
 		dbConfig := make(map[string]interface{})
-		for key, value := range specMap {
+		for key, value := range resolvedConfig {
 			// Convert camelCase to snake_case for applicable fields
 			switch key {
 			case "excludeTables":
@@ -64,6 +77,7 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, names
 			case "additionalOptions":
 				dbConfig["additional_options"] = value
 			default:
+				// Keep snake_case fields as-is, or convert if needed
 				dbConfig[key] = value
 			}
 		}
@@ -78,10 +92,11 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, names
 	// Process storage references
 	for _, storage := range model.StorageRefs {
 		storageType := strings.ToLower(storage.Type)
-		version := storageType + "s"
+		// Resource name is always "storages" (plural of Storage kind), not type-specific
+		resource := "storages"
 
 		// Fetch the storage CRD
-		storageCRD, err := k.GetCRD(ctx, storage.APIGroup, "v1", version, namespace, storage.Name)
+		storageCRD, err := k.GetCRD(ctx, storage.APIGroup, "v1", resource, namespace, storage.Name)
 		if err != nil {
 			return fmt.Errorf("failed to get %s storage: %w", storageType, err)
 		}
@@ -92,9 +107,21 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, names
 			return fmt.Errorf("storage spec for %s is not a valid map", storage.Name)
 		}
 
+		// Extract config if it exists
+		configMap, ok := specMap["config"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("storage config for %s is not a valid map", storage.Name)
+		}
+
+		// Resolve secret references in the config
+		resolvedConfig, err := k.resolveSecretReferences(ctx, namespace, configMap)
+		if err != nil {
+			return fmt.Errorf("failed to resolve secret references for storage %s: %w", storage.Name, err)
+		}
+
 		// Convert field names to the format expected by gobackup (snake_case)
 		storageConfig := make(map[string]interface{})
-		for key, value := range specMap {
+		for key, value := range resolvedConfig {
 			// Convert camelCase to snake_case for applicable fields
 			switch key {
 			case "accessKeyID":
@@ -197,6 +224,67 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, names
 	}
 
 	return nil
+}
+
+// resolveSecretReferences resolves secret references in a config map.
+// It looks for fields ending with "_ref" (e.g., access_key_id_ref, password_ref),
+// fetches the referenced secrets, and replaces the "_ref" fields with the actual values.
+func (k *K8s) resolveSecretReferences(ctx context.Context, namespace string, configMap map[string]interface{}) (map[string]interface{}, error) {
+	resolved := make(map[string]interface{})
+
+	for key, value := range configMap {
+		// Check if this is a secret reference field (ends with "_ref")
+		if strings.HasSuffix(key, "_ref") {
+			// Parse the secret reference
+			refMap, ok := value.(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("secret reference %s is not a valid map", key)
+			}
+
+			secretName, ok := refMap["name"].(string)
+			if !ok || secretName == "" {
+				return nil, fmt.Errorf("secret reference %s missing or invalid name", key)
+			}
+
+			secretKey, ok := refMap["key"].(string)
+			if !ok || secretKey == "" {
+				return nil, fmt.Errorf("secret reference %s missing or invalid key", key)
+			}
+
+			// Fetch the secret
+			secret, err := k.Clientset.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
+			if err != nil {
+				if errors.IsNotFound(err) {
+					return nil, fmt.Errorf("secret %s referenced by %s not found", secretName, key)
+				}
+				return nil, fmt.Errorf("failed to get secret %s: %w", secretName, err)
+			}
+
+			// Extract the value from the secret
+			secretValue, exists := secret.Data[secretKey]
+			if !exists {
+				// Try stringData as fallback
+				if secret.StringData != nil {
+					if strValue, ok := secret.StringData[secretKey]; ok {
+						secretValue = []byte(strValue)
+					} else {
+						return nil, fmt.Errorf("key %s not found in secret %s", secretKey, secretName)
+					}
+				} else {
+					return nil, fmt.Errorf("key %s not found in secret %s", secretKey, secretName)
+				}
+			}
+
+			// Replace "_ref" with the actual field name and set the value
+			fieldName := strings.TrimSuffix(key, "_ref")
+			resolved[fieldName] = string(secretValue)
+		} else {
+			// Not a secret reference, copy as-is
+			resolved[key] = value
+		}
+	}
+
+	return resolved, nil
 }
 
 // DeleteSecret deletes a secret

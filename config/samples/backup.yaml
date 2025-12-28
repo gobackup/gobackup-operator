@@ -2,14 +2,15 @@ apiVersion: gobackup.io/v1
 kind: Backup
 metadata:
   name: my-first-backup
+  namespace: gobackup-operator-system
 spec:
   databaseRefs:
     - apiGroup: gobackup.io
-      type: Database
+      type: postgresql
       name: example-postgresql
   storageRefs:
     - apiGroup: gobackup.io
-      type: Storage
+      type: s3
       name: s3-direct
       keep: 5
       timeout: 300

@@ -2,6 +2,7 @@ apiVersion: gobackup.io/v1
 kind: Database
 metadata:
   name: example-postgresql
+  namespace: gobackup-operator-system
 spec:
   type: postgresql
   config:

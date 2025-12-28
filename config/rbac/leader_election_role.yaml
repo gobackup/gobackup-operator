@@ -10,6 +10,7 @@ metadata:
     app.kubernetes.io/part-of: gobackup-operator
     app.kubernetes.io/managed-by: kustomize
   name: leader-election-role
+  namespace: gobackup-operator-system
 rules:
 - apiGroups:
   - ""
@@ -42,3 +43,4 @@ rules:
   verbs:
   - create
   - patch
+
