@@ -104,10 +104,62 @@ type Encode struct {
 	Type string `json:"type,omitempty"`
 }
 
+// BackupRunStatus represents the status of a single backup run
+type BackupRunStatus struct {
+	// JobName is the name of the Job that ran this backup
+	JobName string `json:"jobName,omitempty"`
+
+	// StartTime is when the backup job started
+	StartTime *metav1.Time `json:"startTime,omitempty"`
+
+	// CompletionTime is when the backup job completed
+	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
+
+	// Phase is the current phase of the backup (Pending, Running, Succeeded, Failed)
+	Phase string `json:"phase,omitempty"`
+
+	// Message contains a human-readable message indicating details about the backup
+	// This is truncated to avoid status size issues (max 1024 characters)
+	Message string `json:"message,omitempty"`
+
+	// Logs contains the last N lines of gobackup output (truncated to avoid large status)
+	// Only captured on failure to help debugging. Max 4096 characters.
+	// +optional
+	Logs string `json:"logs,omitempty"`
+}
+
 // BackupStatus defines the observed state of Backup
 type BackupStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// LastBackupTime is the timestamp of the last backup attempt
+	LastBackupTime *metav1.Time `json:"lastBackupTime,omitempty"`
+
+	// LastSuccessfulBackupTime is the timestamp of the last successful backup
+	LastSuccessfulBackupTime *metav1.Time `json:"lastSuccessfulBackupTime,omitempty"`
+
+	// Phase is the current phase of the backup (Idle, Running, Succeeded, Failed)
+	Phase string `json:"phase,omitempty"`
+
+	// Conditions represent the latest available observations of the backup's state
+	// +optional
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// LastRun contains the status of the most recent backup run
+	// Only the last run is kept to avoid status size explosion
+	// +optional
+	LastRun *BackupRunStatus `json:"lastRun,omitempty"`
+
+	// RecentRuns contains the status of recent backup runs (limited to last N runs)
+	// This is a sliding window - oldest entries are removed when limit is exceeded
+	// Default limit: 5 runs to prevent status bloat
+	// +optional
+	// +kubebuilder:validation:MaxItems=5
+	RecentRuns []BackupRunStatus `json:"recentRuns,omitempty"`
+
+	// FailureCount tracks consecutive failures for alerting purposes
+	FailureCount int32 `json:"failureCount,omitempty"`
+
+	// SuccessCount tracks total successful backups
+	SuccessCount int32 `json:"successCount,omitempty"`
 }
 
 //+kubebuilder:resource:shortName=backup

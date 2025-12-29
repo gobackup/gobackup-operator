@@ -111,9 +111,10 @@ func main() {
 	}
 
 	if err = (&controller.BackupReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		K8s:    k8s,
+		Client:    mgr.GetClient(),
+		Scheme:    mgr.GetScheme(),
+		K8s:       k8s,
+		Clientset: clientset,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Backup")
 		os.Exit(1)

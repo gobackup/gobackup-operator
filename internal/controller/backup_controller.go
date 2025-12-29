@@ -17,8 +17,10 @@ limitations under the License.
 package controller
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"strings"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -28,9 +30,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
@@ -40,9 +44,19 @@ import (
 // BackupReconciler reconciles a Backup object
 type BackupReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	K8s    *k8sutil.K8s
+	Scheme    *runtime.Scheme
+	K8s       *k8sutil.K8s
+	Clientset *kubernetes.Clientset
 }
+
+const (
+	// MaxRecentRuns is the maximum number of recent runs to keep in status
+	MaxRecentRuns = 5
+	// MaxLogSize is the maximum size of logs to store in status (4KB)
+	MaxLogSize = 4096
+	// MaxMessageSize is the maximum size of message to store in status (1KB)
+	MaxMessageSize = 1024
+)
 
 // +kubebuilder:rbac:groups=gobackup.io,resources=backups,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=gobackup.io,resources=backups/status,verbs=get;update;patch
@@ -55,6 +69,8 @@ type BackupReconciler struct {
 // +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
+// +kubebuilder:rbac:groups=core,resources=pods/log,verbs=get
 
 // Reconcile is the main reconciliation loop for Backup resources.
 // It handles the creation and management of CronJobs for scheduled backups.
@@ -94,7 +110,19 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	return r.reconcileScheduledBackup(ctx, backup)
+	// Reconcile scheduled backup (CronJob)
+	result, err := r.reconcileScheduledBackup(ctx, backup)
+	if err != nil {
+		return result, err
+	}
+
+	// Reconcile job status - update backup status based on job states
+	if err := r.reconcileJobStatus(ctx, backup); err != nil {
+		logger.Error(err, "Failed to reconcile job status")
+		// Don't return error, status update failure shouldn't block reconciliation
+	}
+
+	return result, nil
 }
 
 // reconcileScheduledBackup handles the reconciliation of backups with a schedule defined.
@@ -408,24 +436,31 @@ func (r *BackupReconciler) buildJobTemplate(backup *backupv1.Backup) batchv1.Job
 		})
 	}
 
-	return batchv1.JobTemplateSpec{
-		Spec: batchv1.JobSpec{
-			Template: corev1.PodTemplateSpec{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:            "gobackup",
-							Image:           imageName,
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Command:         command,
-							VolumeMounts:    volumeMounts,
-						},
+	jobSpec := batchv1.JobSpec{
+		Template: corev1.PodTemplateSpec{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name:            "gobackup",
+						Image:           imageName,
+						ImagePullPolicy: corev1.PullIfNotPresent,
+						Command:         command,
+						VolumeMounts:    volumeMounts,
 					},
-					Volumes:       volumes,
-					RestartPolicy: corev1.RestartPolicyNever,
 				},
+				Volumes:       volumes,
+				RestartPolicy: corev1.RestartPolicyNever,
 			},
 		},
+	}
+
+	// Set TTLSecondsAfterFinished to automatically clean up completed/failed Jobs
+	// Hardcoded to 1 second (1 second)
+	ttlSecondsAfterFinished := int32(1)
+	jobSpec.TTLSecondsAfterFinished = &ttlSecondsAfterFinished
+
+	return batchv1.JobTemplateSpec{
+		Spec: jobSpec,
 	}
 }
 
@@ -434,7 +469,39 @@ func (r *BackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&backupv1.Backup{}).
 		Owns(&batchv1.CronJob{}).
+		Watches(&batchv1.Job{}, handler.EnqueueRequestsFromMapFunc(r.findBackupForJob)).
 		Complete(r)
+}
+
+// findBackupForJob maps a Job to the Backup that owns it (via CronJob)
+func (r *BackupReconciler) findBackupForJob(ctx context.Context, obj client.Object) []ctrl.Request {
+	job, ok := obj.(*batchv1.Job)
+	if !ok {
+		return nil
+	}
+
+	// Find the CronJob owner
+	var cronJobName string
+	for _, ref := range job.OwnerReferences {
+		if ref.Kind == "CronJob" {
+			cronJobName = ref.Name
+			break
+		}
+	}
+
+	if cronJobName == "" {
+		return nil
+	}
+
+	// The CronJob name is the same as the Backup name
+	return []ctrl.Request{
+		{
+			NamespacedName: types.NamespacedName{
+				Name:      cronJobName,
+				Namespace: job.Namespace,
+			},
+		},
+	}
 }
 
 // createCronJob creates a CronJob for scheduled backups.
@@ -485,4 +552,241 @@ func (r *BackupReconciler) createCronJob(ctx context.Context, backup *backupv1.B
 	}
 
 	return cronJob, nil
+}
+
+// reconcileJobStatus updates the Backup status based on the state of related Jobs
+func (r *BackupReconciler) reconcileJobStatus(ctx context.Context, backup *backupv1.Backup) error {
+	logger := log.FromContext(ctx)
+	logger.Info("Reconciling job status", "backup", backup.Name)
+
+	// List all Jobs owned by the CronJob (which is owned by the Backup)
+	jobList := &batchv1.JobList{}
+	if err := r.List(ctx, jobList, client.InNamespace(backup.Namespace)); err != nil {
+		return fmt.Errorf("failed to list jobs: %w", err)
+	}
+
+	logger.Info("Found jobs in namespace", "count", len(jobList.Items), "namespace", backup.Namespace)
+
+	// Filter jobs that belong to this backup's CronJob
+	var relatedJobs []batchv1.Job
+	for _, job := range jobList.Items {
+		// Jobs created by CronJob have the CronJob name as a prefix
+		if strings.HasPrefix(job.Name, backup.Name+"-") {
+			relatedJobs = append(relatedJobs, job)
+			logger.V(1).Info("Found related job", "job", job.Name, "phase", r.getJobPhase(&job))
+		}
+	}
+
+	logger.Info("Found related jobs for backup", "backup", backup.Name, "count", len(relatedJobs))
+
+	if len(relatedJobs) == 0 {
+		logger.Info("No related jobs found, skipping status update")
+		return nil
+	}
+
+	// Find the most recent job
+	var latestJob *batchv1.Job
+	for i := range relatedJobs {
+		job := &relatedJobs[i]
+		if latestJob == nil || job.CreationTimestamp.After(latestJob.CreationTimestamp.Time) {
+			latestJob = job
+		}
+	}
+
+	if latestJob == nil {
+		return nil
+	}
+
+	logger.Info("Latest job found", "job", latestJob.Name, "phase", r.getJobPhase(latestJob))
+
+	// Get the current phase
+	currentPhase := r.getJobPhase(latestJob)
+
+	// Check if this job has already been processed with the same phase
+	if backup.Status.LastRun != nil && backup.Status.LastRun.JobName == latestJob.Name {
+		if backup.Status.LastRun.Phase == currentPhase {
+			logger.V(1).Info("Job already processed with same phase, skipping", "job", latestJob.Name, "phase", currentPhase)
+			return nil // Already up to date
+		}
+		logger.Info("Job phase changed, updating status", "job", latestJob.Name, "oldPhase", backup.Status.LastRun.Phase, "newPhase", currentPhase)
+	} else {
+		logger.Info("New job detected, updating status", "job", latestJob.Name, "phase", currentPhase)
+	}
+
+	// Build the run status
+	runStatus := r.buildRunStatus(ctx, latestJob)
+
+	// Determine if we should increment counters (only when transitioning to a terminal state)
+	shouldIncrementCounters := false
+	if backup.Status.LastRun == nil || backup.Status.LastRun.JobName != latestJob.Name {
+		// This is a new job we haven't seen before
+		shouldIncrementCounters = (currentPhase == "Succeeded" || currentPhase == "Failed")
+	} else if backup.Status.LastRun.Phase != currentPhase {
+		// Phase changed - only increment if transitioning TO a terminal state
+		shouldIncrementCounters = (currentPhase == "Succeeded" || currentPhase == "Failed")
+	}
+
+	// Update the backup status
+	statusCopy := backup.Status.DeepCopy()
+	now := metav1.Now()
+
+	statusCopy.LastBackupTime = &now
+	statusCopy.Phase = runStatus.Phase
+	statusCopy.LastRun = &runStatus
+
+	// Update counters and timestamps based on phase (only once per job completion)
+	if shouldIncrementCounters {
+		if runStatus.Phase == "Succeeded" {
+			statusCopy.LastSuccessfulBackupTime = &now
+			statusCopy.SuccessCount++
+			statusCopy.FailureCount = 0 // Reset consecutive failures
+			logger.Info("Incrementing success count", "newCount", statusCopy.SuccessCount)
+		} else if runStatus.Phase == "Failed" {
+			statusCopy.FailureCount++
+			logger.Info("Incrementing failure count", "newCount", statusCopy.FailureCount)
+		}
+	}
+
+	// Add to recent runs (sliding window)
+	statusCopy.RecentRuns = r.addToRecentRuns(statusCopy.RecentRuns, runStatus)
+
+	// Update the status
+	backup.Status = *statusCopy
+	if err := r.Status().Update(ctx, backup); err != nil {
+		if errors.IsConflict(err) {
+			logger.Info("Conflict updating backup status, will retry on next reconciliation")
+			return nil // Will be retried on next reconciliation
+		}
+		logger.Error(err, "Failed to update backup status")
+		return fmt.Errorf("failed to update backup status: %w", err)
+	}
+
+	logger.Info("Successfully updated backup status", "phase", runStatus.Phase, "job", latestJob.Name)
+	return nil
+}
+
+// getJobPhase returns the phase of a Job
+func (r *BackupReconciler) getJobPhase(job *batchv1.Job) string {
+	if job.Status.Succeeded > 0 {
+		return "Succeeded"
+	}
+	if job.Status.Failed > 0 {
+		return "Failed"
+	}
+	if job.Status.Active > 0 {
+		return "Running"
+	}
+	return "Pending"
+}
+
+// buildRunStatus creates a BackupRunStatus from a Job
+func (r *BackupReconciler) buildRunStatus(ctx context.Context, job *batchv1.Job) backupv1.BackupRunStatus {
+	logger := log.FromContext(ctx)
+
+	runStatus := backupv1.BackupRunStatus{
+		JobName:   job.Name,
+		StartTime: job.Status.StartTime,
+		Phase:     r.getJobPhase(job),
+	}
+
+	if job.Status.CompletionTime != nil {
+		runStatus.CompletionTime = job.Status.CompletionTime
+	}
+
+	// Set message based on job conditions
+	for _, condition := range job.Status.Conditions {
+		if condition.Type == batchv1.JobComplete && condition.Status == corev1.ConditionTrue {
+			runStatus.Message = truncateString("Backup completed successfully", MaxMessageSize)
+		} else if condition.Type == batchv1.JobFailed && condition.Status == corev1.ConditionTrue {
+			runStatus.Message = truncateString(fmt.Sprintf("Backup failed: %s", condition.Message), MaxMessageSize)
+		}
+	}
+
+	// Collect logs only on failure to save space
+	if runStatus.Phase == "Failed" && r.Clientset != nil {
+		logs, err := r.collectPodLogs(ctx, job)
+		if err != nil {
+			logger.V(1).Info("Failed to collect pod logs", "error", err)
+			runStatus.Logs = truncateString(fmt.Sprintf("Failed to collect logs: %v", err), MaxLogSize)
+		} else {
+			runStatus.Logs = logs
+		}
+	}
+
+	return runStatus
+}
+
+// collectPodLogs collects logs from pods belonging to a Job
+func (r *BackupReconciler) collectPodLogs(ctx context.Context, job *batchv1.Job) (string, error) {
+	if r.Clientset == nil {
+		return "", fmt.Errorf("clientset not available")
+	}
+
+	// List pods for this job
+	podList := &corev1.PodList{}
+	if err := r.List(ctx, podList,
+		client.InNamespace(job.Namespace),
+		client.MatchingLabels{"job-name": job.Name}); err != nil {
+		return "", fmt.Errorf("failed to list pods: %w", err)
+	}
+
+	if len(podList.Items) == 0 {
+		return "", fmt.Errorf("no pods found for job %s", job.Name)
+	}
+
+	// Get logs from the first (usually only) pod
+	pod := &podList.Items[0]
+
+	// Get container logs
+	tailLines := int64(100) // Last 100 lines
+	podLogOpts := &corev1.PodLogOptions{
+		Container: "gobackup",
+		TailLines: &tailLines,
+	}
+
+	req := r.Clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, podLogOpts)
+	podLogs, err := req.Stream(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get pod logs: %w", err)
+	}
+	defer podLogs.Close()
+
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, podLogs)
+	if err != nil {
+		return "", fmt.Errorf("failed to read pod logs: %w", err)
+	}
+
+	return truncateString(buf.String(), MaxLogSize), nil
+}
+
+// addToRecentRuns adds a run to the recent runs list, maintaining the max size
+func (r *BackupReconciler) addToRecentRuns(recentRuns []backupv1.BackupRunStatus, newRun backupv1.BackupRunStatus) []backupv1.BackupRunStatus {
+	// Check if this run already exists (by job name)
+	for i, run := range recentRuns {
+		if run.JobName == newRun.JobName {
+			// Update existing entry
+			recentRuns[i] = newRun
+			return recentRuns
+		}
+	}
+
+	// Add new run at the beginning
+	recentRuns = append([]backupv1.BackupRunStatus{newRun}, recentRuns...)
+
+	// Trim to max size
+	if len(recentRuns) > MaxRecentRuns {
+		recentRuns = recentRuns[:MaxRecentRuns]
+	}
+
+	return recentRuns
+}
+
+// truncateString truncates a string to maxLen, adding a prefix indicator if truncated
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	prefix := "...[truncated]...\n"
+	return prefix + s[len(s)-maxLen+len(prefix):]
 }
