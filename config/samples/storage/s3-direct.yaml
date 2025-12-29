@@ -9,10 +9,12 @@ spec:
   config:
     bucket: my-backup-bucket
     region: us-east-1
+    endpoint: https://s3.us-east-1.amazonaws.com
     path: backups/myapp
     access_key_id: YOUR_ACCESS_KEY_ID
     secret_access_key: YOUR_SECRET_ACCESS_KEY
-    storage_class: STANDARD_IA
-    keep: 30
+    storage_class: ""
+    force_path_style: true
+    keep: 2
     timeout: 600
     max_retries: 3
