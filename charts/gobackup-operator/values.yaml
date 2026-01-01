@@ -1,0 +1,103 @@
+# Default values for gobackup-operator.
+
+# Number of replicas for the operator deployment
+replicaCount: 1
+
+image:
+  repository: ghcr.io/gobackup/gobackup-operator
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  # fsGroup: 1000
+
+# Container security context
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - "ALL"
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+
+# Leader election configuration
+leaderElection:
+  enabled: true
+
+# Probes configuration
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8081
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8081
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+# Node selector for the operator pod
+nodeSelector: {}
+
+# Tolerations for the operator pod
+tolerations: []
+
+# Affinity rules for the operator pod
+affinity: {}
+
+# CRD installation
+crds:
+  # Specifies whether CRDs should be installed
+  install: true
+  # Keep CRDs when the chart is uninstalled
+  keep: true
+
+# Metrics configuration
+metrics:
+  # Enable metrics endpoint
+  enabled: false
+  # Service configuration for metrics
+  service:
+    port: 8080
+    annotations: {}
+
+# ServiceMonitor configuration (requires Prometheus Operator)
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+  labels: {}
+  annotations: {}
+
