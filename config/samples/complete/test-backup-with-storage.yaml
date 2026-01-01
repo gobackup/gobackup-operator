@@ -86,8 +86,4 @@ spec:
   
   afterScript: |
     echo "Backup completed at $(date)"
-  
-  persistence:
-    enabled: true
-    size: 100Mi
-    accessMode: ReadWriteOnce
+

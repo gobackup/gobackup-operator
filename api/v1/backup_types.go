@@ -45,21 +45,6 @@ type BackupSpec struct {
 
 	// Schedule defines when the backup should run
 	Schedule *BackupSchedule `json:"schedule,omitempty"`
-
-	// Persistence defines the storage for gobackup state (cycler.json)
-	Persistence *Persistence `json:"persistence,omitempty"`
-}
-
-// Persistence defines the persistence configuration
-type Persistence struct {
-	// Enabled determines if a PVC should be created
-	Enabled bool `json:"enabled,omitempty"`
-	// StorageClass to use for the PVC
-	StorageClass *string `json:"storageClass,omitempty"`
-	// AccessMode for the PVC (default: ReadWriteOnce)
-	AccessMode string `json:"accessMode,omitempty"`
-	// Size of the PVC (default: 100Mi)
-	Size string `json:"size,omitempty"`
 }
 
 // BackupSchedule defines the schedule for the backup
