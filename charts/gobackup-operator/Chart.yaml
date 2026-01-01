@@ -1,0 +1,24 @@
+apiVersion: v2
+name: gobackup-operator
+description: A Helm chart for GoBackup Operator - Kubernetes operator for managing database backups
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/gobackup/gobackup-operator
+sources:
+  - https://github.com/gobackup/gobackup-operator
+maintainers:
+  - name: gobackup
+    url: https://github.com/gobackup
+keywords:
+  - backup
+  - database
+  - operator
+  - kubernetes
+  - postgresql
+  - redis
+  - s3
+  - gcs
+  - azure
+kubeVersion: ">=1.19.0-0"
+

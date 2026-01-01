@@ -1,0 +1,85 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Your release is named {{ .Release.Name }}.
+
+To learn more about the release, try:
+
+  $ helm status {{ .Release.Name }}
+  $ helm get all {{ .Release.Name }}
+
+GoBackup Operator is now running in your cluster.
+
+## Getting Started
+
+1. Create a Storage resource to define where backups will be stored:
+
+   ```yaml
+   apiVersion: gobackup.io/v1
+   kind: Storage
+   metadata:
+     name: my-s3-storage
+   spec:
+     type: s3
+     config:
+       bucket: my-backup-bucket
+       region: us-east-1
+       access_key_id_ref:
+         name: s3-credentials
+         key: access-key-id
+       secret_access_key_ref:
+         name: s3-credentials
+         key: secret-access-key
+   ```
+
+2. Create a Database resource to define the database to backup:
+
+   ```yaml
+   apiVersion: gobackup.io/v1
+   kind: Database
+   metadata:
+     name: my-postgres
+   spec:
+     type: postgresql
+     config:
+       host: postgres-service
+       port: 5432
+       database: mydb
+       username: postgres
+       password: mypassword
+   ```
+
+3. Create a Backup resource to schedule backups:
+
+   ```yaml
+   apiVersion: gobackup.io/v1
+   kind: Backup
+   metadata:
+     name: my-backup
+   spec:
+     schedule:
+       cron: "0 2 * * *"  # Daily at 2 AM
+     databaseRefs:
+       - name: my-postgres
+         type: postgresql
+     storageRefs:
+       - name: my-s3-storage
+         type: s3
+         keep: 7
+   ```
+
+## Useful Commands
+
+- List all backups:
+  $ kubectl get backups
+
+- List all databases:
+  $ kubectl get databases
+
+- List all storages:
+  $ kubectl get storages
+
+- View backup status:
+  $ kubectl describe backup <backup-name>
+
+For more information, visit: https://github.com/gobackup/gobackup-operator
+

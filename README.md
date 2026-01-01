@@ -58,6 +58,43 @@ The Operator acts on the following [Custom Resource Definitions (CRDs)](https://
 
 ### Installation
 
+#### Option 1: Using Helm (Recommended)
+
+Add the Helm repository and install the chart:
+
+```sh
+helm install gobackup-operator ./charts/gobackup-operator \
+  --namespace gobackup-operator-system \
+  --create-namespace
+```
+
+Or install with custom values:
+
+```sh
+helm install gobackup-operator ./charts/gobackup-operator \
+  --namespace gobackup-operator-system \
+  --create-namespace \
+  --set image.tag=v0.1.0 \
+  --set resources.limits.memory=256Mi
+```
+
+To upgrade:
+
+```sh
+helm upgrade gobackup-operator ./charts/gobackup-operator \
+  --namespace gobackup-operator-system
+```
+
+To uninstall:
+
+```sh
+helm uninstall gobackup-operator --namespace gobackup-operator-system
+```
+
+See [charts/gobackup-operator/README.md](charts/gobackup-operator/README.md) for all available configuration options.
+
+#### Option 2: Using Kustomize/Make
+
 1. Install Custom Resource Definitions (CRDs):
 
 ```sh
@@ -274,6 +311,8 @@ gobackup-operator/
 ├── .github/               # CI/CD workflows (GitHub Actions)
 ├── api/                   # API definitions (CustomResourceDefinitions)
 ├── build/                 # Build artifacts
+├── charts/                # Helm charts
+│   └── gobackup-operator/ # Main Helm chart for the operator
 ├── cmd/                   # Entry point for the operator
 ├── config/
 │   ├── crd/               # Custom Resource Definitions (CRDs)
