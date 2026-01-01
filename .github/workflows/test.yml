@@ -1,0 +1,27 @@
+name: Build & Test
+on:
+  pull_request:
+  push:
+    branches:
+      - "*"
+    tags:
+      - "*"
+jobs:
+  build:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      GO_ENV: test
+    steps:
+      - name: Skip Duplicate Actions
+        uses: fkirc/skip-duplicate-actions@v5.3.1
+      - uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.5'
+        id: go
+      - name: Get dependencies
+        run: go get -v -t -d ./...
+      - name: Test
+        run: go test ./...
