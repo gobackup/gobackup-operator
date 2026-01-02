@@ -129,30 +129,6 @@ func (r *BackupReconciler) handleBackupCreate(ctx context.Context, backup *backu
 		return ctrl.Result{}, err
 	}
 
-<<<<<<< HEAD
-	// Reconcile scheduled backup (CronJob)
-	result, err := r.reconcileScheduledBackup(ctx, backup)
-	if err != nil {
-		return result, err
-	}
-
-	// Reconcile job status - update backup status based on job states
-	if err := r.reconcileJobStatus(ctx, backup); err != nil {
-		logger.Error(err, "Failed to reconcile job status")
-		// Don't return error, status update failure shouldn't block reconciliation
-	}
-
-	return result, nil
-}
-
-// reconcileScheduledBackup handles the reconciliation of backups with a schedule defined.
-// It creates or updates the CronJob and associated Secret.
-func (r *BackupReconciler) reconcileScheduledBackup(ctx context.Context, backup *backupv1.Backup) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-	logger.Info("Reconciling scheduled backup", "namespace", backup.Namespace, "name", backup.Name)
-
-=======
->>>>>>> 42e3a2b52dce866284cb79ac6c677850caace9e3
 	// Validate the backup spec
 	if err := r.validateBackupSpec(backup); err != nil {
 		logger.Error(err, "Invalid backup specification during create")
@@ -396,43 +372,6 @@ func (r *BackupReconciler) buildJobTemplate(backup *backupv1.Backup) batchv1.Job
 		},
 	}
 
-<<<<<<< HEAD
-	// Adjust for persistence
-	if backup.Spec.Persistence != nil && backup.Spec.Persistence.Enabled {
-		configMountPath = "/etc/gobackup"
-		command = []string{"/bin/sh", "-c", "gobackup perform -c /etc/gobackup/gobackup.yml"}
-
-		// Update config mount path
-		volumeMounts[0].MountPath = configMountPath
-
-		// Add persistence volume
-		volumes = append(volumes, corev1.Volume{
-			Name: "persistence",
-			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: backup.Name,
-				},
-			},
-		})
-
-		// Add persistence mount
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      "persistence",
-			MountPath: "/root/.gobackup",
-		})
-	}
-
-	jobSpec := batchv1.JobSpec{
-		Template: corev1.PodTemplateSpec{
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{
-						Name:            "gobackup",
-						Image:           imageName,
-						ImagePullPolicy: corev1.PullIfNotPresent,
-						Command:         command,
-						VolumeMounts:    volumeMounts,
-=======
 	return batchv1.JobTemplateSpec{
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
@@ -445,7 +384,6 @@ func (r *BackupReconciler) buildJobTemplate(backup *backupv1.Backup) batchv1.Job
 							Command:         command,
 							VolumeMounts:    volumeMounts,
 						},
->>>>>>> 42e3a2b52dce866284cb79ac6c677850caace9e3
 					},
 				},
 				Volumes:       volumes,
