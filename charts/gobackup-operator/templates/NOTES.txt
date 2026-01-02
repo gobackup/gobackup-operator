@@ -82,4 +82,3 @@ GoBackup Operator is now running in your cluster.
   $ kubectl describe backup <backup-name>
 
 For more information, visit: https://github.com/gobackup/gobackup-operator
-

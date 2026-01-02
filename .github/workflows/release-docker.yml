@@ -33,7 +33,7 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ghcr.io/gobackup/gobackup-operator:latest
+            ghcr.io/${{ github.repository_owner }}/gobackup-operator:latest
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
