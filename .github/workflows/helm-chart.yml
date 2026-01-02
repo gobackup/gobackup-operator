@@ -54,12 +54,49 @@ jobs:
         with:
           version: v3.14.0
 
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.7.0
+      - name: Get chart version
+        id: chart
+        run: |
+          VERSION=$(grep '^version:' charts/gobackup-operator/Chart.yaml | awk '{print $2}')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Chart version: $VERSION"
+
+      - name: Package Helm chart
+        run: |
+          helm package charts/gobackup-operator --destination .cr-release-packages
+
+      - name: Create GitHub Release
         env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-        with:
-          charts_dir: charts
-          skip_existing: true
-          release_name_template: "v{{ .Version }}"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_NAME="v${{ steps.chart.outputs.version }}"
+          TAG_NAME="v${{ steps.chart.outputs.version }}"
+          CHART_PACKAGE=".cr-release-packages/gobackup-operator-${{ steps.chart.outputs.version }}.tgz"
+          
+          # Check if release already exists
+          if gh release view "$TAG_NAME" &>/dev/null; then
+            echo "Release $TAG_NAME already exists, skipping..."
+          else
+            gh release create "$TAG_NAME" "$CHART_PACKAGE" \
+              --title "$RELEASE_NAME" \
+              --notes "Helm chart for GoBackup Operator v${{ steps.chart.outputs.version }}"
+          fi
+
+      - name: Update Helm repo index
+        run: |
+          # Checkout gh-pages branch
+          git fetch origin gh-pages:gh-pages || true
+          git checkout gh-pages || git checkout --orphan gh-pages
+          
+          # Download existing index if it exists
+          if [ -f index.yaml ]; then
+            helm repo index .cr-release-packages --url https://github.com/gobackup/gobackup-operator/releases/download/v${{ steps.chart.outputs.version }} --merge index.yaml
+          else
+            helm repo index .cr-release-packages --url https://github.com/gobackup/gobackup-operator/releases/download/v${{ steps.chart.outputs.version }}
+          fi
+          
+          cp .cr-release-packages/index.yaml .
+          git add index.yaml
+          git commit -m "Update Helm repo index for v${{ steps.chart.outputs.version }}" || true
+          git push origin gh-pages || true
 

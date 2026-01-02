@@ -13,19 +13,19 @@ maintainers:
 keywords:
   - gobackup
   - backup
-  - database
   - operator
+  - database
   - postgresql
   - mysql
   - redis
   - mongodb
   - mariadb
-  - etcd
   - influxdb
+  - storage
+  - etcd
   - s3
   - gcs
   - azure
   - minio
-  - storage
 kubeVersion: ">=1.19.0-0"
 
