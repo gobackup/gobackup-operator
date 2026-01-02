@@ -1,0 +1,293 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: backups.gobackup.io
+spec:
+  group: gobackup.io
+  names:
+    kind: Backup
+    listKind: BackupList
+    plural: backups
+    shortNames:
+    - backup
+    singular: backup
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Backup is the Schema for the backups API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: BackupSpec defines the desired state of Backup
+            properties:
+              afterScript:
+                description: AfterScript is the script to run after the backup
+                type: string
+              beforeScript:
+                description: BeforeScript is the script to run before the backup
+                type: string
+              compressWith:
+                description: CompressWith defines the compression to use
+                properties:
+                  type:
+                    type: string
+                type: object
+              databaseRefs:
+                description: DatabaseRefs represents the list of databases to backup
+                items:
+                  properties:
+                    apiGroup:
+                      type: string
+                    name:
+                      type: string
+                    type:
+                      description: Type is the database backend type (postgresql,
+                        redis, etc.) matching the Database resource's spec.type field
+                      type: string
+                  type: object
+                type: array
+              encodeWith:
+                description: EncodeWith defines the encoding to use
+                properties:
+                  type:
+                    type: string
+                type: object
+              persistence:
+                description: Persistence defines the storage for gobackup state (cycler.json)
+                properties:
+                  accessMode:
+                    description: 'AccessMode for the PVC (default: ReadWriteOnce)'
+                    type: string
+                  enabled:
+                    description: Enabled determines if a PVC should be created
+                    type: boolean
+                  size:
+                    description: 'Size of the PVC (default: 100Mi)'
+                    type: string
+                  storageClass:
+                    description: StorageClass to use for the PVC
+                    type: string
+                type: object
+              schedule:
+                description: Schedule defines when the backup should run
+                properties:
+                  cron:
+                    description: The cron expression defining the schedule
+                    type: string
+                  failedJobsHistoryLimit:
+                    description: The number of failed finished jobs to retain
+                    format: int32
+                    type: integer
+                  startingDeadlineSeconds:
+                    description: Optional deadline in seconds for starting the job
+                      if it misses scheduled time for any reason
+                    format: int64
+                    type: integer
+                  successfulJobsHistoryLimit:
+                    description: The number of successful finished jobs to retain
+                    format: int32
+                    type: integer
+                  suspend:
+                    description: This flag tells the controller to suspend subsequent
+                      executions
+                    type: boolean
+                type: object
+              storageRefs:
+                description: StorageRefs represents the list of storages to backup
+                  to
+                items:
+                  properties:
+                    apiGroup:
+                      type: string
+                    keep:
+                      type: integer
+                    name:
+                      type: string
+                    timeout:
+                      type: integer
+                    type:
+                      description: Type is the storage backend type (s3, gcs, azure,
+                        local, ftp, etc.) matching the Storage resource's spec.type
+                        field
+                      type: string
+                  type: object
+                type: array
+            type: object
+          status:
+            description: BackupStatus defines the observed state of Backup
+            properties:
+              conditions:
+                description: Conditions represent the latest available observations
+                  of the backup's state
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              failureCount:
+                description: FailureCount tracks consecutive failures for alerting
+                  purposes
+                format: int32
+                type: integer
+              lastBackupTime:
+                description: LastBackupTime is the timestamp of the last backup attempt
+                format: date-time
+                type: string
+              lastRun:
+                description: |-
+                  LastRun contains the status of the most recent backup run
+                  Only the last run is kept to avoid status size explosion
+                properties:
+                  completionTime:
+                    description: CompletionTime is when the backup job completed
+                    format: date-time
+                    type: string
+                  jobName:
+                    description: JobName is the name of the Job that ran this backup
+                    type: string
+                  logs:
+                    description: |-
+                      Logs contains the last N lines of gobackup output (truncated to avoid large status)
+                      Only captured on failure to help debugging. Max 4096 characters.
+                    type: string
+                  message:
+                    description: |-
+                      Message contains a human-readable message indicating details about the backup
+                      This is truncated to avoid status size issues (max 1024 characters)
+                    type: string
+                  phase:
+                    description: Phase is the current phase of the backup (Pending,
+                      Running, Succeeded, Failed)
+                    type: string
+                  startTime:
+                    description: StartTime is when the backup job started
+                    format: date-time
+                    type: string
+                type: object
+              lastSuccessfulBackupTime:
+                description: LastSuccessfulBackupTime is the timestamp of the last
+                  successful backup
+                format: date-time
+                type: string
+              phase:
+                description: Phase is the current phase of the backup (Idle, Running,
+                  Succeeded, Failed)
+                type: string
+              recentRuns:
+                description: |-
+                  RecentRuns contains the status of recent backup runs (limited to last N runs)
+                  This is a sliding window - oldest entries are removed when limit is exceeded
+                  Default limit: 5 runs to prevent status bloat
+                items:
+                  description: BackupRunStatus represents the status of a single backup
+                    run
+                  properties:
+                    completionTime:
+                      description: CompletionTime is when the backup job completed
+                      format: date-time
+                      type: string
+                    jobName:
+                      description: JobName is the name of the Job that ran this backup
+                      type: string
+                    logs:
+                      description: |-
+                        Logs contains the last N lines of gobackup output (truncated to avoid large status)
+                        Only captured on failure to help debugging. Max 4096 characters.
+                      type: string
+                    message:
+                      description: |-
+                        Message contains a human-readable message indicating details about the backup
+                        This is truncated to avoid status size issues (max 1024 characters)
+                      type: string
+                    phase:
+                      description: Phase is the current phase of the backup (Pending,
+                        Running, Succeeded, Failed)
+                      type: string
+                    startTime:
+                      description: StartTime is when the backup job started
+                      format: date-time
+                      type: string
+                  type: object
+                maxItems: 5
+                type: array
+              successCount:
+                description: SuccessCount tracks total successful backups
+                format: int32
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

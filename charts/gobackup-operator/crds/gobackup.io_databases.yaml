@@ -1,0 +1,135 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: databases.gobackup.io
+spec:
+  group: gobackup.io
+  names:
+    kind: Database
+    listKind: DatabaseList
+    plural: databases
+    shortNames:
+    - db
+    singular: database
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Database is the Schema for the databases API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DatabaseSpec defines the desired state of Database
+            properties:
+              config:
+                description: Config contains the database configuration
+                properties:
+                  args:
+                    description: |-
+                      Args are additional arguments for pg_dump (PostgreSQL) or redis-cli utility (Redis)
+                      For Redis, e.g.: --tls --cacert redis_ca.pem
+                    type: string
+                  args_redis:
+                    description: 'ArgsRedis are additional options for redis-cli utility,
+                      for example: --tls --cacert redis_ca.pem'
+                    type: string
+                  copy:
+                    description: Copy is used for local Redis server, just copy Redis
+                      dump.db
+                    type: boolean
+                  database:
+                    description: Database is the database name (PostgreSQL)
+                    type: string
+                  exclude_tables:
+                    description: ExcludeTables is an array of tables to exclude from
+                      backup (PostgreSQL)
+                    items:
+                      type: string
+                    type: array
+                  host:
+                    description: |-
+                      Host is the database server hostname
+                      Default for PostgreSQL: localhost, for Redis: 127.0.0.1
+                    type: string
+                  invoke_save:
+                    description: 'InvokeSave invokes save before backup (Redis). Default:
+                      true'
+                    type: boolean
+                  mode:
+                    description: 'Mode is the Redis dump mode. Default: copy'
+                    enum:
+                    - copy
+                    - sync
+                    type: string
+                  password:
+                    description: |-
+                      Password is the password for the database or Redis server
+                      Default for Redis: ""
+                    type: string
+                  port:
+                    description: |-
+                      Port is the database server port
+                      Default for PostgreSQL: 5432, for Redis: 6379
+                    type: integer
+                  rdb_path:
+                    description: 'RdbPath is the path to dump.rdb for Redis. Default:
+                      /var/lib/redis/dump.rdb'
+                    type: string
+                  socket:
+                    description: |-
+                      Socket is the database server socket
+                      For PostgreSQL: e.g. /var/run/postgresql/.s.PGSQL.5432
+                      For Redis: e.g. /var/run/redis/redis.sock
+                    type: string
+                  sync:
+                    description: Sync is used for remote Redis server to export
+                    type: boolean
+                  tables:
+                    description: Tables is an array of tables to backup (PostgreSQL)
+                    items:
+                      type: string
+                    type: array
+                  username:
+                    description: |-
+                      Username is the username for the database (PostgreSQL)
+                      Default: root
+                    type: string
+                type: object
+              type:
+                description: Type is the database backend type
+                enum:
+                - postgresql
+                - redis
+                type: string
+            required:
+            - config
+            - type
+            type: object
+          status:
+            description: DatabaseStatus defines the observed state of Database
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
