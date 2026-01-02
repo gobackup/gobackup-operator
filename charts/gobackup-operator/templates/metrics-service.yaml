@@ -21,4 +21,3 @@ spec:
   selector:
     {{- include "gobackup-operator.selectorLabels" . | nindent 4 }}
 {{- end }}
-
