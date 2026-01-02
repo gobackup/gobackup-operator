@@ -11,14 +11,21 @@ maintainers:
   - name: gobackup
     url: https://github.com/gobackup
 keywords:
+  - gobackup
   - backup
   - database
   - operator
-  - kubernetes
   - postgresql
+  - mysql
   - redis
+  - mongodb
+  - mariadb
+  - etcd
+  - influxdb
   - s3
   - gcs
   - azure
+  - minio
+  - storage
 kubeVersion: ">=1.19.0-0"
 
