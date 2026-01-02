@@ -372,8 +372,13 @@ func (r *BackupReconciler) buildJobTemplate(backup *backupv1.Backup) batchv1.Job
 		},
 	}
 
+	// Set TTLSecondsAfterFinished to automatically clean up completed/failed Jobs
+	// Hardcoded to 1 second (1 second)
+	ttlSecondsAfterFinished := int32(1)
+
 	return batchv1.JobTemplateSpec{
 		Spec: batchv1.JobSpec{
+			TTLSecondsAfterFinished: &ttlSecondsAfterFinished,
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -385,20 +390,11 @@ func (r *BackupReconciler) buildJobTemplate(backup *backupv1.Backup) batchv1.Job
 							VolumeMounts:    volumeMounts,
 						},
 					},
+					Volumes:       volumes,
+					RestartPolicy: corev1.RestartPolicyNever,
 				},
-				Volumes:       volumes,
-				RestartPolicy: corev1.RestartPolicyNever,
 			},
 		},
-	}
-
-	// Set TTLSecondsAfterFinished to automatically clean up completed/failed Jobs
-	// Hardcoded to 1 second (1 second)
-	ttlSecondsAfterFinished := int32(1)
-	jobSpec.TTLSecondsAfterFinished = &ttlSecondsAfterFinished
-
-	return batchv1.JobTemplateSpec{
-		Spec: jobSpec,
 	}
 }
 
