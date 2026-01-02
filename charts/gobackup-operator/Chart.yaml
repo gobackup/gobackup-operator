@@ -1,6 +1,6 @@
 apiVersion: v2
 name: gobackup-operator
-description: A Helm chart for GoBackup Operator - Kubernetes operator for managing database backups and push to storage
+description: A Helm chart for GoBackup Operator - Kubernetes operator for managing database backups
 type: application
 version: 0.1.0-alpha
 appVersion: "0.1.0-alpha"
