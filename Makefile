@@ -81,6 +81,16 @@ test-e2e: ## Run end-to-end tests (requires a Kubernetes cluster).
 	fi
 	./test/e2e/e2e_test.sh
 
+.PHONY: test-crd
+test-crd: manifests ## Validate CRD files (syntax, structure, and optionally apply to cluster).
+	@chmod +x hack/validate-crds.sh
+	./hack/validate-crds.sh
+
+.PHONY: test-crd-apply
+test-crd-apply: manifests ## Validate CRD files by actually applying them to the cluster (requires cluster access).
+	@chmod +x hack/validate-crds.sh
+	TEST_APPLY_CRDS=true ./hack/validate-crds.sh
+
 .PHONY: test-coverage
 test-coverage: test ## Generate test coverage report.
 	go tool cover -html=cover.out -o cover.html
