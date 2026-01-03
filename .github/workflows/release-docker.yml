@@ -3,19 +3,37 @@ on:
   push:
     branches:
       - "release-docker"
+  release:
+    types: [created]
 
 jobs:
   docker:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - name: Get version tag
+        id: get_version
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            # Use the release tag name
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            # For branch pushes, try to get git tag
+            TAG=$(git describe --tags --exact-match 2>/dev/null || git describe --tags --abbrev=0 2>/dev/null)
+          fi
+          echo "version=$TAG" >> $GITHUB_OUTPUT
+          echo "Using version: $TAG"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            network=host
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -24,6 +42,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v6
@@ -31,9 +55,12 @@ jobs:
           context: .
           file: ./build/Dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: |
-            ghcr.io/${{ github.repository_owner }}/gobackup-operator:latest
+            ghcr.io/${{ github.repository_owner }}/gobackup-operator:${{ steps.get_version.outputs.version }}
+            payamqorbanpour/gobackup-operator:${{ steps.get_version.outputs.version }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
