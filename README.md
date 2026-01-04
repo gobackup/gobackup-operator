@@ -33,9 +33,11 @@ It supports both immediate and scheduled backups, with configurable retention po
 
 The Operator acts on the following [Custom Resource Definitions (CRDs)](https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions/):
 
+#### Backup(`backup.yaml`)
+
 - `Backup`, which defines a backup operation configuration. It references one or more database resources and storage backends, and can be configured for immediate execution or scheduled backups using cron syntax. Supports compression, retention policies, and pre/post backup scripts.
 
-#### Database
+#### Database(`database.yaml`)
 
 - `PostgreSQL`, which defines a PostgreSQL database connection configuration. It specifies connection details such as host, port, username, password, database name, and optional table inclusion/exclusion filters.
 - `MySQL`, which defines a MySQL database connection configuration. It specifies connection details such as host, port, username, password, database name, and optional table inclusion/exclusion filters.
@@ -46,7 +48,7 @@ The Operator acts on the following [Custom Resource Definitions (CRDs)](https://
 - `InfluxDB`, which defines an InfluxDB database connection configuration. It specifies connection details such as host, token, bucket, organization, and optional verification settings.
 - `ETCD`, which defines an etcd cluster connection configuration. It specifies endpoints and optional additional backup options.
 
-#### Storage
+#### Storage(`storage.yaml`)
 
 - `S3`, which defines an S3-compatible storage backend configuration. It specifies bucket, region, credentials, path, and other S3-specific settings for storing backups.
 - `Azure`, which defines an Azure Blob Storage backend configuration. It specifies account, container, tenant ID, client ID, and client secret for authentication.
