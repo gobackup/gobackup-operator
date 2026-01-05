@@ -273,7 +273,25 @@ func (r *BackupReconciler) updateCronJobIfNeeded(ctx context.Context, cronJob *b
 	}
 
 	if needsUpdate {
-		if err := r.Update(ctx, cronJob); err != nil {
+		latestCronJob := &batchv1.CronJob{}
+		if err := r.Get(ctx, types.NamespacedName{Name: cronJob.Name, Namespace: cronJob.Namespace}, latestCronJob); err != nil {
+			return false, fmt.Errorf("failed to re-fetch CronJob before update: %w", err)
+		}
+
+		// Apply the changes to the freshly fetched CronJob
+		latestCronJob.Spec.Schedule = backup.Spec.Schedule.Cron
+		latestCronJob.Spec.StartingDeadlineSeconds = backup.Spec.Schedule.StartingDeadlineSeconds
+		latestCronJob.Spec.SuccessfulJobsHistoryLimit = backup.Spec.Schedule.SuccessfulJobsHistoryLimit
+		latestCronJob.Spec.FailedJobsHistoryLimit = backup.Spec.Schedule.FailedJobsHistoryLimit
+		latestCronJob.Spec.Suspend = backup.Spec.Schedule.Suspend
+		latestCronJob.Spec.JobTemplate = expectedTemplate
+
+		// Update the CronJob with the latest version
+		if err := r.Update(ctx, latestCronJob); err != nil {
+			if errors.IsConflict(err) {
+				// If there's still a conflict, return error to trigger retry
+				return false, fmt.Errorf("failed to update CronJob due to conflict (will retry): %w", err)
+			}
 			return false, fmt.Errorf("failed to update CronJob: %w", err)
 		}
 		return true, nil
