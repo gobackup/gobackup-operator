@@ -16,6 +16,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Get chart appVersion
+        id: get_app_version
+        run: |
+          # Extract appVersion from Chart.yaml
+          APP_VERSION=$(grep -E '^appVersion:' charts/gobackup-operator/Chart.yaml | sed -E 's/^appVersion:[[:space:]]*["'\'']?([^"'\'']+)["'\'']?/\1/' | tr -d '[:space:]')
+          echo "appVersion=$APP_VERSION" >> $GITHUB_OUTPUT
+          echo "Using chart appVersion: $APP_VERSION"
+
       - name: Get version tag
         id: get_version
         run: |
@@ -24,10 +32,31 @@ jobs:
             TAG="${{ github.event.release.tag_name }}"
           else
             # For branch pushes, try to get git tag
-            TAG=$(git describe --tags --exact-match 2>/dev/null || git describe --tags --abbrev=0 2>/dev/null)
+            TAG=$(git describe --tags --exact-match 2>/dev/null || git describe --tags --abbrev=0 2>/dev/null || echo "")
           fi
           echo "version=$TAG" >> $GITHUB_OUTPUT
+          echo "has_version=$([ -n "$TAG" ] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
           echo "Using version: $TAG"
+      
+      - name: Prepare tags
+        id: prepare_tags
+        run: |
+          APP_VERSION="${{ steps.get_app_version.outputs.appVersion }}"
+          TAGS="ghcr.io/${{ github.repository_owner }}/gobackup-operator:latest
+          ghcr.io/${{ github.repository_owner }}/gobackup-operator:${APP_VERSION}
+          payamqorbanpour/gobackup-operator:latest
+          payamqorbanpour/gobackup-operator:${APP_VERSION}"
+          
+          if [ "${{ steps.get_version.outputs.has_version }}" == "true" ]; then
+            TAGS="$TAGS
+          ghcr.io/${{ github.repository_owner }}/gobackup-operator:${{ steps.get_version.outputs.version }}
+          payamqorbanpour/gobackup-operator:${{ steps.get_version.outputs.version }}"
+          fi
+          
+          echo "$TAGS" > /tmp/tags.txt
+          echo "tags<<EOF" >> $GITHUB_OUTPUT
+          echo "$TAGS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -58,11 +87,7 @@ jobs:
           platforms: linux/arm64,linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/gobackup-operator:${{ steps.get_version.outputs.version }}
-            ghcr.io/${{ github.repository_owner }}/gobackup-operator:latest
-            payamqorbanpour/gobackup-operator:${{ steps.get_version.outputs.version }}
-            payamqorbanpour/gobackup-operator:latest
+          tags: ${{ steps.prepare_tags.outputs.tags }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

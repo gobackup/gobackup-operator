@@ -67,7 +67,12 @@ Create the name of the service account to use
 Create the image name
 */}}
 {{- define "gobackup-operator.image" -}}
-{{- $tag := default .Chart.AppVersion .Values.image.tag }}
+{{- $tag := "latest" }}
+{{- if .Values.image.tag }}
+{{- $tag = .Values.image.tag }}
+{{- else if .Chart.AppVersion }}
+{{- $tag = .Chart.AppVersion }}
+{{- end }}
 {{- printf "%s:%s" .Values.image.repository $tag }}
 {{- end }}
 
