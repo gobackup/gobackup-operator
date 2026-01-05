@@ -55,12 +55,14 @@ jobs:
           context: .
           file: ./build/Dockerfile
           push: true
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: |
             ghcr.io/${{ github.repository_owner }}/gobackup-operator:${{ steps.get_version.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/gobackup-operator:latest
             payamqorbanpour/gobackup-operator:${{ steps.get_version.outputs.version }}
+            payamqorbanpour/gobackup-operator:latest
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
