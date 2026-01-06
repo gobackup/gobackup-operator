@@ -45,7 +45,7 @@ helm upgrade gobackup-operator gobackup/gobackup-operator \
 helm uninstall gobackup-operator --namespace gobackup-operator-system
 ```
 
-> **Note:** By default, CRDs are kept when uninstalling the chart. To remove them:
+> **Note:** By default, CRDs are installed with the chart. To skip CRD installation, use the `--skip-crds` flag. By default, CRDs are kept when uninstalling the chart (`crds.keep=true`). To remove them:
 > ```bash
 > kubectl delete crd backups.gobackup.io databases.gobackup.io storages.gobackup.io
 > ```
@@ -128,8 +128,9 @@ The following table lists the configurable parameters of the GoBackup Operator c
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `crds.install` | Install CRDs | `true` |
 | `crds.keep` | Keep CRDs on uninstall | `true` |
+
+> **Note:** CRDs are installed by default when using `helm install`. To skip CRD installation, use the `--skip-crds` flag. See [Helm documentation](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/) for more details.
 
 ### Metrics & Monitoring
 
@@ -182,6 +183,17 @@ helm install gobackup-operator ./charts/gobackup-operator \
   --create-namespace \
   --set image.repository=my-registry/gobackup-operator \
   --set image.tag=v1.0.0
+```
+
+### Install without CRDs
+
+If CRDs are already installed or you want to install them separately:
+
+```bash
+helm install gobackup-operator ./charts/gobackup-operator \
+  --namespace gobackup-operator-system \
+  --create-namespace \
+  --skip-crds
 ```
 
 ## Getting Started After Installation
