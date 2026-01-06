@@ -1,0 +1,164 @@
+name: Publish Helm Chart
+on:
+  push:
+    branches:
+      - "release-helm"
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Chart version to publish (leave empty to use Chart.yaml version)'
+        required: false
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  CHART_NAME: gobackup-operator
+
+jobs:
+  publish-ghcr:
+    name: Publish to GitHub Container Registry
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Lint chart
+        run: |
+          helm lint charts/${{ env.CHART_NAME }}
+          helm template test-release charts/${{ env.CHART_NAME }} --debug
+
+      - name: Configure Helm OCI registry
+        run: |
+          helm registry login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
+
+      - name: Get chart version
+        id: chart
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            # Remove 'v' prefix if present
+            VERSION=${VERSION#v}
+          else
+            VERSION=$(grep '^version:' charts/${{ env.CHART_NAME }}/Chart.yaml | awk '{print $2}')
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Chart version: $VERSION"
+
+      - name: Package Helm chart
+        run: |
+          helm package charts/${{ env.CHART_NAME }} --destination .cr-release-packages
+
+      - name: Push to GitHub Container Registry
+        run: |
+          CHART_PACKAGE=".cr-release-packages/${{ env.CHART_NAME }}-${{ steps.chart.outputs.version }}.tgz"
+          helm push $CHART_PACKAGE oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/helm-charts
+          echo "Chart pushed to: oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/helm-charts/${{ env.CHART_NAME }}:${{ steps.chart.outputs.version }}"
+
+      - name: Output chart location
+        run: |
+          echo "Chart available at:"
+          echo "  oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/helm-charts/${{ env.CHART_NAME }}:${{ steps.chart.outputs.version }}"
+          echo ""
+          echo "To install:"
+          echo "  helm install my-release oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/helm-charts/${{ env.CHART_NAME }} --version ${{ steps.chart.outputs.version }}"
+
+  publish-artifacthub:
+    name: Publish to ArtifactHub
+    runs-on: ubuntu-latest
+    needs: publish-ghcr
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Get chart version
+        id: chart
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            # Remove 'v' prefix if present
+            VERSION=${VERSION#v}
+          else
+            VERSION=$(grep '^version:' charts/${{ env.CHART_NAME }}/Chart.yaml | awk '{print $2}')
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Chart version: $VERSION"
+
+      - name: Package Helm chart
+        run: |
+          helm package charts/${{ env.CHART_NAME }} --destination .cr-release-packages
+
+      - name: Upload chart to release
+        if: github.event_name == 'release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CHART_PACKAGE=".cr-release-packages/${{ env.CHART_NAME }}-${{ steps.chart.outputs.version }}.tgz"
+          gh release upload ${{ github.event.release.tag_name }} "$CHART_PACKAGE" --clobber
+          echo "Chart uploaded to GitHub release: ${{ github.event.release.tag_name }}"
+
+      - name: Create GitHub Release (for manual dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_NAME="v${{ steps.chart.outputs.version }}"
+          TAG_NAME="v${{ steps.chart.outputs.version }}"
+          CHART_PACKAGE=".cr-release-packages/${{ env.CHART_NAME }}-${{ steps.chart.outputs.version }}.tgz"
+          
+          # Check if release already exists
+          if gh release view "$TAG_NAME" &>/dev/null; then
+            echo "Release $TAG_NAME already exists, uploading chart..."
+            gh release upload "$TAG_NAME" "$CHART_PACKAGE" --clobber
+          else
+            gh release create "$TAG_NAME" "$CHART_PACKAGE" \
+              --title "$RELEASE_NAME" \
+              --notes "Helm chart for GoBackup Operator v${{ steps.chart.outputs.version }}"
+          fi
+
+      - name: Output ArtifactHub information
+        run: |
+          echo "Chart published successfully!"
+          echo ""
+          echo "ArtifactHub:"
+          if [ "${{ github.event_name }}" == "release" ]; then
+            echo "  Chart uploaded to GitHub release: ${{ github.event.release.tag_name }}"
+          else
+            echo "  Chart uploaded to GitHub release: v${{ steps.chart.outputs.version }}"
+          fi
+          echo "  ArtifactHub will automatically index charts from GitHub releases"
+          echo ""
+          echo "To enable ArtifactHub publishing:"
+          echo "1. Go to https://artifacthub.io/"
+          echo "2. Sign in and add a new repository"
+          echo "3. Select 'GitHub' as the repository kind"
+          echo "4. Point to: https://github.com/${{ github.repository }}"
+          echo "5. ArtifactHub will automatically discover and index your Helm charts"
+          echo ""
+          echo "Alternatively, you can use ArtifactHub's OCI registry support:"
+          echo "Configure ArtifactHub to pull from: oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/helm-charts"
+
