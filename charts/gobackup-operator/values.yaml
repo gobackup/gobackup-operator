@@ -79,9 +79,8 @@ affinity: {}
 
 # CRD installation
 crds:
-  # Specifies whether CRDs should be installed
-  install: true
   # Keep CRDs when the chart is uninstalled
+  # Note: CRDs are installed by default. Use --skip-crds flag to skip installation.
   keep: true
 
 # Metrics configuration
