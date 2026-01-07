@@ -53,6 +53,12 @@ spec:
                     description: 'ArgsRedis are additional options for redis-cli utility,
                       for example: --tls --cacert redis_ca.pem'
                     type: string
+                  auth_db:
+                    description: AuthDB is the authentication database (MongoDB)
+                    type: string
+                  bucket:
+                    description: Bucket is the bucket name (InfluxDB)
+                    type: string
                   copy:
                     description: Copy is used for local Redis server, just copy Redis
                       dump.db
@@ -60,6 +66,11 @@ spec:
                   database:
                     description: Database is the database name (PostgreSQL)
                     type: string
+                  endpoints:
+                    description: Endpoints are the ETCD endpoints (ETCD)
+                    items:
+                      type: string
+                    type: array
                   exclude_tables:
                     description: ExcludeTables is an array of tables to exclude from
                       backup (PostgreSQL)
@@ -80,6 +91,12 @@ spec:
                     enum:
                     - copy
                     - sync
+                    type: string
+                  oplog:
+                    description: Oplog is used to backup oplog (MongoDB)
+                    type: boolean
+                  org:
+                    description: Organization is the organization name (InfluxDB)
                     type: string
                   password:
                     description: |-
@@ -109,6 +126,13 @@ spec:
                     items:
                       type: string
                     type: array
+                  token:
+                    description: Token is the authentication token (InfluxDB)
+                    type: string
+                  trust_server_certificate:
+                    description: TrustServerCertificate is used to trust the server
+                      certificate (MSSQL)
+                    type: boolean
                   username:
                     description: |-
                       Username is the username for the database (PostgreSQL)
@@ -119,7 +143,13 @@ spec:
                 description: Type is the database backend type
                 enum:
                 - postgresql
+                - mysql
+                - mariadb
+                - mongodb
                 - redis
+                - mssql
+                - influxdb
+                - etcd
                 type: string
             required:
             - config
