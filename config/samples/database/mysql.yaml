@@ -12,3 +12,4 @@ spec:
     database: exampledb
     username: root
     password: examplepassword
+    args: "--skip-ssl"

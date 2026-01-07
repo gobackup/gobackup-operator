@@ -51,8 +51,9 @@ type DatabaseConfig struct {
 	// Default for Redis: ""
 	Password *string `json:"password,omitempty"`
 
-	// Args are additional arguments for pg_dump (PostgreSQL) or redis-cli utility (Redis)
+	// Args are additional arguments for pg_dump (PostgreSQL), mysqldump (MySQL) or redis-cli utility (Redis)
 	// For Redis, e.g.: --tls --cacert redis_ca.pem
+	// For MySQL, e.g.: --skip-ssl or --ssl-ca=/path/to/ca.pem
 	Args *string `json:"args,omitempty"`
 
 	// PostgreSQL-specific fields
