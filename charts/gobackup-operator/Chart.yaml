@@ -27,5 +27,21 @@ keywords:
   - gcs
   - azure
   - minio
+  - local
+  - ftp
+  - sftp
+  - scp
+  - webdav
+  - oss
+  - r2
+  - spaces
+  - b2
+  - cos
+  - us3
+  - kodo
+  - bos
+  - obs
+  - tos
+  - upyun
 kubeVersion: ">=1.19.0-0"
 
