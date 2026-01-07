@@ -392,7 +392,7 @@ func (r *BackupReconciler) buildJobTemplate(backup *backupv1.Backup) batchv1.Job
 
 	// Set TTLSecondsAfterFinished to automatically clean up completed/failed Jobs
 	// Hardcoded to 1 second (1 second)
-	ttlSecondsAfterFinished := int32(1)
+	ttlSecondsAfterFinished := int32(60)
 
 	return batchv1.JobTemplateSpec{
 		Spec: batchv1.JobSpec{
