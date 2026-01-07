@@ -1,0 +1,12 @@
+apiVersion: gobackup.io/v1
+kind: Database
+metadata:
+  name: example-influxdb
+  namespace: gobackup-operator-system
+spec:
+  type: influxdb
+  config:
+    host: influxdb.example.svc.cluster.local
+    token: mytoken
+    bucket: mybucket
+    org: myorg

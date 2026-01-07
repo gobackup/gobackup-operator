@@ -1,0 +1,13 @@
+apiVersion: gobackup.io/v1
+kind: Database
+metadata:
+  name: example-mariadb
+  namespace: gobackup-operator-system
+spec:
+  type: mariadb
+  config:
+    host: mariadb.example.svc.cluster.local
+    port: 3306
+    database: exampledb
+    username: root
+    password: examplepassword

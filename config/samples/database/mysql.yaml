@@ -1,0 +1,14 @@
+apiVersion: gobackup.io/v1
+kind: Database
+metadata:
+  name: example-mysql
+  namespace: gobackup-operator-system
+spec:
+  type: mysql
+  config:
+    host: mysql.example.svc.cluster.local
+    port: 3306
+    socket: ""
+    database: exampledb
+    username: root
+    password: examplepassword

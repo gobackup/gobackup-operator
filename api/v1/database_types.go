@@ -23,7 +23,7 @@ import (
 // DatabaseSpec defines the desired state of Database
 type DatabaseSpec struct {
 	// Type is the database backend type
-	// +kubebuilder:validation:Enum=postgresql;redis
+	// +kubebuilder:validation:Enum=postgresql;mysql;mariadb;mongodb;redis;mssql;influxdb;etcd
 	Type string `json:"type"`
 
 	// Config contains the database configuration
@@ -69,6 +69,35 @@ type DatabaseConfig struct {
 
 	// ExcludeTables is an array of tables to exclude from backup (PostgreSQL)
 	ExcludeTables []string `json:"exclude_tables,omitempty"`
+
+	// MongoDB-specific fields
+
+	// AuthDB is the authentication database (MongoDB)
+	AuthDB *string `json:"auth_db,omitempty"`
+
+	// Oplog is used to backup oplog (MongoDB)
+	Oplog *bool `json:"oplog,omitempty"`
+
+	// MSSQL-specific fields
+
+	// TrustServerCertificate is used to trust the server certificate (MSSQL)
+	TrustServerCertificate *bool `json:"trust_server_certificate,omitempty"`
+
+	// InfluxDB-specific fields
+
+	// Token is the authentication token (InfluxDB)
+	Token *string `json:"token,omitempty"`
+
+	// Bucket is the bucket name (InfluxDB)
+	Bucket *string `json:"bucket,omitempty"`
+
+	// Organization is the organization name (InfluxDB)
+	Organization *string `json:"org,omitempty"`
+
+	// ETCD-specific fields
+
+	// Endpoints are the ETCD endpoints (ETCD)
+	Endpoints []string `json:"endpoints,omitempty"`
 
 	// Redis-specific fields
 

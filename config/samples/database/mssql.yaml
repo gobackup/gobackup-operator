@@ -1,0 +1,14 @@
+apiVersion: gobackup.io/v1
+kind: Database
+metadata:
+  name: example-mssql
+  namespace: gobackup-operator-system
+spec:
+  type: mssql
+  config:
+    host: mssql.example.svc.cluster.local
+    port: 1433
+    database: exampledb
+    username: sa
+    password: examplepassword
+    trust_server_certificate: true

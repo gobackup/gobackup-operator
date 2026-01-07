@@ -1,0 +1,15 @@
+apiVersion: gobackup.io/v1
+kind: Database
+metadata:
+  name: example-mongodb
+  namespace: gobackup-operator-system
+spec:
+  type: mongodb
+  config:
+    host: mongodb.example.svc.cluster.local
+    port: 27017
+    database: exampledb
+    username: root
+    password: examplepassword
+    auth_db: admin
+    oplog: true

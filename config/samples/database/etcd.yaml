@@ -1,0 +1,11 @@
+apiVersion: gobackup.io/v1
+kind: Database
+metadata:
+  name: example-etcd
+  namespace: gobackup-operator-system
+spec:
+  type: etcd
+  config:
+    endpoints:
+      - 192.168.1.1:2379
+      - 192.168.1.2:2379
