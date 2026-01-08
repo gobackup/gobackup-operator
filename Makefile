@@ -112,6 +112,25 @@ lint: golangci-lint ## Run golangci-lint linter & yamllint
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
 
+.PHONY: kind-start
+kind-start: ## Start a kind cluster if it doesn't exist
+	@echo "Ensuring kind cluster is running..."
+	@# Check if Docker is running
+	@if ! $(CONTAINER_TOOL) info > /dev/null 2>&1; then \
+		echo "Error: Docker daemon is not running. Please start Docker first."; \
+		exit 1; \
+	fi
+	@if ! command -v kind > /dev/null; then \
+		echo "Error: kind is not installed. Install it from https://kind.sigs.k8s.io/docs/user/quick-start/"; \
+		exit 1; \
+	fi
+	@if ! kind get clusters | grep -q gobackup-operator; then \
+		echo "Creating gobackup-operator kind cluster..."; \
+		kind create cluster --name gobackup-operator; \
+	else \
+		echo "Using existing gobackup-operator kind cluster"; \
+	fi
+
 .PHONY: kind-run
 kind-run: fmt vet kustomize ## Run the operator on a local kind cluster
 	@echo "Setting up and running the operator on a kind cluster"
