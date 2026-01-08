@@ -1,0 +1,14 @@
+apiVersion: gobackup.io/v1
+kind: Storage
+metadata:
+  name: ftp
+  namespace: gobackup-e2e-test
+spec:
+  type: ftp
+  config:
+    host: ftp.gobackup-e2e-test
+    port: 21
+    username: root
+    password: password
+    path: /
+    keep: 5

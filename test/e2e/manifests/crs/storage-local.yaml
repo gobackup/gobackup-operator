@@ -1,0 +1,10 @@
+apiVersion: gobackup.io/v1
+kind: Storage
+metadata:
+  name: local
+  namespace: gobackup-e2e-test
+spec:
+  type: local
+  config:
+    path: /tmp/backups
+    keep: 5

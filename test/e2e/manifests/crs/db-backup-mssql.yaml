@@ -1,0 +1,27 @@
+apiVersion: gobackup.io/v1
+kind: Database
+metadata:
+  name: mssql
+  namespace: gobackup-e2e-test
+spec:
+  type: mssql
+  config:
+    host: mssql.gobackup-e2e-test
+    port: 1433
+    username: sa
+    password: Password123!
+    database: master
+    trust_server_certificate: true
+---
+apiVersion: gobackup.io/v1
+kind: Backup
+metadata:
+  name: backup-mssql
+  namespace: gobackup-e2e-test
+spec:
+  databaseRefs:
+    - name: mssql
+  storageRefs:
+    - name: minio
+  compressWith:
+    type: gzip

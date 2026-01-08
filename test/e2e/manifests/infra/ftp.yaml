@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ftp
+  namespace: gobackup-e2e-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ftp
+  template:
+    metadata:
+      labels:
+        app: ftp
+    spec:
+      containers:
+      - name: ftp
+        image: delfer/alpine-ftp-server:latest
+        env:
+        - name: USERS
+          value: "root|password"
+        ports:
+        - containerPort: 21
+        - containerPort: 21000
+        - containerPort: 21001
+        - containerPort: 21002
+        - containerPort: 21003
+        - containerPort: 21004
+        - containerPort: 21005
+        - containerPort: 21006
+        - containerPort: 21007
+        - containerPort: 21008
+        - containerPort: 21009
+        - containerPort: 21010
+        livenessProbe:
+          tcpSocket:
+            port: 21
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ftp
+  namespace: gobackup-e2e-test
+spec:
+  selector:
+    app: ftp
+  ports:
+  - port: 21
+    targetPort: 21

@@ -1,0 +1,14 @@
+apiVersion: gobackup.io/v1
+kind: Storage
+metadata:
+  name: sftp
+  namespace: gobackup-e2e-test
+spec:
+  type: sftp
+  config:
+    host: sftp.gobackup-e2e-test
+    port: 22
+    username: root
+    password: password
+    path: /upload
+    keep: 5

@@ -1,0 +1,13 @@
+apiVersion: gobackup.io/v1
+kind: Storage
+metadata:
+  name: webdav
+  namespace: gobackup-e2e-test
+spec:
+  type: webdav
+  config:
+    root: http://webdav.gobackup-e2e-test
+    username: root
+    password: password
+    path: /
+    keep: 5

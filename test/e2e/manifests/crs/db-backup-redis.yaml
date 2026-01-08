@@ -1,0 +1,26 @@
+apiVersion: gobackup.io/v1
+kind: Database
+metadata:
+  name: redis
+  namespace: gobackup-e2e-test
+spec:
+  type: redis
+  config:
+    host: redis.gobackup-e2e-test
+    port: 6379
+    mode: copy
+    rdb_path: /data/dump.rdb
+    invoke_save: true
+---
+apiVersion: gobackup.io/v1
+kind: Backup
+metadata:
+  name: backup-redis
+  namespace: gobackup-e2e-test
+spec:
+  databaseRefs:
+    - name: redis
+  storageRefs:
+    - name: minio
+  compressWith:
+    type: gzip

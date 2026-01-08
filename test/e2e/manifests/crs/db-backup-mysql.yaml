@@ -1,0 +1,27 @@
+apiVersion: gobackup.io/v1
+kind: Database
+metadata:
+  name: mysql
+  namespace: gobackup-e2e-test
+spec:
+  type: mysql
+  config:
+    host: mysql.gobackup-e2e-test
+    port: 3306
+    username: root
+    password: password
+    database: testdb
+    args: "--no-tablespaces"
+---
+apiVersion: gobackup.io/v1
+kind: Backup
+metadata:
+  name: backup-mysql
+  namespace: gobackup-e2e-test
+spec:
+  databaseRefs:
+    - name: mysql
+  storageRefs:
+    - name: minio
+  compressWith:
+    type: gzip

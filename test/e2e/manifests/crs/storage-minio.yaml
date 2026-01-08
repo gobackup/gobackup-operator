@@ -1,0 +1,13 @@
+apiVersion: gobackup.io/v1
+kind: Storage
+metadata:
+  name: minio
+  namespace: gobackup-e2e-test
+spec:
+  s3:
+    bucket: test-bucket
+    endpoint: http://minio.gobackup-e2e-test:9000
+    region: us-east-1
+    accessKeyId: minioadmin
+    secretAccessKey: minioadmin
+    forcePathStyle: true

@@ -1,0 +1,22 @@
+apiVersion: gobackup.io/v1
+kind: Database
+metadata:
+  name: etcd
+  namespace: gobackup-e2e-test
+spec:
+  type: etcd
+  config:
+    endpoints: ["http://etcd.gobackup-e2e-test:2379"]
+---
+apiVersion: gobackup.io/v1
+kind: Backup
+metadata:
+  name: backup-etcd
+  namespace: gobackup-e2e-test
+spec:
+  databaseRefs:
+    - name: etcd
+  storageRefs:
+    - name: minio
+  compressWith:
+    type: gzip

@@ -46,8 +46,9 @@ spec:
                 properties:
                   args:
                     description: |-
-                      Args are additional arguments for pg_dump (PostgreSQL) or redis-cli utility (Redis)
+                      Args are additional arguments for pg_dump (PostgreSQL), mysqldump (MySQL) or redis-cli utility (Redis)
                       For Redis, e.g.: --tls --cacert redis_ca.pem
+                      For MySQL, e.g.: --skip-ssl or --ssl-ca=/path/to/ca.pem
                     type: string
                   args_redis:
                     description: 'ArgsRedis are additional options for redis-cli utility,

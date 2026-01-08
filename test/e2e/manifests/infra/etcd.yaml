@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: etcd
+  namespace: gobackup-e2e-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: etcd
+  template:
+    metadata:
+      labels:
+        app: etcd
+    spec:
+      containers:
+      - name: etcd
+        image: quay.io/coreos/etcd:v3.5.0
+        command:
+        - /usr/local/bin/etcd
+        - --name=etcd0
+        - --advertise-client-urls=http://etcd.gobackup-e2e-test:2379
+        - --listen-client-urls=http://0.0.0.0:2379
+        - --initial-advertise-peer-urls=http://etcd.gobackup-e2e-test:2380
+        - --listen-peer-urls=http://0.0.0.0:2380
+        - --initial-cluster=etcd0=http://etcd.gobackup-e2e-test:2380
+        - --initial-cluster-state=new
+        ports:
+        - containerPort: 2379
+        - containerPort: 2380
+        livenessProbe:
+          tcpSocket:
+            port: 2379
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: etcd
+  namespace: gobackup-e2e-test
+spec:
+  selector:
+    app: etcd
+  ports:
+  - name: client
+    port: 2379
+    targetPort: 2379
+  - name: peer
+    port: 2380
+    targetPort: 2380

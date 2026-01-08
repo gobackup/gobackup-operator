@@ -1,0 +1,26 @@
+apiVersion: gobackup.io/v1
+kind: Database
+metadata:
+  name: mariadb
+  namespace: gobackup-e2e-test
+spec:
+  type: mariadb
+  config:
+    host: mariadb.gobackup-e2e-test
+    port: 3306
+    username: root
+    password: password
+    database: testdb
+---
+apiVersion: gobackup.io/v1
+kind: Backup
+metadata:
+  name: backup-mariadb
+  namespace: gobackup-e2e-test
+spec:
+  databaseRefs:
+    - name: mariadb
+  storageRefs:
+    - name: minio
+  compressWith:
+    type: gzip

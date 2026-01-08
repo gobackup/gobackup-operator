@@ -1,0 +1,26 @@
+apiVersion: gobackup.io/v1
+kind: Database
+metadata:
+  name: postgres
+  namespace: gobackup-e2e-test
+spec:
+  type: postgresql
+  config:
+    host: postgres.gobackup-e2e-test
+    port: 5432
+    username: postgres
+    password: password
+    database: testdb
+---
+apiVersion: gobackup.io/v1
+kind: Backup
+metadata:
+  name: backup-postgres
+  namespace: gobackup-e2e-test
+spec:
+  databaseRefs:
+    - name: postgres
+  storageRefs:
+    - name: minio
+  compressWith:
+    type: gzip

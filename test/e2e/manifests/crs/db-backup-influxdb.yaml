@@ -1,0 +1,26 @@
+apiVersion: gobackup.io/v1
+kind: Database
+metadata:
+  name: influxdb
+  namespace: gobackup-e2e-test
+spec:
+  type: influxdb
+  config:
+    host: influxdb.gobackup-e2e-test
+    port: 8086
+    token: my-super-secret-auth-token
+    org: my-org
+    bucket: my-bucket
+---
+apiVersion: gobackup.io/v1
+kind: Backup
+metadata:
+  name: backup-influxdb
+  namespace: gobackup-e2e-test
+spec:
+  databaseRefs:
+    - name: influxdb
+  storageRefs:
+    - name: minio
+  compressWith:
+    type: gzip

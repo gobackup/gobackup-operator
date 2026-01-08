@@ -1,0 +1,27 @@
+apiVersion: gobackup.io/v1
+kind: Database
+metadata:
+  name: mongodb
+  namespace: gobackup-e2e-test
+spec:
+  type: mongodb
+  config:
+    host: mongodb.gobackup-e2e-test
+    port: 27017
+    username: root
+    password: "password"
+    auth_db: admin
+    oplog: true
+---
+apiVersion: gobackup.io/v1
+kind: Backup
+metadata:
+  name: backup-mongodb
+  namespace: gobackup-e2e-test
+spec:
+  databaseRefs:
+    - name: mongodb
+  storageRefs:
+    - name: minio
+  compressWith:
+    type: gzip
