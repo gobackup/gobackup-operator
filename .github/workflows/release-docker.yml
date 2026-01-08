@@ -16,14 +16,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get chart appVersion
-        id: get_app_version
-        run: |
-          # Extract appVersion from Chart.yaml
-          APP_VERSION=$(grep -E '^appVersion:' charts/gobackup-operator/Chart.yaml | sed -E 's/^appVersion:[[:space:]]*["'\'']?([^"'\'']+)["'\'']?/\1/' | tr -d '[:space:]')
-          echo "appVersion=$APP_VERSION" >> $GITHUB_OUTPUT
-          echo "Using chart appVersion: $APP_VERSION"
-
       - name: Get version tag
         id: get_version
         run: |
@@ -41,11 +33,8 @@ jobs:
       - name: Prepare tags
         id: prepare_tags
         run: |
-          APP_VERSION="${{ steps.get_app_version.outputs.appVersion }}"
           TAGS="ghcr.io/${{ github.repository_owner }}/gobackup-operator:latest
-          ghcr.io/${{ github.repository_owner }}/gobackup-operator:${APP_VERSION}
-          payamqorbanpour/gobackup-operator:latest
-          payamqorbanpour/gobackup-operator:${APP_VERSION}"
+          payamqorbanpour/gobackup-operator:latest"
           
           if [ "${{ steps.get_version.outputs.has_version }}" == "true" ]; then
             TAGS="$TAGS
