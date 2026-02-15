@@ -1,7 +1,7 @@
 apiVersion: gobackup.io/v1
 kind: Database
 metadata:
-  name: postgres
+  name: postgresql
   namespace: gobackup-e2e-test
 spec:
   type: postgresql
@@ -15,11 +15,11 @@ spec:
 apiVersion: gobackup.io/v1
 kind: Backup
 metadata:
-  name: backup-postgres
+  name: backup-postgresql
   namespace: gobackup-e2e-test
 spec:
   databaseRefs:
-    - name: postgres
+    - name: postgresql
   storageRefs:
     - name: minio
   compressWith:
