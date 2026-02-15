@@ -4,10 +4,11 @@ metadata:
   name: minio
   namespace: gobackup-e2e-test
 spec:
-  s3:
+  type: minio
+  config:
     bucket: test-bucket
     endpoint: http://minio.gobackup-e2e-test:9000
     region: us-east-1
-    accessKeyId: minioadmin
-    secretAccessKey: minioadmin
-    forcePathStyle: true
+    access_key_id: minioadmin
+    secret_access_key: minioadmin
+    force_path_style: true
