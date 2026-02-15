@@ -19,6 +19,8 @@ metadata:
   name: backup-mysql
   namespace: gobackup-e2e-test
 spec:
+  schedule:
+    cron: "*/5 * * * *"
   databaseRefs:
     - name: mysql
   storageRefs:

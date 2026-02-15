@@ -151,10 +151,26 @@ test_database() {
     log_info "Applying CRs for $db_type..."
     kubectl apply -f "$MANIFESTS_DIR/crs/db-backup-${db_type}.yaml" -n "$TEST_NS"
     
+    # Wait a bit for controller to process
+    sleep 5
+    
     # 3. Verify Secret creation
     log_info "Verifying Secret creation..."
     timeout 60 bash -c "until kubectl get secret backup-${db_type} -n $TEST_NS; do sleep 2; done" || {
         log_error "Secret backup-${db_type} was not created"
+        log_info "Dumping debug information..."
+        log_info "=== Backup Resource ==="
+        kubectl get backup backup-${db_type} -n "$TEST_NS" -o yaml
+        log_info "=== Backup Status ==="
+        kubectl describe backup backup-${db_type} -n "$TEST_NS"
+        log_info "=== Database Resource ==="
+        kubectl get database ${db_type} -n "$TEST_NS" -o yaml
+        log_info "=== Storage Resource ==="
+        kubectl get storage minio -n "$TEST_NS" -o yaml
+        log_info "=== Controller Logs ==="
+        kubectl logs -n "$OPERATOR_NS" -l control-plane=controller-manager -c manager --tail=100
+        log_info "=== Events ==="
+        kubectl get events -n "$TEST_NS" --sort-by='.lastTimestamp'
         exit 1
     }
     
