@@ -112,6 +112,21 @@ lint: golangci-lint ## Run golangci-lint linter & yamllint
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
 
+.PHONY: ai-review
+ai-review: ## Run AI code review on current changes (requires ARVAN_API_KEY)
+	@echo "Running AI code review..."
+	@./scripts/local-ai-review.sh
+
+.PHONY: ai-review-staged
+ai-review-staged: ## Run AI code review on staged changes only
+	@echo "Running AI code review on staged changes..."
+	@./scripts/local-ai-review.sh --staged
+
+.PHONY: ai-review-unstaged
+ai-review-unstaged: ## Run AI code review on unstaged changes only
+	@echo "Running AI code review on unstaged changes..."
+	@./scripts/local-ai-review.sh --unstaged
+
 .PHONY: kind-start
 kind-start: ## Start a kind cluster if it doesn't exist
 	@echo "Ensuring kind cluster is running..."
