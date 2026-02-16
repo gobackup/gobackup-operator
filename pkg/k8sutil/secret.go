@@ -43,8 +43,14 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, names
 		// Resource name is always "databases" (plural of Database kind), not type-specific
 		resource := "databases"
 
+		// Default to gobackup.io if APIGroup is not specified
+		apiGroup := database.APIGroup
+		if apiGroup == "" {
+			apiGroup = "gobackup.io"
+		}
+
 		// Fetch the database CRD
-		databaseCRD, err := k.GetCRD(ctx, database.APIGroup, "v1", resource, namespace, database.Name)
+		databaseCRD, err := k.GetCRD(ctx, apiGroup, "v1", resource, namespace, database.Name)
 		if err != nil {
 			return fmt.Errorf("failed to get %s database: %w", dbType, err)
 		}
@@ -95,8 +101,14 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, names
 		// Resource name is always "storages" (plural of Storage kind), not type-specific
 		resource := "storages"
 
+		// Default to gobackup.io if APIGroup is not specified
+		apiGroup := storage.APIGroup
+		if apiGroup == "" {
+			apiGroup = "gobackup.io"
+		}
+
 		// Fetch the storage CRD
-		storageCRD, err := k.GetCRD(ctx, storage.APIGroup, "v1", resource, namespace, storage.Name)
+		storageCRD, err := k.GetCRD(ctx, apiGroup, "v1", resource, namespace, storage.Name)
 		if err != nil {
 			return fmt.Errorf("failed to get %s storage: %w", storageType, err)
 		}

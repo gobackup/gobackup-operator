@@ -151,27 +151,50 @@ test_database() {
     log_info "Applying CRs for $db_type..."
     kubectl apply -f "$MANIFESTS_DIR/crs/db-backup-${db_type}.yaml" -n "$TEST_NS"
     
+    # Wait a bit for controller to process
+    sleep 5
+    
     # 3. Verify Secret creation
     log_info "Verifying Secret creation..."
     timeout 60 bash -c "until kubectl get secret backup-${db_type} -n $TEST_NS; do sleep 2; done" || {
         log_error "Secret backup-${db_type} was not created"
+        log_info "Dumping debug information..."
+        log_info "=== Backup Resource ==="
+        kubectl get backup backup-${db_type} -n "$TEST_NS" -o yaml
+        log_info "=== Backup Status ==="
+        kubectl describe backup backup-${db_type} -n "$TEST_NS"
+        log_info "=== Database Resource ==="
+        kubectl get database ${db_type} -n "$TEST_NS" -o yaml
+        log_info "=== Storage Resource ==="
+        kubectl get storage minio -n "$TEST_NS" -o yaml
+        log_info "=== Controller Logs ==="
+        kubectl logs -n "$OPERATOR_NS" -l control-plane=controller-manager -c manager --tail=100
+        log_info "=== Events ==="
+        kubectl get events -n "$TEST_NS" --sort-by='.lastTimestamp'
         exit 1
     }
     
-    # 4. Verify Job creation
-    log_info "Verifying Job creation..."
-    timeout 60 bash -c "until kubectl get job backup-${db_type} -n $TEST_NS; do sleep 2; done" || {
-        log_error "Job backup-${db_type} was not created"
+    # 4. Verify CronJob creation (since schedule is defined)
+    log_info "Verifying CronJob creation..."
+    timeout 60 bash -c "until kubectl get cronjob backup-${db_type} -n $TEST_NS; do sleep 2; done" || {
+        log_error "CronJob backup-${db_type} was not created"
         kubectl describe backup backup-${db_type} -n "$TEST_NS"
         exit 1
     }
     
-    # 5. Verify Job Image
-    JOB_IMAGE=$(kubectl get job backup-${db_type} -n "$TEST_NS" -o jsonpath='{.spec.template.spec.containers[0].image}')
-    if [[ "$JOB_IMAGE" != *"gobackup"* ]]; then
-        log_error "Job image is incorrect: $JOB_IMAGE"
+    # 5. Verify CronJob Image and Schedule
+    CRONJOB_IMAGE=$(kubectl get cronjob backup-${db_type} -n "$TEST_NS" -o jsonpath='{.spec.jobTemplate.spec.template.spec.containers[0].image}')
+    if [[ "$CRONJOB_IMAGE" != *"gobackup"* ]]; then
+        log_error "CronJob image is incorrect: $CRONJOB_IMAGE"
         exit 1
     fi
+    
+    CRONJOB_SCHEDULE=$(kubectl get cronjob backup-${db_type} -n "$TEST_NS" -o jsonpath='{.spec.schedule}')
+    if [[ -z "$CRONJOB_SCHEDULE" ]]; then
+        log_error "CronJob schedule is not set"
+        exit 1
+    fi
+    log_info "CronJob schedule: $CRONJOB_SCHEDULE"
 
     log_info "$db_type test passed ✓"
 }

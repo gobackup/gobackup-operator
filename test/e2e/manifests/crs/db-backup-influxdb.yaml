@@ -18,6 +18,8 @@ metadata:
   name: backup-influxdb
   namespace: gobackup-e2e-test
 spec:
+  schedule:
+    cron: "*/5 * * * *"
   databaseRefs:
     - name: influxdb
   storageRefs:
