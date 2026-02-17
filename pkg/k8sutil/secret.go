@@ -32,8 +32,16 @@ type Model struct {
 	Encode   string `yaml:"encode_with,omitempty"`
 }
 
-// CreateSecret creates a secret containing the gobackup.yml configuration file
-func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, namespace, name string) error {
+// CreateSecret creates or updates the gobackup.yml Secret owned by the Backup resource
+func (k *K8s) CreateSecret(ctx context.Context, backup *backupv1.Backup) error {
+	if backup == nil {
+		return fmt.Errorf("backup cannot be nil")
+	}
+
+	model := backup.Spec
+	namespace := backup.Namespace
+	name := backup.Name
+
 	databases := make(map[string]interface{})
 	storages := make(map[string]interface{})
 
@@ -214,6 +222,11 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, names
 		},
 	}
 
+	ownerRef := metav1.NewControllerRef(backup, backupv1.GroupVersion.WithKind("Backup"))
+	if ownerRef != nil {
+		secret.OwnerReferences = append(secret.OwnerReferences, *ownerRef)
+	}
+
 	// Check if the secret already exists
 	found, err := k.Clientset.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
@@ -228,14 +241,27 @@ func (k *K8s) CreateSecret(ctx context.Context, model backupv1.BackupSpec, names
 		return fmt.Errorf("failed to get existing secret: %w", err)
 	}
 
-	// Update the existing secret
-	secret.ResourceVersion = found.ResourceVersion
-	_, err = k.Clientset.CoreV1().Secrets(namespace).Update(ctx, secret, metav1.UpdateOptions{})
+	existing := found.DeepCopy()
+	existing.StringData = secret.StringData
+	if ownerRef != nil {
+		existing.OwnerReferences = ensureOwnerReference(existing.OwnerReferences, *ownerRef)
+	}
+
+	_, err = k.Clientset.CoreV1().Secrets(namespace).Update(ctx, existing, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update secret: %w", err)
 	}
 
 	return nil
+}
+
+func ensureOwnerReference(refs []metav1.OwnerReference, owner metav1.OwnerReference) []metav1.OwnerReference {
+	for _, ref := range refs {
+		if ref.UID == owner.UID {
+			return refs
+		}
+	}
+	return append(refs, owner)
 }
 
 // resolveSecretReferences resolves secret references in a config map.

@@ -315,6 +315,41 @@ func (in *DatabaseConfig) DeepCopyInto(out *DatabaseConfig) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.AuthDB != nil {
+		in, out := &in.AuthDB, &out.AuthDB
+		*out = new(string)
+		**out = **in
+	}
+	if in.Oplog != nil {
+		in, out := &in.Oplog, &out.Oplog
+		*out = new(bool)
+		**out = **in
+	}
+	if in.TrustServerCertificate != nil {
+		in, out := &in.TrustServerCertificate, &out.TrustServerCertificate
+		*out = new(bool)
+		**out = **in
+	}
+	if in.Token != nil {
+		in, out := &in.Token, &out.Token
+		*out = new(string)
+		**out = **in
+	}
+	if in.Bucket != nil {
+		in, out := &in.Bucket, &out.Bucket
+		*out = new(string)
+		**out = **in
+	}
+	if in.Organization != nil {
+		in, out := &in.Organization, &out.Organization
+		*out = new(string)
+		**out = **in
+	}
+	if in.Endpoints != nil {
+		in, out := &in.Endpoints, &out.Endpoints
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.Mode != nil {
 		in, out := &in.Mode, &out.Mode
 		*out = new(string)
