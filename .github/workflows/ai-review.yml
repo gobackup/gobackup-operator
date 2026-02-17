@@ -94,16 +94,19 @@ jobs:
           
           # Extract the review content
           REVIEW=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // ""')
-          HAS_ISSUES=true
+          HAS_ISSUES=false
 
           if echo "$RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
             ERROR_MSG=$(echo "$RESPONSE" | jq -r '.error.message // "Unknown error"')
             REVIEW="AI review failed: $ERROR_MSG"
+            HAS_ISSUES=false
           else
             TRIMMED=$(echo "$REVIEW" | tr -d '[:space:]')
             if [ -z "$TRIMMED" ] || [ "$TRIMMED" = "NO_ISSUES" ]; then
               HAS_ISSUES=false
               REVIEW="NO_ISSUES"
+            else
+              HAS_ISSUES=true
             fi
           fi
 
