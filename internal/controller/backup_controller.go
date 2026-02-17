@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -101,13 +102,41 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Route to appropriate handler based on operation type
+	var result ctrl.Result
 	if isCreate {
 		logger.Info("Handling Backup CREATE operation", "namespace", backup.Namespace, "name", backup.Name)
-		return r.handleBackupCreate(ctx, backup)
+		var err error
+		result, err = r.handleBackupCreate(ctx, backup)
+		if err != nil {
+			return result, err
+		}
 	} else {
 		logger.Info("Handling Backup UPDATE operation", "namespace", backup.Namespace, "name", backup.Name)
-		return r.handleBackupUpdate(ctx, backup, cronJob)
+		var err error
+		result, err = r.handleBackupUpdate(ctx, backup, cronJob)
+		if err != nil {
+			return result, err
+		}
 	}
+
+	if err := r.reconcileJobStatus(ctx, backup); err != nil {
+		logger.Error(err, "Failed to reconcile job status")
+		return ctrl.Result{}, err
+	}
+
+	shouldRequeue := false
+	if backup.Status.LastRun != nil {
+		switch backup.Status.LastRun.Phase {
+		case "Running", "Pending":
+			shouldRequeue = true
+		}
+	}
+
+	if shouldRequeue && !result.Requeue && result.RequeueAfter == 0 {
+		result.RequeueAfter = 30 * time.Second
+	}
+
+	return result, nil
 }
 
 // handleBackupCreate handles the creation of a new Backup resource.
@@ -135,7 +164,7 @@ func (r *BackupReconciler) handleBackupCreate(ctx context.Context, backup *backu
 	}
 
 	// Create the secret that will be used by the CronJob
-	if err := r.K8s.CreateSecret(ctx, backup.Spec, backup.Namespace, backup.Name); err != nil {
+	if err := r.K8s.CreateSecret(ctx, backup); err != nil {
 		logger.Error(err, "Failed to create secret for scheduled backup")
 		return ctrl.Result{}, err
 	}
@@ -176,7 +205,7 @@ func (r *BackupReconciler) handleBackupUpdate(ctx context.Context, backup *backu
 	}
 
 	// Update the secret that will be used by the CronJob
-	if err := r.K8s.CreateSecret(ctx, backup.Spec, backup.Namespace, backup.Name); err != nil {
+	if err := r.K8s.CreateSecret(ctx, backup); err != nil {
 		logger.Error(err, "Failed to update secret for scheduled backup")
 		return ctrl.Result{}, err
 	}
