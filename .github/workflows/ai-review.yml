@@ -206,12 +206,21 @@ jobs:
               return;
             }
 
+            let reviewBody = summary ? summary.trim() : '';
+            if (formattedComments.length) {
+              reviewBody = reviewBody ? `${reviewBody}\n\n@copilot please review these suggestions.` : '@copilot please review these suggestions.';
+            }
+
+            if (!reviewBody) {
+              reviewBody = '@copilot please review this change.';
+            }
+
             await github.rest.pulls.createReview({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: Number(process.env.PR_NUMBER),
               event: 'COMMENT',
-              body: summary,
+              body: reviewBody,
               comments: formattedComments
             });
         env:
