@@ -66,7 +66,22 @@ jobs:
           DIFF_CONTENT=$(cat pr_diff.txt | jq -Rs .)
           
           # Prepare the review prompt
-          PROMPT="Act as a senior Go and Kubernetes engineer. Review the diff and point out only real bugs, security concerns, or risky changes. Keep the review concise and specific, referencing files or resources when it helps. If there is nothing actionable to flag, respond with NO_ISSUES and nothing else.
+          PROMPT="Act as a senior Go and Kubernetes engineer. Review the diff and flag only true bugs, security concerns, or risky changes. Return ONLY valid JSON matching this schema:
+          {
+            \"summary\": string | null,
+            \"comments\": [
+              {
+                \"path\": \"relative/file.go\",
+                \"line\": number,  # line number in the PR head
+                \"side\": \"RIGHT\" | \"LEFT\" (default RIGHT),
+                \"body\": \"Explain the issue and impact.\",
+                \"suggestion\": \"Optional replacement code without fences.\"
+              }
+            ]
+          }
+          - Use comments array only for actionable findings. Leave it empty when there are no issues.
+          - Omit suggestion when not needed. When present, include only the replacement code lines.
+          - Set summary to a short overview or null. If there are no issues, respond with {\"summary\":\"NO_ISSUES\",\"comments\":[]}.
           
           Code diff:
           $DIFF_CONTENT"
@@ -99,19 +114,34 @@ jobs:
           if echo "$RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
             ERROR_MSG=$(echo "$RESPONSE" | jq -r '.error.message // "Unknown error"')
             REVIEW="AI review failed: $ERROR_MSG"
-            HAS_ISSUES=false
+            echo "$REVIEW" >&2
           else
-            TRIMMED=$(echo "$REVIEW" | tr -d '[:space:]')
-            if [ -z "$TRIMMED" ] || [ "$TRIMMED" = "NO_ISSUES" ]; then
-              HAS_ISSUES=false
-              REVIEW="NO_ISSUES"
+            echo "$REVIEW" > ai_raw_review.txt
+            if ! echo "$REVIEW" | jq '.' > review.json 2>review_parse_error.log; then
+              echo "AI review response was not valid JSON, skipping inline comments." >&2
+              cat review_parse_error.log >&2
             else
-              HAS_ISSUES=true
+              COMMENTS_COUNT=$(jq '.comments | length' review.json 2>/dev/null || echo 0)
+              SUMMARY=$(jq -r '.summary // ""' review.json)
+              if [ "$COMMENTS_COUNT" -gt 0 ]; then
+                HAS_ISSUES=true
+              elif [ "$SUMMARY" = "NO_ISSUES" ]; then
+                :
+              else
+                SUMMARY=$(echo "$SUMMARY" | tr -d '[:space:]')
+                if [ -z "$SUMMARY" ]; then
+                  jq '.summary = "NO_ISSUES"' review.json > review.tmp && mv review.tmp review.json
+                fi
+              fi
             fi
           fi
 
-          # Save review to file
-          echo "$REVIEW" > review.txt
+          # Persist summary for diagnostics
+          if [ -f review.json ]; then
+            jq -r '.summary // "NO_ISSUES"' review.json 2>/dev/null > summary.txt || echo "$REVIEW" > summary.txt
+          else
+            echo "$REVIEW" > summary.txt
+          fi
           echo "has_issues=$HAS_ISSUES" >> "$GITHUB_OUTPUT"
       
       - name: Post AI Review Comment
@@ -121,37 +151,68 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const reviewContent = fs.readFileSync('review.txt', 'utf8').trim();
-            const marker = '<!-- ai-review -->';
-            const header = '### AI Code Review (automated)\n\n';
-            const comment = `${header}${reviewContent}\n\n${marker}`;
+            const core = require('@actions/core');
 
-            // Check if there's already an AI review comment
-            const { data: comments } = await github.rest.issues.listComments({
+            if (!fs.existsSync('review.json')) {
+              core.info('No structured review to post.');
+              return;
+            }
+
+            const data = JSON.parse(fs.readFileSync('review.json', 'utf8'));
+            const summary = data.summary && data.summary !== 'NO_ISSUES' ? data.summary : '';
+            const comments = Array.isArray(data.comments) ? data.comments : [];
+
+            const formattedComments = comments
+              .map((item, index) => {
+                if (!item || !item.path || item.path.trim() === '' || item.line === undefined || item.body === undefined) {
+                  core.warning(`Skipping malformed comment at index ${index}`);
+                  return null;
+                }
+
+                const lineNumber = Number(item.line);
+                if (!Number.isInteger(lineNumber) || lineNumber <= 0) {
+                  core.warning(`Invalid line number for comment at index ${index}`);
+                  return null;
+                }
+
+                const body = String(item.body || '').trim();
+                if (!body) {
+                  core.warning(`Empty body for comment at index ${index}`);
+                  return null;
+                }
+
+                const parts = [body];
+
+                if (item.suggestion) {
+                  const suggestion = String(item.suggestion).trimEnd();
+                  if (suggestion) {
+                    parts.push('```suggestion');
+                    parts.push(suggestion);
+                    parts.push('```');
+                  }
+                }
+
+                return {
+                  path: item.path,
+                  line: lineNumber,
+                  side: item.side === 'LEFT' ? 'LEFT' : 'RIGHT',
+                  body: parts.join('\n\n')
+                };
+              })
+              .filter(Boolean);
+
+            if (!formattedComments.length && !summary) {
+              core.info('AI review found no actionable comments.');
+              return;
+            }
+
+            await github.rest.pulls.createReview({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: ${{ inputs.pr_number }},
+              pull_number: Number(process.env.PR_NUMBER),
+              event: 'COMMENT',
+              body: summary,
+              comments: formattedComments
             });
-            
-            const botComment = comments.find(comment => 
-              comment.user.type === 'Bot' && 
-              comment.body.includes(marker)
-            );
-            
-            if (botComment) {
-              // Update existing comment
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: botComment.id,
-                body: comment
-              });
-            } else {
-              // Create new comment
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: ${{ inputs.pr_number }},
-                body: comment
-              });
-            }
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
