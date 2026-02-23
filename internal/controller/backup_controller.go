@@ -163,6 +163,12 @@ func (r *BackupReconciler) handleBackupCreate(ctx context.Context, backup *backu
 		return ctrl.Result{}, err
 	}
 
+	// Validate the database CRD configurations
+	if err := r.validateDatabaseRefs(ctx, backup); err != nil {
+		logger.Error(err, "Invalid database configuration during create")
+		return ctrl.Result{}, err
+	}
+
 	// Create the secret that will be used by the CronJob
 	if err := r.K8s.CreateSecret(ctx, backup); err != nil {
 		logger.Error(err, "Failed to create secret for scheduled backup")
@@ -201,6 +207,12 @@ func (r *BackupReconciler) handleBackupUpdate(ctx context.Context, backup *backu
 	// Validate the backup spec
 	if err := r.validateBackupSpec(backup); err != nil {
 		logger.Error(err, "Invalid backup specification during update")
+		return ctrl.Result{}, err
+	}
+
+	// Validate the database CRD configurations
+	if err := r.validateDatabaseRefs(ctx, backup); err != nil {
+		logger.Error(err, "Invalid database configuration during update")
 		return ctrl.Result{}, err
 	}
 
