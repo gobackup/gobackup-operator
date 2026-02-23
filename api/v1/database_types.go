@@ -21,6 +21,21 @@ import (
 )
 
 // DatabaseSpec defines the desired state of Database
+// +kubebuilder:validation:XValidation:rule="self.type == 'redis' || !has(self.config.mode)",message="config.mode is only valid when spec.type is redis"
+// +kubebuilder:validation:XValidation:rule="self.type == 'redis' || !has(self.config.sync)",message="config.sync is only valid when spec.type is redis"
+// +kubebuilder:validation:XValidation:rule="self.type == 'redis' || !has(self.config.copy)",message="config.copy is only valid when spec.type is redis"
+// +kubebuilder:validation:XValidation:rule="self.type == 'redis' || !has(self.config.invoke_save)",message="config.invoke_save is only valid when spec.type is redis"
+// +kubebuilder:validation:XValidation:rule="self.type == 'redis' || !has(self.config.rdb_path)",message="config.rdb_path is only valid when spec.type is redis"
+// +kubebuilder:validation:XValidation:rule="self.type == 'redis' || !has(self.config.args_redis)",message="config.args_redis is only valid when spec.type is redis"
+// +kubebuilder:validation:XValidation:rule="self.type == 'mongodb' || !has(self.config.auth_db)",message="config.auth_db is only valid when spec.type is mongodb"
+// +kubebuilder:validation:XValidation:rule="self.type == 'mongodb' || !has(self.config.oplog)",message="config.oplog is only valid when spec.type is mongodb"
+// +kubebuilder:validation:XValidation:rule="self.type == 'mssql' || !has(self.config.trust_server_certificate)",message="config.trust_server_certificate is only valid when spec.type is mssql"
+// +kubebuilder:validation:XValidation:rule="self.type == 'influxdb' || !has(self.config.token)",message="config.token is only valid when spec.type is influxdb"
+// +kubebuilder:validation:XValidation:rule="self.type == 'influxdb' || !has(self.config.bucket)",message="config.bucket is only valid when spec.type is influxdb"
+// +kubebuilder:validation:XValidation:rule="self.type == 'influxdb' || !has(self.config.org)",message="config.org is only valid when spec.type is influxdb"
+// +kubebuilder:validation:XValidation:rule="self.type == 'etcd' || !has(self.config.endpoints)",message="config.endpoints is only valid when spec.type is etcd"
+// +kubebuilder:validation:XValidation:rule="self.type in ['postgresql', 'mysql', 'mariadb', 'mssql'] || !has(self.config.tables)",message="config.tables is only valid for SQL databases (postgresql, mysql, mariadb, mssql)"
+// +kubebuilder:validation:XValidation:rule="self.type in ['postgresql', 'mysql', 'mariadb', 'mssql'] || !has(self.config.exclude_tables)",message="config.exclude_tables is only valid for SQL databases (postgresql, mysql, mariadb, mssql)"
 type DatabaseSpec struct {
 	// Type is the database backend type
 	// +kubebuilder:validation:Enum=postgresql;mysql;mariadb;mongodb;redis;mssql;influxdb;etcd

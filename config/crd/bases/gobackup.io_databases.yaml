@@ -156,6 +156,40 @@ spec:
             - config
             - type
             type: object
+            x-kubernetes-validations:
+            - message: config.mode is only valid when spec.type is redis
+              rule: self.type == 'redis' || !has(self.config.mode)
+            - message: config.sync is only valid when spec.type is redis
+              rule: self.type == 'redis' || !has(self.config.sync)
+            - message: config.copy is only valid when spec.type is redis
+              rule: self.type == 'redis' || !has(self.config.copy)
+            - message: config.invoke_save is only valid when spec.type is redis
+              rule: self.type == 'redis' || !has(self.config.invoke_save)
+            - message: config.rdb_path is only valid when spec.type is redis
+              rule: self.type == 'redis' || !has(self.config.rdb_path)
+            - message: config.args_redis is only valid when spec.type is redis
+              rule: self.type == 'redis' || !has(self.config.args_redis)
+            - message: config.auth_db is only valid when spec.type is mongodb
+              rule: self.type == 'mongodb' || !has(self.config.auth_db)
+            - message: config.oplog is only valid when spec.type is mongodb
+              rule: self.type == 'mongodb' || !has(self.config.oplog)
+            - message: config.trust_server_certificate is only valid when spec.type
+                is mssql
+              rule: self.type == 'mssql' || !has(self.config.trust_server_certificate)
+            - message: config.token is only valid when spec.type is influxdb
+              rule: self.type == 'influxdb' || !has(self.config.token)
+            - message: config.bucket is only valid when spec.type is influxdb
+              rule: self.type == 'influxdb' || !has(self.config.bucket)
+            - message: config.org is only valid when spec.type is influxdb
+              rule: self.type == 'influxdb' || !has(self.config.org)
+            - message: config.endpoints is only valid when spec.type is etcd
+              rule: self.type == 'etcd' || !has(self.config.endpoints)
+            - message: config.tables is only valid for SQL databases (postgresql,
+                mysql, mariadb, mssql)
+              rule: self.type in ['postgresql', 'mysql', 'mariadb', 'mssql'] || !has(self.config.tables)
+            - message: config.exclude_tables is only valid for SQL databases (postgresql,
+                mysql, mariadb, mssql)
+              rule: self.type in ['postgresql', 'mysql', 'mariadb', 'mssql'] || !has(self.config.exclude_tables)
           status:
             description: DatabaseStatus defines the observed state of Database
             type: object
