@@ -47,7 +47,6 @@ func (k *K8s) CreateSecret(ctx context.Context, backup *backupv1.Backup) error {
 
 	// Process database references
 	for _, database := range model.DatabaseRefs {
-		dbType := strings.ToLower(database.Type)
 		// Resource name is always "databases" (plural of Database kind), not type-specific
 		resource := "databases"
 
@@ -60,7 +59,7 @@ func (k *K8s) CreateSecret(ctx context.Context, backup *backupv1.Backup) error {
 		// Fetch the database CRD
 		databaseCRD, err := k.GetCRD(ctx, apiGroup, "v1", resource, namespace, database.Name)
 		if err != nil {
-			return fmt.Errorf("failed to get %s database: %w", dbType, err)
+			return fmt.Errorf("failed to get database %s: %w", database.Name, err)
 		}
 
 		// Extract the database spec
@@ -68,6 +67,12 @@ func (k *K8s) CreateSecret(ctx context.Context, backup *backupv1.Backup) error {
 		if !ok {
 			return fmt.Errorf("database spec for %s is not a valid map", database.Name)
 		}
+
+		rawType, ok := specMap["type"].(string)
+		if !ok || strings.TrimSpace(rawType) == "" {
+			return fmt.Errorf("database type for %s is missing or invalid", database.Name)
+		}
+		dbType := strings.ToLower(strings.TrimSpace(rawType))
 
 		// Extract config if it exists
 		configMap, ok := specMap["config"].(map[string]interface{})
