@@ -33,3 +33,7 @@ Dockerfile.cross
 # Local Helm overrides (contains private config/secrets)
 charts/gobackup-operator/values.local.yaml
 charts/gobackup-operator/values.*.local.yaml
+
+# Claude
+.claude
+.serena
