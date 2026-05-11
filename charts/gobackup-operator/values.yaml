@@ -9,6 +9,12 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
+# Image used for the per-Backup CronJob/Job pods spawned by the operator.
+# Pin a digest (e.g. ghcr.io/gobackup/gobackup@sha256:...) to avoid stale
+# `:latest` cached on nodes when ImagePullPolicy is IfNotPresent.
+backupJob:
+  image: ghcr.io/gobackup/gobackup:latest
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""

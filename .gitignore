@@ -28,4 +28,12 @@ Dockerfile.cross
 *~
 
 # Resource examples for preparing test environment on local machine
-example.local
+*.local
+
+# Local Helm overrides (contains private config/secrets)
+charts/gobackup-operator/values.local.yaml
+charts/gobackup-operator/values.*.local.yaml
+
+# Claude
+.claude
+.serena

@@ -38,6 +38,9 @@ spec:
         {{- if .Values.leaderElection.enabled }}
         - --leader-elect
         {{- end }}
+        env:
+        - name: BACKUP_JOB_IMAGE
+          value: {{ .Values.backupJob.image | quote }}
         securityContext:
           {{- toYaml .Values.securityContext | nindent 10 }}
         livenessProbe:

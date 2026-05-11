@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"time"
 
@@ -396,7 +397,10 @@ func stringSlicesEqual(a, b []string) bool {
 
 // buildJobTemplate creates a JobTemplateSpec from the Backup spec.
 func (r *BackupReconciler) buildJobTemplate(backup *backupv1.Backup) batchv1.JobTemplateSpec {
-	imageName := "huacnlee/gobackup:latest"
+	imageName := os.Getenv("BACKUP_JOB_IMAGE")
+	if imageName == "" {
+		imageName = "huacnlee/gobackup:latest"
+	}
 	command := []string{"/bin/sh", "-c", "gobackup perform"}
 	configMountPath := "/root/.gobackup"
 
@@ -436,8 +440,9 @@ func (r *BackupReconciler) buildJobTemplate(backup *backupv1.Backup) batchv1.Job
 							VolumeMounts:    volumeMounts,
 						},
 					},
-					Volumes:       volumes,
-					RestartPolicy: corev1.RestartPolicyNever,
+					Volumes:          volumes,
+					RestartPolicy:    corev1.RestartPolicyNever,
+					ImagePullSecrets: []corev1.LocalObjectReference{{Name: "regcred"}},
 				},
 			},
 		},
