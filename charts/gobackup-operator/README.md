@@ -9,22 +9,21 @@ A Helm chart for deploying the GoBackup Operator on Kubernetes.
 
 ## Installation
 
-### Add the repository (if published to a Helm repository)
-
-```bash
-helm repo add gobackup https://gobackup.github.io/gobackup-operator
-helm repo update
-```
+The chart is published as an [OCI artifact](https://helm.sh/docs/topics/registries/) on GitHub Container Registry: `oci://ghcr.io/gobackup/gobackup-operator`. Helm 3.8+ can install directly from OCI — no `helm repo add` step.
 
 ### Install the chart
 
 ```bash
-helm install gobackup-operator gobackup/gobackup-operator \
+helm install gobackup-operator \
+  oci://ghcr.io/gobackup/gobackup-operator \
+  --version 0.1.1-alpha \
   --namespace gobackup-operator-system \
   --create-namespace
 ```
 
-Or install from local chart:
+Replace `0.1.1-alpha` with any tag from the [GitHub Releases](https://github.com/gobackup/gobackup-operator/releases) page.
+
+Or install from a local checkout (useful when developing the chart):
 
 ```bash
 helm install gobackup-operator ./charts/gobackup-operator \
@@ -35,7 +34,9 @@ helm install gobackup-operator ./charts/gobackup-operator \
 ### Upgrade
 
 ```bash
-helm upgrade gobackup-operator gobackup/gobackup-operator \
+helm upgrade gobackup-operator \
+  oci://ghcr.io/gobackup/gobackup-operator \
+  --version 0.1.1-alpha \
   --namespace gobackup-operator-system
 ```
 
