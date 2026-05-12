@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 env:
@@ -58,6 +58,30 @@ jobs:
           CHART_PACKAGE=".cr-release-packages/${{ env.CHART_NAME }}-${{ steps.chart.outputs.version }}.tgz"
           helm push "$CHART_PACKAGE" oci://${{ env.REGISTRY }}/${{ github.repository_owner }}
           echo "Pushed: oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.CHART_NAME }}:${{ steps.chart.outputs.version }}"
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.chart.outputs.version }}"
+          TAG="v${VERSION}"
+          CHART_PACKAGE=".cr-release-packages/${{ env.CHART_NAME }}-${VERSION}.tgz"
+          NOTES="Helm chart \`${{ env.CHART_NAME }}\` ${VERSION}
+
+          Install:
+          \`\`\`
+          helm install my-release oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.CHART_NAME }} --version ${VERSION}
+          \`\`\`"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists — uploading chart package (clobbering existing asset)."
+            gh release upload "$TAG" "$CHART_PACKAGE" --clobber
+          else
+            gh release create "$TAG" "$CHART_PACKAGE" \
+              --title "$TAG" \
+              --notes "$NOTES" \
+              --target "${{ github.sha }}"
+          fi
 
       - name: Install hint
         run: |
