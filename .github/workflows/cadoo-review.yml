@@ -17,5 +17,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LLM_GATEWAY_URL: ${{ secrets.LLM_GATEWAY_URL }}
           LLM_GATEWAY_API_KEY: ${{ secrets.LLM_GATEWAY_API_KEY }}
-          CADOO_DEFAULT_MODEL: openai/gpt-oss-20b
+          CADOO_DEFAULT_MODEL: llama-3.3-70b-versatile
         run: cadoo ci --pr "${{ github.event.pull_request.html_url }}"
