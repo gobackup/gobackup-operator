@@ -1,14 +1,12 @@
 apiVersion: gobackup.io/v1
 kind: Database
 metadata:
-  name: example-redis
+  name: example-redis-direct
   namespace: default
 spec:
   type: redis
   config:
     host: redis.example.svc.cluster.local
     port: 6379
-    password_ref:
-      name: database-credentials
-      key: password
+    password: examplepassword
     mode: sync
