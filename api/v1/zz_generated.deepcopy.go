@@ -290,6 +290,11 @@ func (in *DatabaseConfig) DeepCopyInto(out *DatabaseConfig) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.PasswordRef != nil {
+		in, out := &in.PasswordRef, &out.PasswordRef
+		*out = new(corev1.SecretKeySelector)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Args != nil {
 		in, out := &in.Args, &out.Args
 		*out = new(string)
@@ -304,6 +309,11 @@ func (in *DatabaseConfig) DeepCopyInto(out *DatabaseConfig) {
 		in, out := &in.Username, &out.Username
 		*out = new(string)
 		**out = **in
+	}
+	if in.UsernameRef != nil {
+		in, out := &in.UsernameRef, &out.UsernameRef
+		*out = new(corev1.SecretKeySelector)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Tables != nil {
 		in, out := &in.Tables, &out.Tables
@@ -334,6 +344,11 @@ func (in *DatabaseConfig) DeepCopyInto(out *DatabaseConfig) {
 		in, out := &in.Token, &out.Token
 		*out = new(string)
 		**out = **in
+	}
+	if in.TokenRef != nil {
+		in, out := &in.TokenRef, &out.TokenRef
+		*out = new(corev1.SecretKeySelector)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Bucket != nil {
 		in, out := &in.Bucket, &out.Bucket

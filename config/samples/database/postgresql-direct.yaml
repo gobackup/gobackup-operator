@@ -1,7 +1,7 @@
 apiVersion: gobackup.io/v1
 kind: Database
 metadata:
-  name: example-postgresql
+  name: example-postgresql-direct
   namespace: default
 spec:
   type: postgresql
@@ -10,12 +10,8 @@ spec:
     port: 5432
     socket: ""
     database: exampledb
-    username_ref:
-      name: database-credentials
-      key: username
-    password_ref:
-      name: database-credentials
-      key: password
+    username: root
+    password: examplepassword
     tables:
       - table1
       - table2

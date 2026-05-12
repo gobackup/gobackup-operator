@@ -1,14 +1,12 @@
 apiVersion: gobackup.io/v1
 kind: Database
 metadata:
-  name: example-influxdb
+  name: example-influxdb-direct
   namespace: default
 spec:
   type: influxdb
   config:
     host: influxdb.example.svc.cluster.local
-    token_ref:
-      name: database-credentials
-      key: token
+    token: mytoken
     bucket: mybucket
     org: myorg

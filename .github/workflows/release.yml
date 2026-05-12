@@ -1,0 +1,64 @@
+name: release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'charts/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  CHART_NAME: gobackup-operator
+
+concurrency:
+  group: release-helm-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  helm-release:
+    name: Publish Helm chart to GHCR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Lint chart
+        run: |
+          helm lint charts/${{ env.CHART_NAME }}
+          helm template test-release charts/${{ env.CHART_NAME }} --debug
+
+      - name: Get chart version
+        id: chart
+        run: |
+          VERSION=$(grep '^version:' charts/${{ env.CHART_NAME }}/Chart.yaml | awk '{print $2}')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Chart version: $VERSION"
+
+      - name: Package chart
+        run: helm package charts/${{ env.CHART_NAME }} --destination .cr-release-packages
+
+      - name: Login to GHCR
+        run: |
+          helm registry login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
+
+      - name: Push chart
+        run: |
+          CHART_PACKAGE=".cr-release-packages/${{ env.CHART_NAME }}-${{ steps.chart.outputs.version }}.tgz"
+          helm push "$CHART_PACKAGE" oci://${{ env.REGISTRY }}/${{ github.repository_owner }}
+          echo "Pushed: oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.CHART_NAME }}:${{ steps.chart.outputs.version }}"
+
+      - name: Install hint
+        run: |
+          echo "helm install my-release oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.CHART_NAME }} --version ${{ steps.chart.outputs.version }}"

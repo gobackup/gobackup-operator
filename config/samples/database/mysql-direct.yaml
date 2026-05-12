@@ -1,7 +1,7 @@
 apiVersion: gobackup.io/v1
 kind: Database
 metadata:
-  name: example-mysql
+  name: example-mysql-direct
   namespace: default
 spec:
   type: mysql
@@ -10,10 +10,6 @@ spec:
     port: 3306
     socket: ""
     database: exampledb
-    username_ref:
-      name: database-credentials
-      key: username
-    password_ref:
-      name: database-credentials
-      key: password
+    username: root
+    password: examplepassword
     args: "--skip-ssl"

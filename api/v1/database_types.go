@@ -17,10 +17,27 @@ limitations under the License.
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DatabaseSpec defines the desired state of Database
+// +kubebuilder:validation:XValidation:rule="self.type == 'redis' || !has(self.config.mode)",message="config.mode is only valid when spec.type is redis"
+// +kubebuilder:validation:XValidation:rule="self.type == 'redis' || !has(self.config.sync)",message="config.sync is only valid when spec.type is redis"
+// +kubebuilder:validation:XValidation:rule="self.type == 'redis' || !has(self.config.copy)",message="config.copy is only valid when spec.type is redis"
+// +kubebuilder:validation:XValidation:rule="self.type == 'redis' || !has(self.config.invoke_save)",message="config.invoke_save is only valid when spec.type is redis"
+// +kubebuilder:validation:XValidation:rule="self.type == 'redis' || !has(self.config.rdb_path)",message="config.rdb_path is only valid when spec.type is redis"
+// +kubebuilder:validation:XValidation:rule="self.type == 'redis' || !has(self.config.args_redis)",message="config.args_redis is only valid when spec.type is redis"
+// +kubebuilder:validation:XValidation:rule="self.type == 'mongodb' || !has(self.config.auth_db)",message="config.auth_db is only valid when spec.type is mongodb"
+// +kubebuilder:validation:XValidation:rule="self.type == 'mongodb' || !has(self.config.oplog)",message="config.oplog is only valid when spec.type is mongodb"
+// +kubebuilder:validation:XValidation:rule="self.type == 'mssql' || !has(self.config.trust_server_certificate)",message="config.trust_server_certificate is only valid when spec.type is mssql"
+// +kubebuilder:validation:XValidation:rule="self.type == 'influxdb' || !has(self.config.token)",message="config.token is only valid when spec.type is influxdb"
+// +kubebuilder:validation:XValidation:rule="self.type == 'influxdb' || !has(self.config.token_ref)",message="config.token_ref is only valid when spec.type is influxdb"
+// +kubebuilder:validation:XValidation:rule="self.type == 'influxdb' || !has(self.config.bucket)",message="config.bucket is only valid when spec.type is influxdb"
+// +kubebuilder:validation:XValidation:rule="self.type == 'influxdb' || !has(self.config.org)",message="config.org is only valid when spec.type is influxdb"
+// +kubebuilder:validation:XValidation:rule="self.type == 'etcd' || !has(self.config.endpoints)",message="config.endpoints is only valid when spec.type is etcd"
+// +kubebuilder:validation:XValidation:rule="self.type in ['postgresql', 'mysql', 'mariadb', 'mssql'] || !has(self.config.tables)",message="config.tables is only valid for SQL databases (postgresql, mysql, mariadb, mssql)"
+// +kubebuilder:validation:XValidation:rule="self.type in ['postgresql', 'mysql', 'mariadb', 'mssql'] || !has(self.config.exclude_tables)",message="config.exclude_tables is only valid for SQL databases (postgresql, mysql, mariadb, mssql)"
 type DatabaseSpec struct {
 	// Type is the database backend type
 	// +kubebuilder:validation:Enum=postgresql;mysql;mariadb;mongodb;redis;mssql;influxdb;etcd
@@ -47,9 +64,13 @@ type DatabaseConfig struct {
 	// For Redis: e.g. /var/run/redis/redis.sock
 	Socket *string `json:"socket,omitempty"`
 
-	// Password is the password for the database or Redis server
+	// Password is the password for the database or Redis server. Use password_ref to reference a Secret instead.
 	// Default for Redis: ""
 	Password *string `json:"password,omitempty"`
+
+	// PasswordRef references a Secret containing the database password.
+	// Set either Password or PasswordRef, not both.
+	PasswordRef *corev1.SecretKeySelector `json:"password_ref,omitempty"`
 
 	// Args are additional arguments for pg_dump (PostgreSQL), mysqldump (MySQL) or redis-cli utility (Redis)
 	// For Redis, e.g.: --tls --cacert redis_ca.pem
@@ -61,9 +82,12 @@ type DatabaseConfig struct {
 	// Database is the database name (PostgreSQL)
 	Database *string `json:"database,omitempty"`
 
-	// Username is the username for the database (PostgreSQL)
+	// Username is the username for the database (PostgreSQL). Use username_ref to reference a Secret instead.
 	// Default: root
 	Username *string `json:"username,omitempty"`
+
+	// UsernameRef references a Secret containing the database username.
+	UsernameRef *corev1.SecretKeySelector `json:"username_ref,omitempty"`
 
 	// Tables is an array of tables to backup (PostgreSQL)
 	Tables []string `json:"tables,omitempty"`
@@ -86,8 +110,11 @@ type DatabaseConfig struct {
 
 	// InfluxDB-specific fields
 
-	// Token is the authentication token (InfluxDB)
+	// Token is the authentication token (InfluxDB). Use token_ref to reference a Secret instead.
 	Token *string `json:"token,omitempty"`
+
+	// TokenRef references a Secret containing the InfluxDB authentication token.
+	TokenRef *corev1.SecretKeySelector `json:"token_ref,omitempty"`
 
 	// Bucket is the bucket name (InfluxDB)
 	Bucket *string `json:"bucket,omitempty"`
