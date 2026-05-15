@@ -13,7 +13,7 @@ image:
 # Pin a digest (e.g. ghcr.io/gobackup/gobackup@sha256:...) to avoid stale
 # `:latest` cached on nodes when ImagePullPolicy is IfNotPresent.
 backupJob:
-  image: ghcr.io/gobackup/gobackup:latest
+  image: ghcr.io/gobackup/gobackup:v3.1.0
 
 imagePullSecrets: []
 nameOverride: ""
