@@ -145,6 +145,12 @@ type BackupStatus struct {
 
 	// SuccessCount tracks total successful backups
 	SuccessCount int32 `json:"successCount,omitempty"`
+
+	// ObservedGeneration is the most recent Backup spec generation that the
+	// controller has reconciled. It is used to detect manifest edits so the
+	// CronJob can be deleted and recreated only when the spec actually changes.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 //+kubebuilder:resource:shortName=backup

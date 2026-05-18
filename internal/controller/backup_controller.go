@@ -177,12 +177,22 @@ func (r *BackupReconciler) handleBackupCreate(ctx context.Context, backup *backu
 		return ctrl.Result{}, err
 	}
 
+	// Record the generation we just reconciled so the next reconcile (which
+	// sees the CronJob already exists and is routed as an update) does not
+	// immediately delete and recreate the freshly created CronJob.
+	if err := r.recordObservedGeneration(ctx, backup); err != nil {
+		logger.Error(err, "Failed to record observed generation after create")
+		return ctrl.Result{}, err
+	}
+
 	logger.Info("Successfully created Backup and associated resources", "namespace", backup.Namespace, "name", backup.Name)
 	return ctrl.Result{}, nil
 }
 
 // handleBackupUpdate handles the update of an existing Backup resource.
-// This method is called when a Backup CRD is updated.
+// This method is called when a Backup CRD is updated. On every manifest edit
+// it deletes the old CronJob, recreates it from the updated spec, and triggers
+// an immediate run if nothing is already running.
 func (r *BackupReconciler) handleBackupUpdate(ctx context.Context, backup *backupv1.Backup, existingCronJob *batchv1.CronJob) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.Info("Processing Backup update", "namespace", backup.Namespace, "name", backup.Name)
@@ -205,23 +215,68 @@ func (r *BackupReconciler) handleBackupUpdate(ctx context.Context, backup *backu
 		return ctrl.Result{}, err
 	}
 
-	// Update the secret that will be used by the CronJob
+	// Only act when the manifest actually changed. The API server bumps
+	// metadata.generation on every spec edit but not on status/metadata-only
+	// writes, so comparing it against the recorded observedGeneration prevents
+	// an endless delete/recreate loop on routine reconciles.
+	if backup.Generation == backup.Status.ObservedGeneration {
+		logger.V(1).Info("Backup spec unchanged, keeping existing CronJob", "generation", backup.Generation)
+		return ctrl.Result{}, nil
+	}
+
+	logger.Info("Backup manifest changed, recreating CronJob",
+		"generation", backup.Generation, "observedGeneration", backup.Status.ObservedGeneration)
+
+	// Refresh the secret consumed by the CronJob with the new configuration.
 	if err := r.K8s.CreateSecret(ctx, backup); err != nil {
 		logger.Error(err, "Failed to update secret for scheduled backup")
 		return ctrl.Result{}, err
 	}
 
-	// Update the existing CronJob if needed
-	if updated, err := r.updateCronJobIfNeeded(ctx, existingCronJob, backup); err != nil {
-		logger.Error(err, "Failed to update CronJob during Backup update")
+	// Delete the old CronJob, orphaning any Jobs/Pods it already spawned so an
+	// in-progress backup is allowed to run to completion.
+	if err := r.deleteCronJob(ctx, existingCronJob); err != nil {
+		logger.Error(err, "Failed to delete old CronJob during Backup update")
 		return ctrl.Result{}, err
-	} else if updated {
-		logger.Info("Successfully updated CronJob for Backup", "namespace", backup.Namespace, "name", backup.Name)
-	} else {
-		logger.V(1).Info("No changes detected in CronJob for Backup", "namespace", backup.Namespace, "name", backup.Name)
 	}
 
-	logger.Info("Successfully processed Backup update", "namespace", backup.Namespace, "name", backup.Name)
+	// Recreate the CronJob from the updated spec.
+	newCronJob, err := r.createCronJob(ctx, backup)
+	if err != nil {
+		if errors.IsAlreadyExists(err) {
+			// The old CronJob is still terminating; retry shortly.
+			logger.V(1).Info("Old CronJob still terminating, requeueing")
+			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
+		}
+		logger.Error(err, "Failed to recreate CronJob during Backup update")
+		return ctrl.Result{}, err
+	}
+
+	// Run if needed: only trigger an immediate backup when nothing is already
+	// running for this Backup, so we don't stack a run on top of an in-progress one.
+	inProgress, err := r.hasRunningBackupJob(ctx, backup)
+	if err != nil {
+		logger.Error(err, "Failed to check for in-progress backup jobs")
+		return ctrl.Result{}, err
+	}
+	if inProgress {
+		logger.Info("A backup run is already in progress, skipping immediate run", "name", backup.Name)
+	} else {
+		if err := r.triggerManualBackupJob(ctx, backup, newCronJob); err != nil {
+			logger.Error(err, "Failed to trigger immediate backup run")
+			return ctrl.Result{}, err
+		}
+		logger.Info("Triggered immediate backup run after manifest change", "name", backup.Name)
+	}
+
+	// Record the generation we just reconciled so we don't recreate again until
+	// the next manifest edit.
+	if err := r.recordObservedGeneration(ctx, backup); err != nil {
+		logger.Error(err, "Failed to record observed generation")
+		return ctrl.Result{}, err
+	}
+
+	logger.Info("Successfully recreated CronJob for Backup", "namespace", backup.Namespace, "name", backup.Name)
 	return ctrl.Result{}, nil
 }
 
@@ -253,146 +308,6 @@ func (r *BackupReconciler) validateCronExpression(cron string) error {
 	}
 
 	return nil
-}
-
-// updateCronJobIfNeeded checks if the CronJob needs to be updated based on the Backup spec
-// and updates it if necessary. Returns true if an update was performed.
-func (r *BackupReconciler) updateCronJobIfNeeded(ctx context.Context, cronJob *batchv1.CronJob, backup *backupv1.Backup) (bool, error) {
-	logger := log.FromContext(ctx)
-	needsUpdate := false
-
-	// Check and update schedule
-	if cronJob.Spec.Schedule != backup.Spec.Schedule.Cron {
-		cronJob.Spec.Schedule = backup.Spec.Schedule.Cron
-		needsUpdate = true
-		logger.V(1).Info("CronJob schedule changed", "old", cronJob.Spec.Schedule, "new", backup.Spec.Schedule.Cron)
-	}
-
-	// Check and update StartingDeadlineSeconds
-	if !equalInt64Ptr(cronJob.Spec.StartingDeadlineSeconds, backup.Spec.Schedule.StartingDeadlineSeconds) {
-		cronJob.Spec.StartingDeadlineSeconds = backup.Spec.Schedule.StartingDeadlineSeconds
-		needsUpdate = true
-	}
-
-	// Check and update SuccessfulJobsHistoryLimit
-	if !equalInt32Ptr(cronJob.Spec.SuccessfulJobsHistoryLimit, backup.Spec.Schedule.SuccessfulJobsHistoryLimit) {
-		cronJob.Spec.SuccessfulJobsHistoryLimit = backup.Spec.Schedule.SuccessfulJobsHistoryLimit
-		needsUpdate = true
-	}
-
-	// Check and update FailedJobsHistoryLimit
-	if !equalInt32Ptr(cronJob.Spec.FailedJobsHistoryLimit, backup.Spec.Schedule.FailedJobsHistoryLimit) {
-		cronJob.Spec.FailedJobsHistoryLimit = backup.Spec.Schedule.FailedJobsHistoryLimit
-		needsUpdate = true
-	}
-
-	// Check and update Suspend
-	if !equalBoolPtr(cronJob.Spec.Suspend, backup.Spec.Schedule.Suspend) {
-		cronJob.Spec.Suspend = backup.Spec.Schedule.Suspend
-		needsUpdate = true
-	}
-
-	// Check if job template needs update (this is a simplified check)
-	// In a production system, you might want to do a deep comparison
-	expectedTemplate := r.buildJobTemplate(backup)
-	if !jobTemplatesEqual(&cronJob.Spec.JobTemplate, &expectedTemplate) {
-		cronJob.Spec.JobTemplate = expectedTemplate
-		needsUpdate = true
-		logger.V(1).Info("CronJob job template changed")
-	}
-
-	if needsUpdate {
-		latestCronJob := &batchv1.CronJob{}
-		if err := r.Get(ctx, types.NamespacedName{Name: cronJob.Name, Namespace: cronJob.Namespace}, latestCronJob); err != nil {
-			return false, fmt.Errorf("failed to re-fetch CronJob before update: %w", err)
-		}
-
-		// Apply the changes to the freshly fetched CronJob
-		latestCronJob.Spec.Schedule = backup.Spec.Schedule.Cron
-		latestCronJob.Spec.StartingDeadlineSeconds = backup.Spec.Schedule.StartingDeadlineSeconds
-		latestCronJob.Spec.SuccessfulJobsHistoryLimit = backup.Spec.Schedule.SuccessfulJobsHistoryLimit
-		latestCronJob.Spec.FailedJobsHistoryLimit = backup.Spec.Schedule.FailedJobsHistoryLimit
-		latestCronJob.Spec.Suspend = backup.Spec.Schedule.Suspend
-		latestCronJob.Spec.JobTemplate = expectedTemplate
-
-		// Update the CronJob with the latest version
-		if err := r.Update(ctx, latestCronJob); err != nil {
-			if errors.IsConflict(err) {
-				// If there's still a conflict, return error to trigger retry
-				return false, fmt.Errorf("failed to update CronJob due to conflict (will retry): %w", err)
-			}
-			return false, fmt.Errorf("failed to update CronJob: %w", err)
-		}
-		return true, nil
-	}
-
-	return false, nil
-}
-
-// equalInt64Ptr compares two *int64 pointers for equality, handling nil cases.
-func equalInt64Ptr(a, b *int64) bool {
-	if a == nil && b == nil {
-		return true
-	}
-	if a == nil || b == nil {
-		return false
-	}
-	return *a == *b
-}
-
-// equalInt32Ptr compares two *int32 pointers for equality, handling nil cases.
-func equalInt32Ptr(a, b *int32) bool {
-	if a == nil && b == nil {
-		return true
-	}
-	if a == nil || b == nil {
-		return false
-	}
-	return *a == *b
-}
-
-// equalBoolPtr compares two *bool pointers for equality, handling nil cases.
-func equalBoolPtr(a, b *bool) bool {
-	if a == nil && b == nil {
-		return true
-	}
-	if a == nil || b == nil {
-		return false
-	}
-	return *a == *b
-}
-
-// jobTemplatesEqual performs a basic comparison of two JobTemplateSpecs.
-// This is a simplified comparison - in production you might want a deeper comparison.
-func jobTemplatesEqual(a, b *batchv1.JobTemplateSpec) bool {
-	// Compare container image and command
-	if len(a.Spec.Template.Spec.Containers) != len(b.Spec.Template.Spec.Containers) {
-		return false
-	}
-	if len(a.Spec.Template.Spec.Containers) > 0 {
-		containerA := a.Spec.Template.Spec.Containers[0]
-		containerB := b.Spec.Template.Spec.Containers[0]
-		if containerA.Image != containerB.Image {
-			return false
-		}
-		if !stringSlicesEqual(containerA.Command, containerB.Command) {
-			return false
-		}
-	}
-	return true
-}
-
-// stringSlicesEqual compares two string slices for equality.
-func stringSlicesEqual(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }
 
 // buildJobTemplate creates a JobTemplateSpec from the Backup spec.
@@ -537,6 +452,88 @@ func (r *BackupReconciler) createCronJob(ctx context.Context, backup *backupv1.B
 	}
 
 	return cronJob, nil
+}
+
+// deleteCronJob deletes the given CronJob using Orphan propagation so that any
+// Jobs/Pods it already spawned (e.g. an in-progress backup) are preserved and
+// allowed to run to completion. A missing CronJob is treated as success.
+func (r *BackupReconciler) deleteCronJob(ctx context.Context, cronJob *batchv1.CronJob) error {
+	logger := log.FromContext(ctx)
+	if err := r.Delete(ctx, cronJob, client.PropagationPolicy(metav1.DeletePropagationOrphan)); err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to delete CronJob %s/%s: %w", cronJob.Namespace, cronJob.Name, err)
+	}
+	logger.Info("Deleted old CronJob (existing Jobs preserved)", "namespace", cronJob.Namespace, "name", cronJob.Name)
+	return nil
+}
+
+// hasRunningBackupJob reports whether a Job belonging to this Backup is still
+// Pending or Running. Jobs created by the CronJob are name-prefixed with the
+// Backup name, matching the convention used by reconcileJobStatus.
+func (r *BackupReconciler) hasRunningBackupJob(ctx context.Context, backup *backupv1.Backup) (bool, error) {
+	jobList := &batchv1.JobList{}
+	if err := r.List(ctx, jobList, client.InNamespace(backup.Namespace)); err != nil {
+		return false, fmt.Errorf("failed to list jobs: %w", err)
+	}
+
+	for i := range jobList.Items {
+		job := &jobList.Items[i]
+		if !strings.HasPrefix(job.Name, backup.Name+"-") {
+			continue
+		}
+		switch r.getJobPhase(job) {
+		case "Running", "Pending":
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// triggerManualBackupJob creates a one-off Job from the Backup's job template so
+// the updated configuration takes effect immediately instead of waiting for the
+// next scheduled cron tick. The Job is owned by the freshly created CronJob so
+// findBackupForJob re-enqueues the Backup and reconcileJobStatus tracks it via
+// the shared <backup-name>- name prefix.
+func (r *BackupReconciler) triggerManualBackupJob(ctx context.Context, backup *backupv1.Backup, cronJob *batchv1.CronJob) error {
+	jobTemplate := r.buildJobTemplate(backup)
+
+	job := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-manual-%d", backup.Name, time.Now().Unix()),
+			Namespace: backup.Namespace,
+			Annotations: map[string]string{
+				"cronjob.kubernetes.io/instantiate": "manual",
+			},
+		},
+		Spec: jobTemplate.Spec,
+	}
+
+	if err := controllerutil.SetControllerReference(cronJob, job, r.Scheme); err != nil {
+		return fmt.Errorf("failed to set controller reference for manual Job: %w", err)
+	}
+
+	if err := r.Create(ctx, job); err != nil {
+		return fmt.Errorf("failed to create manual backup Job: %w", err)
+	}
+	return nil
+}
+
+// recordObservedGeneration persists the current spec generation into the Backup
+// status so subsequent reconciles can tell whether the manifest changed. A merge
+// patch is used so it does not conflict with the status update performed later
+// in reconcileJobStatus within the same reconcile.
+func (r *BackupReconciler) recordObservedGeneration(ctx context.Context, backup *backupv1.Backup) error {
+	if backup.Status.ObservedGeneration == backup.Generation {
+		return nil
+	}
+	patch := client.MergeFrom(backup.DeepCopy())
+	backup.Status.ObservedGeneration = backup.Generation
+	if err := r.Status().Patch(ctx, backup, patch); err != nil {
+		return fmt.Errorf("failed to record observedGeneration: %w", err)
+	}
+	return nil
 }
 
 // reconcileJobStatus updates the Backup status based on the state of related Jobs
