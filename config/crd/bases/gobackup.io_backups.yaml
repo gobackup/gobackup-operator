@@ -224,6 +224,13 @@ spec:
                   successful backup
                 format: date-time
                 type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the most recent Backup spec generation that the
+                  controller has reconciled. It is used to detect manifest edits so the
+                  CronJob can be deleted and recreated only when the spec actually changes.
+                format: int64
+                type: integer
               phase:
                 description: Phase is the current phase of the backup (Idle, Running,
                   Succeeded, Failed)
