@@ -62,28 +62,37 @@ The Operator acts on the following [Custom Resource Definitions (CRDs)](https://
 
 #### Option 1: Using Helm (Recommended)
 
-Add the Helm repository and install the chart:
+The chart is published as an OCI artifact to GitHub Container Registry on every release.
+
+Install the latest published version:
 
 ```sh
-helm install gobackup-operator ./charts/gobackup-operator \
+helm install gobackup-operator \
+  oci://ghcr.io/gobackup/gobackup-operator \
+  --version 0.1.1-alpha \
   --namespace gobackup-operator-system \
   --create-namespace
 ```
 
-Or install with custom values:
+Pick a specific version from the [GitHub Releases](https://github.com/gobackup/gobackup-operator/releases) page or list the available OCI tags at `ghcr.io/gobackup/gobackup-operator`.
+
+Install with custom values:
 
 ```sh
-helm install gobackup-operator ./charts/gobackup-operator \
+helm install gobackup-operator \
+  oci://ghcr.io/gobackup/gobackup-operator \
+  --version 0.1.1-alpha \
   --namespace gobackup-operator-system \
   --create-namespace \
-  --set image.tag=v0.1.0 \
   --set resources.limits.memory=256Mi
 ```
 
 To upgrade:
 
 ```sh
-helm upgrade gobackup-operator ./charts/gobackup-operator \
+helm upgrade gobackup-operator \
+  oci://ghcr.io/gobackup/gobackup-operator \
+  --version 0.1.1-alpha \
   --namespace gobackup-operator-system
 ```
 
@@ -91,6 +100,14 @@ To uninstall:
 
 ```sh
 helm uninstall gobackup-operator --namespace gobackup-operator-system
+```
+
+To install from a local checkout instead of OCI (useful while developing):
+
+```sh
+helm install gobackup-operator ./charts/gobackup-operator \
+  --namespace gobackup-operator-system \
+  --create-namespace
 ```
 
 See [charts/gobackup-operator/README.md](charts/gobackup-operator/README.md) for all available configuration options.
