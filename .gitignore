@@ -36,5 +36,4 @@ charts/gobackup-operator/values.*.local.yaml
 
 # Claude
 .claude
-CLAUDE.md
 .serena
