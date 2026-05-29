@@ -2,6 +2,108 @@ apiVersion: v1
 entries:
   gobackup-operator:
   - apiVersion: v2
+    appVersion: 0.1.3-alpha
+    created: "2026-05-29T20:44:48.228959+03:30"
+    description: A Helm chart for GoBackup Operator - Kubernetes operator for managing
+      database backups
+    digest: 7f9b71fb99fdc0b0ee336f2de279d09b1b9d655bce0ac11e0a854affa902f749
+    home: https://github.com/gobackup/gobackup-operator
+    keywords:
+    - gobackup
+    - backup
+    - operator
+    - database
+    - postgresql
+    - mysql
+    - redis
+    - mongodb
+    - mariadb
+    - influxdb
+    - storage
+    - etcd
+    - s3
+    - gcs
+    - azure
+    - minio
+    - local
+    - ftp
+    - sftp
+    - scp
+    - webdav
+    - oss
+    - r2
+    - spaces
+    - b2
+    - cos
+    - us3
+    - kodo
+    - bos
+    - obs
+    - tos
+    - upyun
+    kubeVersion: '>=1.19.0-0'
+    maintainers:
+    - name: gobackup
+      url: https://github.com/gobackup
+    name: gobackup-operator
+    sources:
+    - https://github.com/gobackup/gobackup-operator
+    type: application
+    urls:
+    - https://github.com/gobackup/gobackup-operator/releases/download/v0.1.3-alpha/gobackup-operator-0.1.3-alpha.tgz
+    version: 0.1.3-alpha
+  - apiVersion: v2
+    appVersion: 0.1.2-alpha
+    created: "2026-05-29T20:44:48.177996+03:30"
+    description: A Helm chart for GoBackup Operator - Kubernetes operator for managing
+      database backups
+    digest: 982c6676abc510d4ccbb5274e89003a5b2fbf65bee42633d82cbd9d662468b69
+    home: https://github.com/gobackup/gobackup-operator
+    keywords:
+    - gobackup
+    - backup
+    - operator
+    - database
+    - postgresql
+    - mysql
+    - redis
+    - mongodb
+    - mariadb
+    - influxdb
+    - storage
+    - etcd
+    - s3
+    - gcs
+    - azure
+    - minio
+    - local
+    - ftp
+    - sftp
+    - scp
+    - webdav
+    - oss
+    - r2
+    - spaces
+    - b2
+    - cos
+    - us3
+    - kodo
+    - bos
+    - obs
+    - tos
+    - upyun
+    kubeVersion: '>=1.19.0-0'
+    maintainers:
+    - name: gobackup
+      url: https://github.com/gobackup
+    name: gobackup-operator
+    sources:
+    - https://github.com/gobackup/gobackup-operator
+    type: application
+    urls:
+    - https://github.com/gobackup/gobackup-operator/releases/download/v0.1.2-alpha/gobackup-operator-0.1.2-alpha.tgz
+    version: 0.1.2-alpha
+  - apiVersion: v2
     appVersion: 0.1.0-alpha
     created: "2026-05-06T18:18:30.227021787Z"
     description: A Helm chart for GoBackup Operator - Kubernetes operator for managing
@@ -52,4 +154,4 @@ entries:
     urls:
     - https://github.com/gobackup/gobackup-operator/releases/download/v0.1.0-alpha/gobackup-operator-0.1.0-alpha.tgz
     version: 0.1.0-alpha
-generated: "2026-05-06T18:18:30.226203107Z"
+generated: "2026-05-29T20:44:48.228129+03:30"
