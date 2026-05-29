@@ -83,6 +83,31 @@ jobs:
               --target "${{ github.sha }}"
           fi
 
+      - name: Update gh-pages Helm repo index
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.chart.outputs.version }}"
+          TAG="v${VERSION}"
+          CHART_FILE="${{ env.CHART_NAME }}-${VERSION}.tgz"
+          URL_BASE="https://github.com/${{ github.repository }}/releases/download/${TAG}"
+
+          git fetch origin gh-pages
+          git worktree add /tmp/ghpages FETCH_HEAD
+
+          STAGE="$(mktemp -d)"
+          cp ".cr-release-packages/${CHART_FILE}" "${STAGE}/"
+          # --merge keeps existing entries; each version's url points at its own release asset
+          helm repo index "${STAGE}" --url "${URL_BASE}" --merge /tmp/ghpages/index.yaml
+          cp "${STAGE}/index.yaml" /tmp/ghpages/index.yaml
+
+          cd /tmp/ghpages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.yaml
+          git commit -m "Update Helm repo index for ${VERSION}" || { echo "No index changes"; exit 0; }
+          git push origin HEAD:gh-pages
+
       - name: Install hint
         run: |
           echo "helm install my-release oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.CHART_NAME }} --version ${{ steps.chart.outputs.version }}"
