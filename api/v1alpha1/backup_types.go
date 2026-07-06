@@ -23,6 +23,48 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// Backup phases describe the aggregate state of a Backup, as reported in
+// BackupStatus.Phase.
+const (
+	// BackupPhaseIdle indicates no backup run is currently active.
+	BackupPhaseIdle = "Idle"
+	// BackupPhaseRunning indicates a backup run is currently in progress.
+	BackupPhaseRunning = "Running"
+	// BackupPhaseSucceeded indicates the most recent backup run succeeded.
+	BackupPhaseSucceeded = "Succeeded"
+	// BackupPhaseFailed indicates the most recent backup run failed.
+	BackupPhaseFailed = "Failed"
+)
+
+// Run phases describe the state of a single backup run, as reported in
+// BackupRunStatus.Phase.
+const (
+	// RunPhasePending indicates the run's Job has been created but not started.
+	RunPhasePending = "Pending"
+	// RunPhaseRunning indicates the run's Job is active.
+	RunPhaseRunning = "Running"
+	// RunPhaseSucceeded indicates the run's Job completed successfully.
+	RunPhaseSucceeded = "Succeeded"
+	// RunPhaseFailed indicates the run's Job failed.
+	RunPhaseFailed = "Failed"
+)
+
+// Condition types set on BackupStatus.Conditions.
+const (
+	// ConditionTypeReady is True when the most recent backup run succeeded.
+	ConditionTypeReady = "Ready"
+)
+
+// Condition reasons set on the Ready condition.
+const (
+	// ReasonBackupSucceeded indicates the last backup run succeeded.
+	ReasonBackupSucceeded = "BackupSucceeded"
+	// ReasonBackupFailed indicates the last backup run failed.
+	ReasonBackupFailed = "BackupFailed"
+	// ReasonReconciling indicates a backup run is in progress or pending.
+	ReasonReconciling = "Reconciling"
+)
+
 // BackupSpec defines the desired state of Backup
 type BackupSpec struct {
 	// DatabaseRefs represents the list of databases to backup
@@ -65,27 +107,49 @@ type BackupSchedule struct {
 	FailedJobsHistoryLimit *int32 `json:"failedJobsHistoryLimit,omitempty"`
 }
 
+// StorageRef references a Storage resource that a Backup writes to.
 type StorageRef struct {
+	// APIGroup is the API group of the referenced Storage resource. Defaults to gobackup.io.
+	// +optional
 	APIGroup string `json:"apiGroup,omitempty"`
 	// Type is the storage backend type (s3, gcs, azure, local, ftp, etc.) matching the Storage resource's spec.type field
-	Type    string `json:"type,omitempty"`
-	Name    string `json:"name,omitempty"`
-	Keep    int    `json:"keep,omitempty"`
-	Timeout int    `json:"timeout,omitempty"`
+	// +optional
+	Type string `json:"type,omitempty"`
+	// Name is the name of the referenced Storage resource.
+	// +optional
+	Name string `json:"name,omitempty"`
+	// Keep specifies how many backups to retain at this storage location.
+	// +optional
+	Keep int `json:"keep,omitempty"`
+	// Timeout is the upload timeout in seconds for this storage location.
+	// +optional
+	Timeout int `json:"timeout,omitempty"`
 }
 
+// DatabaseRef references a Database resource that a Backup captures.
 type DatabaseRef struct {
+	// APIGroup is the API group of the referenced Database resource. Defaults to gobackup.io.
+	// +optional
 	APIGroup string `json:"apiGroup,omitempty"`
 	// Type is the database backend type (postgresql, redis, etc.) matching the Database resource's spec.type field
+	// +optional
 	Type string `json:"type,omitempty"`
+	// Name is the name of the referenced Database resource.
+	// +optional
 	Name string `json:"name,omitempty"`
 }
 
+// Compress defines the compression applied to a backup archive.
 type Compress struct {
+	// Type is the compression algorithm (e.g. gzip).
+	// +optional
 	Type string `json:"type,omitempty"`
 }
 
+// Encode defines the encoding/encryption applied to a backup archive.
 type Encode struct {
+	// Type is the encoding type.
+	// +optional
 	Type string `json:"type,omitempty"`
 }
 
@@ -100,7 +164,9 @@ type BackupRunStatus struct {
 	// CompletionTime is when the backup job completed
 	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
 
-	// Phase is the current phase of the backup (Pending, Running, Succeeded, Failed)
+	// Phase is the current phase of the backup run (Pending, Running, Succeeded, Failed)
+	// +kubebuilder:validation:Enum=Pending;Running;Succeeded;Failed
+	// +optional
 	Phase string `json:"phase,omitempty"`
 
 	// Message contains a human-readable message indicating details about the backup
@@ -122,6 +188,8 @@ type BackupStatus struct {
 	LastSuccessfulBackupTime *metav1.Time `json:"lastSuccessfulBackupTime,omitempty"`
 
 	// Phase is the current phase of the backup (Idle, Running, Succeeded, Failed)
+	// +kubebuilder:validation:Enum=Idle;Running;Succeeded;Failed
+	// +optional
 	Phase string `json:"phase,omitempty"`
 
 	// Conditions represent the latest available observations of the backup's state
@@ -153,9 +221,15 @@ type BackupStatus struct {
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
-//+kubebuilder:resource:shortName=backup
+//+kubebuilder:resource:shortName=backup,categories=gobackup
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:storageversion
+//+kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
+//+kubebuilder:printcolumn:name="Schedule",type=string,JSONPath=`.spec.schedule.cron`
+//+kubebuilder:printcolumn:name="LastSuccess",type=date,JSONPath=`.status.lastSuccessfulBackupTime`
+//+kubebuilder:printcolumn:name="Failures",type=integer,JSONPath=`.status.failureCount`
+//+kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
 // Backup is the Schema for the backups API
 type Backup struct {

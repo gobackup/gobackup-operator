@@ -28,6 +28,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -126,7 +127,7 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	shouldRequeue := false
 	if backup.Status.LastRun != nil {
 		switch backup.Status.LastRun.Phase {
-		case "Running", "Pending":
+		case backupv1.RunPhaseRunning, backupv1.RunPhasePending:
 			shouldRequeue = true
 		}
 	}
@@ -482,7 +483,7 @@ func (r *BackupReconciler) hasRunningBackupJob(ctx context.Context, backup *back
 			continue
 		}
 		switch r.getJobPhase(job) {
-		case "Running", "Pending":
+		case backupv1.RunPhaseRunning, backupv1.RunPhasePending:
 			return true, nil
 		}
 	}
@@ -523,15 +524,75 @@ func (r *BackupReconciler) triggerManualBackupJob(ctx context.Context, backup *b
 // patch is used so it does not conflict with the status update performed later
 // in reconcileJobStatus within the same reconcile.
 func (r *BackupReconciler) recordObservedGeneration(ctx context.Context, backup *backupv1.Backup) error {
-	if backup.Status.ObservedGeneration == backup.Generation {
+	patch := client.MergeFrom(backup.DeepCopy())
+	changed := false
+
+	if backup.Status.ObservedGeneration != backup.Generation {
+		backup.Status.ObservedGeneration = backup.Generation
+		changed = true
+	}
+
+	// Ensure a Ready condition is present so the status subresource is meaningful
+	// even before the first backup run reports a terminal phase. Once a run
+	// reports a terminal state, reconcileJobStatus flips this to the real result.
+	if meta.FindStatusCondition(backup.Status.Conditions, backupv1.ConditionTypeReady) == nil {
+		meta.SetStatusCondition(&backup.Status.Conditions, metav1.Condition{
+			Type:               backupv1.ConditionTypeReady,
+			Status:             metav1.ConditionFalse,
+			Reason:             backupv1.ReasonReconciling,
+			Message:            "Backup scheduled; awaiting first run",
+			ObservedGeneration: backup.Generation,
+		})
+		changed = true
+	}
+
+	if !changed {
 		return nil
 	}
-	patch := client.MergeFrom(backup.DeepCopy())
-	backup.Status.ObservedGeneration = backup.Generation
 	if err := r.Status().Patch(ctx, backup, patch); err != nil {
 		return fmt.Errorf("failed to record observedGeneration: %w", err)
 	}
 	return nil
+}
+
+// backupPhaseForRun maps a single run's phase onto the aggregate Backup phase
+// vocabulary (Idle;Running;Succeeded;Failed). Pending and Running runs both
+// present the Backup as Running.
+func backupPhaseForRun(runPhase string) string {
+	switch runPhase {
+	case backupv1.RunPhaseSucceeded:
+		return backupv1.BackupPhaseSucceeded
+	case backupv1.RunPhaseFailed:
+		return backupv1.BackupPhaseFailed
+	case backupv1.RunPhasePending, backupv1.RunPhaseRunning:
+		return backupv1.BackupPhaseRunning
+	default:
+		return backupv1.BackupPhaseIdle
+	}
+}
+
+// setReadyCondition sets the Ready condition on the given status based on the
+// most recent run phase, stamping it with the current spec generation.
+func setReadyCondition(status *backupv1.BackupStatus, runPhase string, generation int64) {
+	cond := metav1.Condition{
+		Type:               backupv1.ConditionTypeReady,
+		ObservedGeneration: generation,
+	}
+	switch runPhase {
+	case backupv1.RunPhaseSucceeded:
+		cond.Status = metav1.ConditionTrue
+		cond.Reason = backupv1.ReasonBackupSucceeded
+		cond.Message = "Last backup run succeeded"
+	case backupv1.RunPhaseFailed:
+		cond.Status = metav1.ConditionFalse
+		cond.Reason = backupv1.ReasonBackupFailed
+		cond.Message = "Last backup run failed"
+	default:
+		cond.Status = metav1.ConditionFalse
+		cond.Reason = backupv1.ReasonReconciling
+		cond.Message = "Backup run in progress"
+	}
+	meta.SetStatusCondition(&status.Conditions, cond)
 }
 
 // reconcileJobStatus updates the Backup status based on the state of related Jobs
@@ -598,12 +659,13 @@ func (r *BackupReconciler) reconcileJobStatus(ctx context.Context, backup *backu
 
 	// Determine if we should increment counters (only when transitioning to a terminal state)
 	shouldIncrementCounters := false
+	isTerminal := currentPhase == backupv1.RunPhaseSucceeded || currentPhase == backupv1.RunPhaseFailed
 	if backup.Status.LastRun == nil || backup.Status.LastRun.JobName != latestJob.Name {
 		// This is a new job we haven't seen before
-		shouldIncrementCounters = (currentPhase == "Succeeded" || currentPhase == "Failed")
+		shouldIncrementCounters = isTerminal
 	} else if backup.Status.LastRun.Phase != currentPhase {
 		// Phase changed - only increment if transitioning TO a terminal state
-		shouldIncrementCounters = (currentPhase == "Succeeded" || currentPhase == "Failed")
+		shouldIncrementCounters = isTerminal
 	}
 
 	// Update the backup status
@@ -611,18 +673,22 @@ func (r *BackupReconciler) reconcileJobStatus(ctx context.Context, backup *backu
 	now := metav1.Now()
 
 	statusCopy.LastBackupTime = &now
-	statusCopy.Phase = runStatus.Phase
+	statusCopy.Phase = backupPhaseForRun(runStatus.Phase)
 	statusCopy.LastRun = &runStatus
+
+	// Reflect the current run in the Ready condition, stamped with the spec
+	// generation the controller reconciled.
+	setReadyCondition(statusCopy, runStatus.Phase, backup.Generation)
 
 	// Update counters and timestamps based on phase (only once per job completion)
 	if shouldIncrementCounters {
 		switch runStatus.Phase {
-		case "Succeeded":
+		case backupv1.RunPhaseSucceeded:
 			statusCopy.LastSuccessfulBackupTime = &now
 			statusCopy.SuccessCount++
 			statusCopy.FailureCount = 0 // Reset consecutive failures
 			logger.Info("Incrementing success count", "newCount", statusCopy.SuccessCount)
-		case "Failed":
+		case backupv1.RunPhaseFailed:
 			statusCopy.FailureCount++
 			logger.Info("Incrementing failure count", "newCount", statusCopy.FailureCount)
 		}
@@ -649,15 +715,15 @@ func (r *BackupReconciler) reconcileJobStatus(ctx context.Context, backup *backu
 // getJobPhase returns the phase of a Job
 func (r *BackupReconciler) getJobPhase(job *batchv1.Job) string {
 	if job.Status.Succeeded > 0 {
-		return "Succeeded"
+		return backupv1.RunPhaseSucceeded
 	}
 	if job.Status.Failed > 0 {
-		return "Failed"
+		return backupv1.RunPhaseFailed
 	}
 	if job.Status.Active > 0 {
-		return "Running"
+		return backupv1.RunPhaseRunning
 	}
-	return "Pending"
+	return backupv1.RunPhasePending
 }
 
 // buildRunStatus creates a BackupRunStatus from a Job
@@ -684,7 +750,7 @@ func (r *BackupReconciler) buildRunStatus(ctx context.Context, job *batchv1.Job)
 	}
 
 	// Collect logs only on failure to save space
-	if runStatus.Phase == "Failed" && r.Clientset != nil {
+	if runStatus.Phase == backupv1.RunPhaseFailed && r.Clientset != nil {
 		logs, err := r.collectPodLogs(ctx, job)
 		if err != nil {
 			logger.V(1).Info("Failed to collect pod logs", "error", err)

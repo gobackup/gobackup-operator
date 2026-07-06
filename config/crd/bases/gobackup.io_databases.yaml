@@ -8,6 +8,8 @@ metadata:
 spec:
   group: gobackup.io
   names:
+    categories:
+    - gobackup
     kind: Database
     listKind: DatabaseList
     plural: databases
@@ -16,7 +18,14 @@ spec:
     singular: database
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.type
+      name: Type
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Database is the Schema for the databases API
@@ -271,6 +280,14 @@ spec:
               rule: self.type in ['postgresql', 'mysql', 'mariadb', 'mssql'] || !has(self.config.exclude_tables)
           status:
             description: DatabaseStatus defines the observed state of Database
+            properties:
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the most recent Database spec generation observed by
+                  the controller. There is no dedicated Database controller yet, so this is
+                  currently unpopulated; it exists to make the status subresource honest.
+                format: int64
+                type: integer
             type: object
         type: object
     served: true

@@ -8,6 +8,8 @@ metadata:
 spec:
   group: gobackup.io
   names:
+    categories:
+    - gobackup
     kind: Storage
     listKind: StorageList
     plural: storages
@@ -16,7 +18,14 @@ spec:
     singular: storage
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.type
+      name: Type
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Storage is the Schema for the storages API
@@ -347,6 +356,7 @@ spec:
                       Required for: azure
                     type: string
                   timeout:
+                    default: 300
                     description: |-
                       Timeout is the upload timeout in seconds. Default: 300
                       Used by: s3, oss, ftp, sftp, scp, gcs, azure, r2, spaces, b2, cos, us3, kodo, bos, minio, obs, tos, upyun
@@ -387,6 +397,14 @@ spec:
             type: object
           status:
             description: StorageStatus defines the observed state of Storage
+            properties:
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the most recent Storage spec generation observed by
+                  the controller. There is no dedicated Storage controller yet, so this is
+                  currently unpopulated; it exists to make the status subresource honest.
+                format: int64
+                type: integer
             type: object
         type: object
     served: true

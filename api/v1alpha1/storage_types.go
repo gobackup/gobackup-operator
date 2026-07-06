@@ -41,6 +41,7 @@ type StorageConfig struct {
 
 	// Timeout is the upload timeout in seconds. Default: 300
 	// Used by: s3, oss, ftp, sftp, scp, gcs, azure, r2, spaces, b2, cos, us3, kodo, bos, minio, obs, tos, upyun
+	// +kubebuilder:default=300
 	Timeout *int `json:"timeout,omitempty"`
 
 	// Keep specifies how many backups to retain at this storage location
@@ -180,13 +181,19 @@ type StorageConfig struct {
 
 // StorageStatus defines the observed state of Storage
 type StorageStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// ObservedGeneration is the most recent Storage spec generation observed by
+	// the controller. There is no dedicated Storage controller yet, so this is
+	// currently unpopulated; it exists to make the status subresource honest.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
-//+kubebuilder:resource:shortName=storage
+//+kubebuilder:resource:shortName=storage,categories=gobackup
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:storageversion
+//+kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.type`
+//+kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
 // Storage is the Schema for the storages API
 type Storage struct {
