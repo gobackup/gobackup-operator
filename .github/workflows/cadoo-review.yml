@@ -1,21 +1,16 @@
-name: cadoo-review
+name: debug-gateway-models
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch: {}
+
 jobs:
-  cadoo-review:
+  list-models:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-      checks: write
-      issues: write
-    container: ghcr.io/payamqorbanpour/cadoo-cli:latest
     steps:
-      - name: Run cadoo
+      - name: List models available on LLM gateway
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LLM_GATEWAY_URL: ${{ secrets.LLM_GATEWAY_URL }}
           LLM_GATEWAY_API_KEY: ${{ secrets.LLM_GATEWAY_API_KEY }}
-          CADOO_DEFAULT_MODEL: gemini-2.5-flash
-        run: cadoo ci --pr "${{ github.event.pull_request.html_url }}"
+        run: |
+          curl -s -H "Authorization: Bearer $LLM_GATEWAY_API_KEY" "$LLM_GATEWAY_URL/models" | tee models.json
+          echo "---"
+          jq -r '.data[]?.id // .[]?.id // "could not parse .data[].id, see raw output above"' models.json 2>/dev/null || true
