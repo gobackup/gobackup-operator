@@ -151,13 +151,19 @@ type DatabaseConfig struct {
 
 // DatabaseStatus defines the observed state of Database
 type DatabaseStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// ObservedGeneration is the most recent Database spec generation observed by
+	// the controller. There is no dedicated Database controller yet, so this is
+	// currently unpopulated; it exists to make the status subresource honest.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
-//+kubebuilder:resource:shortName=db
+//+kubebuilder:resource:shortName=db,categories=gobackup
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:storageversion
+//+kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.type`
+//+kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
 // Database is the Schema for the databases API
 type Database struct {
