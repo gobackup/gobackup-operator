@@ -1,0 +1,27 @@
+models:
+  full:
+    after_script: echo after
+    before_script: echo before
+    compress_with: gzip
+    databases:
+      mongo:
+        database: m
+        host: mongo
+        oplog: true
+        port: 27017
+        type: mongodb
+      pg:
+        database: d
+        host: pg
+        port: 5432
+        type: postgresql
+    encode_with: base64
+    storages:
+      local:
+        path: /b
+        type: local
+      s3:
+        bucket: b
+        keep: 7
+        region: r
+        type: s3
