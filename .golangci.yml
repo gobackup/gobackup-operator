@@ -11,10 +11,6 @@ linters:
     - misspell
     - staticcheck
     - unused
-  settings:
-    staticcheck:
-      checks:
-        - all
   exclusions:
     generated: lax
     rules:
