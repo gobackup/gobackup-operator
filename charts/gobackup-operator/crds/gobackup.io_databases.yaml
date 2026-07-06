@@ -48,186 +48,697 @@ spec:
           metadata:
             type: object
           spec:
-            description: DatabaseSpec defines the desired state of Database
+            description: |-
+              DatabaseSpec defines the desired state of Database.
+
+              Config carries one nested sub-object per database type; exactly the
+              sub-object matching spec.type must be set. The two CEL rules below enforce
+              that invariant (the emitter flattens the chosen sub-object into gobackup.yml).
             properties:
               config:
-                description: Config contains the database configuration
+                description: Config carries exactly one nested sub-object matching
+                  spec.type.
                 properties:
-                  args:
-                    description: |-
-                      Args are additional arguments for pg_dump (PostgreSQL), mysqldump (MySQL) or redis-cli utility (Redis)
-                      For Redis, e.g.: --tls --cacert redis_ca.pem
-                      For MySQL, e.g.: --skip-ssl or --ssl-ca=/path/to/ca.pem
-                    type: string
-                  args_redis:
-                    description: 'ArgsRedis are additional options for redis-cli utility,
-                      for example: --tls --cacert redis_ca.pem'
-                    type: string
-                  auth_db:
-                    description: AuthDB is the authentication database (MongoDB)
-                    type: string
-                  bucket:
-                    description: Bucket is the bucket name (InfluxDB)
-                    type: string
-                  copy:
-                    description: Copy is used for local Redis server, just copy Redis
-                      dump.db
-                    type: boolean
-                  database:
-                    description: Database is the database name (PostgreSQL)
-                    type: string
-                  endpoints:
-                    description: Endpoints are the ETCD endpoints (ETCD)
-                    items:
-                      type: string
-                    type: array
-                  exclude_tables:
-                    description: ExcludeTables is an array of tables to exclude from
-                      backup (PostgreSQL)
-                    items:
-                      type: string
-                    type: array
-                  host:
-                    description: |-
-                      Host is the database server hostname
-                      Default for PostgreSQL: localhost, for Redis: 127.0.0.1
-                    type: string
-                  invoke_save:
-                    description: 'InvokeSave invokes save before backup (Redis). Default:
-                      true'
-                    type: boolean
-                  mode:
-                    description: 'Mode is the Redis dump mode. Default: copy'
-                    enum:
-                    - copy
-                    - sync
-                    type: string
-                  oplog:
-                    description: Oplog is used to backup oplog (MongoDB)
-                    type: boolean
-                  org:
-                    description: Organization is the organization name (InfluxDB)
-                    type: string
-                  password:
-                    description: |-
-                      Password is the password for the database or Redis server. Use password_ref to reference a Secret instead.
-                      Default for Redis: ""
-                    type: string
-                  password_ref:
-                    description: |-
-                      PasswordRef references a Secret containing the database password.
-                      Set either Password or PasswordRef, not both.
+                  etcd:
+                    description: 'Etcd configuration (spec.type: etcd).'
                     properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
+                      args:
+                        description: Args are additional etcdctl arguments.
                         type: string
-                      name:
-                        default: ""
-                        description: |-
-                          Name of the referent.
-                          This field is effectively required, but due to backwards compatibility is
-                          allowed to be empty. Instances of this type with an empty value here are
-                          almost certainly wrong.
-                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      endpoint:
+                        description: Endpoint is a single etcd endpoint.
                         type: string
-                      optional:
-                        description: Specify whether the Secret or its key must be
-                          defined
-                        type: boolean
-                    required:
-                    - key
+                      endpoints:
+                        description: Endpoints are the etcd endpoints.
+                        items:
+                          type: string
+                        type: array
                     type: object
-                    x-kubernetes-map-type: atomic
-                  port:
-                    description: |-
-                      Port is the database server port
-                      Default for PostgreSQL: 5432, for Redis: 6379
-                    type: integer
-                  rdb_path:
-                    description: 'RdbPath is the path to dump.rdb for Redis. Default:
-                      /var/lib/redis/dump.rdb'
-                    type: string
-                  socket:
-                    description: |-
-                      Socket is the database server socket
-                      For PostgreSQL: e.g. /var/run/postgresql/.s.PGSQL.5432
-                      For Redis: e.g. /var/run/redis/redis.sock
-                    type: string
-                  sync:
-                    description: Sync is used for remote Redis server to export
-                    type: boolean
-                  tables:
-                    description: Tables is an array of tables to backup (PostgreSQL)
-                    items:
-                      type: string
-                    type: array
-                  token:
-                    description: Token is the authentication token (InfluxDB). Use
-                      token_ref to reference a Secret instead.
-                    type: string
-                  token_ref:
-                    description: TokenRef references a Secret containing the InfluxDB
-                      authentication token.
+                  firebird:
+                    description: 'Firebird configuration (spec.type: firebird).'
                     properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
+                      args:
+                        description: Args are additional gbak arguments.
                         type: string
-                      name:
-                        default: ""
-                        description: |-
-                          Name of the referent.
-                          This field is effectively required, but due to backwards compatibility is
-                          allowed to be empty. Instances of this type with an empty value here are
-                          almost certainly wrong.
-                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      database:
+                        description: Database is the database path/name.
                         type: string
-                      optional:
-                        description: Specify whether the Secret or its key must be
-                          defined
-                        type: boolean
-                    required:
-                    - key
+                      host:
+                        description: Host is the Firebird server hostname.
+                        type: string
+                      password:
+                        description: Password is the database password. Use password_ref
+                          to reference a Secret instead.
+                        type: string
+                      password_ref:
+                        description: PasswordRef references a Secret containing the
+                          database password.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      port:
+                        description: Port is the Firebird server port.
+                        type: integer
+                      role:
+                        description: Role is the SQL role to assume.
+                        type: string
+                      username:
+                        description: Username is the database username. Use username_ref
+                          to reference a Secret instead.
+                        type: string
+                      username_ref:
+                        description: UsernameRef references a Secret containing the
+                          database username.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
                     type: object
-                    x-kubernetes-map-type: atomic
-                  trust_server_certificate:
-                    description: TrustServerCertificate is used to trust the server
-                      certificate (MSSQL)
-                    type: boolean
-                  username:
-                    description: |-
-                      Username is the username for the database (PostgreSQL). Use username_ref to reference a Secret instead.
-                      Default: root
-                    type: string
-                  username_ref:
-                    description: UsernameRef references a Secret containing the database
-                      username.
+                  influxdb:
+                    description: 'InfluxDB configuration (spec.type: influxdb).'
                     properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
-                        type: string
-                      name:
-                        default: ""
-                        description: |-
-                          Name of the referent.
-                          This field is effectively required, but due to backwards compatibility is
-                          allowed to be empty. Instances of this type with an empty value here are
-                          almost certainly wrong.
-                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        type: string
-                      optional:
-                        description: Specify whether the Secret or its key must be
-                          defined
+                      all_databases:
+                        description: AllDatabases backs up all buckets.
                         type: boolean
-                    required:
-                    - key
+                      bucket:
+                        description: Bucket is the bucket name.
+                        type: string
+                      bucket_id:
+                        description: BucketID is the bucket ID.
+                        type: string
+                      host:
+                        description: Host is the InfluxDB server URL/host.
+                        type: string
+                      http_debug:
+                        description: HTTPDebug enables HTTP debug logging.
+                        type: boolean
+                      org:
+                        description: Org is the organization name.
+                        type: string
+                      org_id:
+                        description: OrgID is the organization ID.
+                        type: string
+                      skip_verify:
+                        description: SkipVerify skips TLS certificate verification.
+                        type: boolean
+                      token:
+                        description: Token is the InfluxDB API token. Use token_ref
+                          to reference a Secret instead.
+                        type: string
+                      token_ref:
+                        description: TokenRef references a Secret containing the InfluxDB
+                          API token.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
                     type: object
-                    x-kubernetes-map-type: atomic
+                  mariadb:
+                    description: 'MariaDB configuration (spec.type: mariadb).'
+                    properties:
+                      all_databases:
+                        description: AllDatabases dumps all databases.
+                        type: boolean
+                      args:
+                        description: Args are additional mariadb-dump arguments.
+                        type: string
+                      database:
+                        description: Database is the database name.
+                        type: string
+                      host:
+                        default: 127.0.0.1
+                        description: Host is the MariaDB server hostname.
+                        type: string
+                      password:
+                        description: Password is the database password. Use password_ref
+                          to reference a Secret instead.
+                        type: string
+                      password_ref:
+                        description: PasswordRef references a Secret containing the
+                          database password.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      port:
+                        default: 3306
+                        description: Port is the MariaDB server port.
+                        type: integer
+                      socket:
+                        description: Socket is the MariaDB server socket path.
+                        type: string
+                      username:
+                        default: root
+                        description: Username is the database username. Use username_ref
+                          to reference a Secret instead.
+                        type: string
+                      username_ref:
+                        description: UsernameRef references a Secret containing the
+                          database username.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    type: object
+                  mongodb:
+                    description: 'MongoDB configuration (spec.type: mongodb).'
+                    properties:
+                      all_databases:
+                        description: AllDatabases dumps all databases.
+                        type: boolean
+                      args:
+                        description: Args are additional mongodump arguments.
+                        type: string
+                      authdb:
+                        description: AuthDB is the authentication database.
+                        type: string
+                      database:
+                        description: Database is the database name.
+                        type: string
+                      exclude_tables:
+                        description: ExcludeTables excludes these collections from
+                          the dump.
+                        items:
+                          type: string
+                        type: array
+                      exclude_tables_prefix:
+                        description: ExcludeTablesPrefix excludes collections matching
+                          this prefix.
+                        type: string
+                      host:
+                        default: 127.0.0.1
+                        description: Host is the MongoDB server hostname.
+                        type: string
+                      oplog:
+                        description: Oplog enables a point-in-time oplog backup.
+                        type: boolean
+                      password:
+                        description: Password is the database password. Use password_ref
+                          to reference a Secret instead.
+                        type: string
+                      password_ref:
+                        description: PasswordRef references a Secret containing the
+                          database password.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      port:
+                        default: 27017
+                        description: Port is the MongoDB server port.
+                        type: integer
+                      uri:
+                        description: URI is the full MongoDB connection URI.
+                        type: string
+                      username:
+                        description: Username is the database username. Use username_ref
+                          to reference a Secret instead.
+                        type: string
+                      username_ref:
+                        description: UsernameRef references a Secret containing the
+                          database username.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    type: object
+                  mssql:
+                    description: 'MSSQL configuration (spec.type: mssql).'
+                    properties:
+                      all_databases:
+                        description: AllDatabases dumps all databases.
+                        type: boolean
+                      args:
+                        description: Args are additional sqlcmd/bcp arguments.
+                        type: string
+                      database:
+                        description: Database is the database name.
+                        type: string
+                      host:
+                        default: 127.0.0.1
+                        description: Host is the SQL Server hostname.
+                        type: string
+                      password:
+                        description: Password is the database password. Use password_ref
+                          to reference a Secret instead.
+                        type: string
+                      password_ref:
+                        description: PasswordRef references a Secret containing the
+                          database password.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      port:
+                        default: 1433
+                        description: Port is the SQL Server port.
+                        type: integer
+                      skip_databases:
+                        description: SkipDatabases is a comma-separated list of databases
+                          to skip.
+                        type: string
+                      trust_server_certificate:
+                        description: TrustServerCertificate trusts the server TLS
+                          certificate.
+                        type: boolean
+                      username:
+                        default: sa
+                        description: Username is the database username. Use username_ref
+                          to reference a Secret instead.
+                        type: string
+                      username_ref:
+                        description: UsernameRef references a Secret containing the
+                          database username.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    type: object
+                  mysql:
+                    description: 'MySQL configuration (spec.type: mysql).'
+                    properties:
+                      all_databases:
+                        description: AllDatabases dumps all databases.
+                        type: boolean
+                      args:
+                        description: Args are additional mysqldump arguments.
+                        type: string
+                      database:
+                        description: Database is the database name.
+                        type: string
+                      exclude_tables:
+                        description: ExcludeTables excludes these tables from the
+                          dump.
+                        items:
+                          type: string
+                        type: array
+                      host:
+                        default: 127.0.0.1
+                        description: Host is the MySQL server hostname.
+                        type: string
+                      password:
+                        description: Password is the database password. Use password_ref
+                          to reference a Secret instead.
+                        type: string
+                      password_ref:
+                        description: PasswordRef references a Secret containing the
+                          database password.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      port:
+                        default: 3306
+                        description: Port is the MySQL server port.
+                        type: integer
+                      socket:
+                        description: Socket is the MySQL server socket path.
+                        type: string
+                      tables:
+                        description: Tables restricts the dump to these tables.
+                        items:
+                          type: string
+                        type: array
+                      username:
+                        default: root
+                        description: Username is the database username. Use username_ref
+                          to reference a Secret instead.
+                        type: string
+                      username_ref:
+                        description: UsernameRef references a Secret containing the
+                          database username.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    type: object
+                  postgresql:
+                    description: 'PostgreSQL configuration (spec.type: postgresql).'
+                    properties:
+                      all_databases:
+                        description: AllDatabases dumps all databases (pg_dumpall).
+                        type: boolean
+                      args:
+                        description: Args are additional pg_dump arguments.
+                        type: string
+                      compress:
+                        description: Compress passes the pg_dump compression option.
+                        type: string
+                      database:
+                        description: Database is the database name.
+                        type: string
+                      exclude_tables:
+                        description: ExcludeTables excludes these tables from the
+                          dump.
+                        items:
+                          type: string
+                        type: array
+                      host:
+                        default: localhost
+                        description: Host is the PostgreSQL server hostname.
+                        type: string
+                      password:
+                        description: Password is the database password. Use password_ref
+                          to reference a Secret instead.
+                        type: string
+                      password_ref:
+                        description: PasswordRef references a Secret containing the
+                          database password.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      port:
+                        default: 5432
+                        description: Port is the PostgreSQL server port.
+                        type: integer
+                      socket:
+                        description: Socket is the PostgreSQL server socket path.
+                        type: string
+                      tables:
+                        description: Tables restricts the dump to these tables.
+                        items:
+                          type: string
+                        type: array
+                      username:
+                        description: Username is the database username. Use username_ref
+                          to reference a Secret instead.
+                        type: string
+                      username_ref:
+                        description: UsernameRef references a Secret containing the
+                          database username.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    type: object
+                  redis:
+                    description: 'Redis configuration (spec.type: redis).'
+                    properties:
+                      args:
+                        description: Args are additional redis-cli arguments.
+                        type: string
+                      host:
+                        default: 127.0.0.1
+                        description: Host is the Redis server hostname.
+                        type: string
+                      invoke_save:
+                        default: true
+                        description: InvokeSave runs SAVE before copying the dump
+                          file.
+                        type: boolean
+                      mode:
+                        default: copy
+                        description: Mode is the Redis dump mode.
+                        enum:
+                        - copy
+                        - sync
+                        type: string
+                      password:
+                        description: Password is the Redis password. Use password_ref
+                          to reference a Secret instead.
+                        type: string
+                      password_ref:
+                        description: PasswordRef references a Secret containing the
+                          Redis password.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      port:
+                        default: 6379
+                        description: Port is the Redis server port.
+                        type: integer
+                      rdb_path:
+                        description: RdbPath is the path to dump.rdb.
+                        type: string
+                      socket:
+                        description: Socket is the Redis server socket path.
+                        type: string
+                    type: object
+                  sqlite:
+                    description: 'SQLite configuration (spec.type: sqlite).'
+                    properties:
+                      path:
+                        description: Path is the path to the SQLite database file.
+                        type: string
+                    type: object
                 type: object
               type:
-                description: Type is the database backend type
+                description: Type is the database backend type.
                 enum:
                 - postgresql
                 - mysql
@@ -237,47 +748,26 @@ spec:
                 - mssql
                 - influxdb
                 - etcd
+                - firebird
+                - sqlite
                 type: string
             required:
             - config
             - type
             type: object
             x-kubernetes-validations:
-            - message: config.mode is only valid when spec.type is redis
-              rule: self.type == 'redis' || !has(self.config.mode)
-            - message: config.sync is only valid when spec.type is redis
-              rule: self.type == 'redis' || !has(self.config.sync)
-            - message: config.copy is only valid when spec.type is redis
-              rule: self.type == 'redis' || !has(self.config.copy)
-            - message: config.invoke_save is only valid when spec.type is redis
-              rule: self.type == 'redis' || !has(self.config.invoke_save)
-            - message: config.rdb_path is only valid when spec.type is redis
-              rule: self.type == 'redis' || !has(self.config.rdb_path)
-            - message: config.args_redis is only valid when spec.type is redis
-              rule: self.type == 'redis' || !has(self.config.args_redis)
-            - message: config.auth_db is only valid when spec.type is mongodb
-              rule: self.type == 'mongodb' || !has(self.config.auth_db)
-            - message: config.oplog is only valid when spec.type is mongodb
-              rule: self.type == 'mongodb' || !has(self.config.oplog)
-            - message: config.trust_server_certificate is only valid when spec.type
-                is mssql
-              rule: self.type == 'mssql' || !has(self.config.trust_server_certificate)
-            - message: config.token is only valid when spec.type is influxdb
-              rule: self.type == 'influxdb' || !has(self.config.token)
-            - message: config.token_ref is only valid when spec.type is influxdb
-              rule: self.type == 'influxdb' || !has(self.config.token_ref)
-            - message: config.bucket is only valid when spec.type is influxdb
-              rule: self.type == 'influxdb' || !has(self.config.bucket)
-            - message: config.org is only valid when spec.type is influxdb
-              rule: self.type == 'influxdb' || !has(self.config.org)
-            - message: config.endpoints is only valid when spec.type is etcd
-              rule: self.type == 'etcd' || !has(self.config.endpoints)
-            - message: config.tables is only valid for SQL databases (postgresql,
-                mysql, mariadb, mssql)
-              rule: self.type in ['postgresql', 'mysql', 'mariadb', 'mssql'] || !has(self.config.tables)
-            - message: config.exclude_tables is only valid for SQL databases (postgresql,
-                mysql, mariadb, mssql)
-              rule: self.type in ['postgresql', 'mysql', 'mariadb', 'mssql'] || !has(self.config.exclude_tables)
+            - message: exactly one config sub-object must be set
+              rule: (has(self.config.postgresql)?1:0)+(has(self.config.mysql)?1:0)+(has(self.config.mariadb)?1:0)+(has(self.config.mongodb)?1:0)+(has(self.config.redis)?1:0)+(has(self.config.mssql)?1:0)+(has(self.config.influxdb)?1:0)+(has(self.config.etcd)?1:0)+(has(self.config.firebird)?1:0)+(has(self.config.sqlite)?1:0)
+                == 1
+            - message: the config sub-object must match spec.type
+              rule: (self.type == 'postgresql' && has(self.config.postgresql)) ||
+                (self.type == 'mysql' && has(self.config.mysql)) || (self.type ==
+                'mariadb' && has(self.config.mariadb)) || (self.type == 'mongodb'
+                && has(self.config.mongodb)) || (self.type == 'redis' && has(self.config.redis))
+                || (self.type == 'mssql' && has(self.config.mssql)) || (self.type
+                == 'influxdb' && has(self.config.influxdb)) || (self.type == 'etcd'
+                && has(self.config.etcd)) || (self.type == 'firebird' && has(self.config.firebird))
+                || (self.type == 'sqlite' && has(self.config.sqlite))
           status:
             description: DatabaseStatus defines the observed state of Database
             properties:
