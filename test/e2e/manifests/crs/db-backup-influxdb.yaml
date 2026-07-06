@@ -1,4 +1,4 @@
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Database
 metadata:
   name: influxdb
@@ -12,7 +12,7 @@ spec:
     org: my-org
     bucket: my-bucket
 ---
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Backup
 metadata:
   name: backup-influxdb

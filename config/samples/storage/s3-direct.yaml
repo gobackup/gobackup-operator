@@ -1,5 +1,5 @@
 ---
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Storage
 metadata:
   name: s3-direct

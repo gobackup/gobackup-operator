@@ -38,7 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
+	backupv1 "github.com/gobackup/gobackup-operator/api/v1alpha1"
 	"github.com/gobackup/gobackup-operator/pkg/k8sutil"
 )
 
@@ -64,8 +64,6 @@ const (
 // +kubebuilder:rbac:groups=gobackup.io,resources=backups/finalizers,verbs=update
 // +kubebuilder:rbac:groups=gobackup.io,resources=databases,verbs=get;list;watch
 // +kubebuilder:rbac:groups=gobackup.io,resources=storages,verbs=get;list;watch
-// +kubebuilder:rbac:groups=gobackup.io,resources=postgresqls,verbs=get;list;watch
-// +kubebuilder:rbac:groups=gobackup.io,resources=s3s,verbs=get;list;watch
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
@@ -133,7 +131,7 @@ func (r *BackupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	if shouldRequeue && !result.Requeue && result.RequeueAfter == 0 {
+	if shouldRequeue && result.RequeueAfter == 0 {
 		result.RequeueAfter = 30 * time.Second
 	}
 
@@ -618,12 +616,13 @@ func (r *BackupReconciler) reconcileJobStatus(ctx context.Context, backup *backu
 
 	// Update counters and timestamps based on phase (only once per job completion)
 	if shouldIncrementCounters {
-		if runStatus.Phase == "Succeeded" {
+		switch runStatus.Phase {
+		case "Succeeded":
 			statusCopy.LastSuccessfulBackupTime = &now
 			statusCopy.SuccessCount++
 			statusCopy.FailureCount = 0 // Reset consecutive failures
 			logger.Info("Incrementing success count", "newCount", statusCopy.SuccessCount)
-		} else if runStatus.Phase == "Failed" {
+		case "Failed":
 			statusCopy.FailureCount++
 			logger.Info("Incrementing failure count", "newCount", statusCopy.FailureCount)
 		}
@@ -731,7 +730,7 @@ func (r *BackupReconciler) collectPodLogs(ctx context.Context, job *batchv1.Job)
 	if err != nil {
 		return "", fmt.Errorf("failed to get pod logs: %w", err)
 	}
-	defer podLogs.Close()
+	defer func() { _ = podLogs.Close() }()
 
 	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, podLogs)

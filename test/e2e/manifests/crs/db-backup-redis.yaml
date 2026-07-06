@@ -1,4 +1,4 @@
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Database
 metadata:
   name: redis
@@ -12,7 +12,7 @@ spec:
     rdb_path: /data/dump.rdb
     invoke_save: true
 ---
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Backup
 metadata:
   name: backup-redis

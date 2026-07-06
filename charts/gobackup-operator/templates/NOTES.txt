@@ -14,7 +14,7 @@ GoBackup Operator is now running in your cluster.
 1. Create a Storage resource to define where backups will be stored:
 
    ```yaml
-   apiVersion: gobackup.io/v1
+   apiVersion: gobackup.io/v1alpha1
    kind: Storage
    metadata:
      name: my-s3-storage
@@ -34,7 +34,7 @@ GoBackup Operator is now running in your cluster.
 2. Create a Database resource to define the database to backup:
 
    ```yaml
-   apiVersion: gobackup.io/v1
+   apiVersion: gobackup.io/v1alpha1
    kind: Database
    metadata:
      name: my-postgres
@@ -51,7 +51,7 @@ GoBackup Operator is now running in your cluster.
 3. Create a Backup resource to schedule backups:
 
    ```yaml
-   apiVersion: gobackup.io/v1
+   apiVersion: gobackup.io/v1alpha1
    kind: Backup
    metadata:
      name: my-backup

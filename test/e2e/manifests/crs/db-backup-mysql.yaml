@@ -1,4 +1,4 @@
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Database
 metadata:
   name: mysql
@@ -13,7 +13,7 @@ spec:
     database: testdb
     args: "--no-tablespaces"
 ---
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Backup
 metadata:
   name: backup-mysql

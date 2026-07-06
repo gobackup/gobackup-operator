@@ -59,21 +59,21 @@ models:
 **Three CRDs defined in `api/v1/`:**
 
 ### Backup (`api/v1/backup_types.go`)
-- Group/Version: `gobackup.io/v1`, Kind: `Backup`, shortName: `backup`
+- Group/Version: `gobackup.io/v1alpha1`, Kind: `Backup`, shortName: `backup`
 - References `Database` and `Storage` CRs by name
 - Defines schedule (cron), compression, encryption, before/after scripts
 - Status tracks: `LastBackupTime`, `LastSuccessfulBackupTime`, `Phase`, `RecentRuns` (max 5), `FailureCount`, `SuccessCount`, `ObservedGeneration`
 - Controller: `internal/controller/backup_controller.go`
 
 ### Database (`api/v1/database_types.go`)
-- Group/Version: `gobackup.io/v1`, Kind: `Database`, shortName: `db`
+- Group/Version: `gobackup.io/v1alpha1`, Kind: `Database`, shortName: `db`
 - `spec.type` enum: `postgresql`, `mysql`, `mariadb`, `mongodb`, `redis`, `mssql`, `influxdb`, `etcd`
 - CEL validation rules enforce type-specific field constraints (e.g., `config.token` only valid for `influxdb`)
 - Credential fields support both inline values and `SecretKeySelector` refs (e.g., `password_ref`, `username_ref`, `token_ref`)
 - No dedicated controller; fetched dynamically by `BackupReconciler` via dynamic client when building config
 
 ### Storage (`api/v1/storage_types.go`)
-- Group/Version: `gobackup.io/v1`, Kind: `Storage`, shortName: `storage`
+- Group/Version: `gobackup.io/v1alpha1`, Kind: `Storage`, shortName: `storage`
 - `spec.type` enum: `local`, `ftp`, `sftp`, `scp`, `webdav`, `s3`, `oss`, `gcs`, `azure`, `r2`, `spaces`, `b2`, `cos`, `us3`, `kodo`, `bos`, `minio`, `obs`, `tos`, `upyun`
 - Credential fields support both inline values and `SecretKeySelector` refs (e.g., `access_key_id_ref`, `secret_access_key_ref`, `credentials_ref`, `client_secret_ref`, `private_key_ref`)
 - No dedicated controller; fetched dynamically when building config

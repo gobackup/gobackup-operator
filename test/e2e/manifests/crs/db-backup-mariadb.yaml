@@ -1,4 +1,4 @@
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Database
 metadata:
   name: mariadb
@@ -12,7 +12,7 @@ spec:
     password: password
     database: testdb
 ---
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Backup
 metadata:
   name: backup-mariadb

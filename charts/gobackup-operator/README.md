@@ -204,7 +204,7 @@ After installing the chart, you can start creating backup resources:
 ### 1. Create a Storage resource
 
 ```yaml
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Storage
 metadata:
   name: my-s3-storage
@@ -224,7 +224,7 @@ spec:
 ### 2. Create a Database resource
 
 ```yaml
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Database
 metadata:
   name: my-postgres
@@ -241,7 +241,7 @@ spec:
 ### 3. Create a Backup resource
 
 ```yaml
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Backup
 metadata:
   name: my-backup

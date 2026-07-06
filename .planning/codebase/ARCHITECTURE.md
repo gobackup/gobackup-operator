@@ -7,7 +7,7 @@
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────┐
-│                     User-Facing CRDs (gobackup.io/v1)               │
+│                     User-Facing CRDs (gobackup.io/v1alpha1)               │
 │                                                                      │
 │  Backup (namespaced)    Database (namespaced)   Storage (namespaced) │
 │  `api/v1/backup_types.go`  `api/v1/database_types.go`  `api/v1/storage_types.go` │
@@ -167,7 +167,7 @@
 **Operator binary:**
 - Location: `cmd/main.go`
 - Triggers: `controller-runtime` Manager; signal handler (`ctrl.SetupSignalHandler`)
-- Responsibilities: Register scheme (`gobackup.io/v1` + core k8s), create `K8s` clients, instantiate `BackupReconciler`, add health/readiness probes, start manager
+- Responsibilities: Register scheme (`gobackup.io/v1alpha1` + core k8s), create `K8s` clients, instantiate `BackupReconciler`, add health/readiness probes, start manager
 
 **`BackupReconciler.Reconcile`:**
 - Location: `internal/controller/backup_controller.go:78`
@@ -179,7 +179,7 @@
 - **Threading:** Single-threaded event loop per resource type (controller-runtime default); no explicit goroutines in controller code
 - **Global state:** `scheme` and `setupLog` package-level vars in `cmd/main.go`; all other state flows through reconciler structs
 - **Circular imports:** None detected; `api/v1` → no internal deps; `pkg/k8sutil` → `api/v1`; `internal/controller` → both
-- **CRD version:** All resources are `gobackup.io/v1`; domain is `gobackup.io`
+- **CRD version:** All resources are `gobackup.io/v1alpha1`; domain is `gobackup.io`
 - **Namespace scope:** All CRDs are namespaced; the operator cluster-role watches across all namespaces
 - **Dynamic client dependency:** `Database` and `Storage` CRDs are fetched via the dynamic client at reconcile time, not cached via typed informers — changes to those CRDs do not automatically re-trigger Backup reconciliation; only a change to the Backup spec or its owned CronJob/Jobs does
 

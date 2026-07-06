@@ -85,7 +85,7 @@ import (
     "sigs.k8s.io/controller-runtime/pkg/handler"
     "sigs.k8s.io/controller-runtime/pkg/log"
 
-    backupv1 "github.com/gobackup/gobackup-operator/api/v1"
+    backupv1 "github.com/gobackup/gobackup-operator/api/v1alpha1"
     "github.com/gobackup/gobackup-operator/pkg/k8sutil"
 )
 ```

@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
+	backupv1 "github.com/gobackup/gobackup-operator/api/v1alpha1"
 )
 
 // BackupConfig represents the configuration for backups
@@ -57,7 +57,7 @@ func (k *K8s) CreateSecret(ctx context.Context, backup *backupv1.Backup) error {
 		}
 
 		// Fetch the database CRD
-		databaseCRD, err := k.GetCRD(ctx, apiGroup, "v1", resource, namespace, database.Name)
+		databaseCRD, err := k.GetCRD(ctx, apiGroup, backupv1.GroupVersion.Version, resource, namespace, database.Name)
 		if err != nil {
 			return fmt.Errorf("failed to get database %s: %w", database.Name, err)
 		}
@@ -121,7 +121,7 @@ func (k *K8s) CreateSecret(ctx context.Context, backup *backupv1.Backup) error {
 		}
 
 		// Fetch the storage CRD
-		storageCRD, err := k.GetCRD(ctx, apiGroup, "v1", resource, namespace, storage.Name)
+		storageCRD, err := k.GetCRD(ctx, apiGroup, backupv1.GroupVersion.Version, resource, namespace, storage.Name)
 		if err != nil {
 			return fmt.Errorf("failed to get %s storage: %w", storageType, err)
 		}

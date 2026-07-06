@@ -1,4 +1,4 @@
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Database
 metadata:
   name: mssql
@@ -13,7 +13,7 @@ spec:
     database: master
     trust_server_certificate: true
 ---
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Backup
 metadata:
   name: backup-mssql
