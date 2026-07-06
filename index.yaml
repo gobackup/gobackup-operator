@@ -3,10 +3,10 @@ entries:
   gobackup-operator:
   - apiVersion: v2
     appVersion: 0.1.3-alpha
-    created: "2026-07-06T14:23:58.659102731Z"
+    created: "2026-07-06T15:46:45.391000394Z"
     description: A Helm chart for GoBackup Operator - Kubernetes operator for managing
       database backups
-    digest: 2f94213816eafe79345fa2422ff03c62ca5d08cc20fd90a64d7e1355a2108b78
+    digest: 30041b7db4450bb3e255d343964c4a478f9ce78f95c02b550f7cdd6092c20541
     home: https://github.com/gobackup/gobackup-operator
     keywords:
     - gobackup
@@ -154,4 +154,4 @@ entries:
     urls:
     - https://github.com/gobackup/gobackup-operator/releases/download/v0.1.0-alpha/gobackup-operator-0.1.0-alpha.tgz
     version: 0.1.0-alpha
-generated: "2026-07-06T14:23:58.65801706Z"
+generated: "2026-07-06T15:46:45.389951158Z"
