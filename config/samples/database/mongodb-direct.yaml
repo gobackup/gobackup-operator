@@ -12,5 +12,5 @@ spec:
       database: exampledb
       username: root
       password: examplepassword
-      auth_db: admin
+      authdb: admin
       oplog: true

@@ -7,8 +7,7 @@ spec:
   type: influxdb
   config:
     influxdb:
-      host: influxdb.gobackup-e2e-test
-      port: 8086
+      host: http://influxdb.gobackup-e2e-test:8086
       token: my-super-secret-auth-token
       org: my-org
       bucket: my-bucket

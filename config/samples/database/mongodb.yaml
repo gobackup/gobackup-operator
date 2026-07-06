@@ -16,5 +16,5 @@ spec:
       password_ref:
         name: database-credentials
         key: password
-      auth_db: admin
+      authdb: admin
       oplog: true

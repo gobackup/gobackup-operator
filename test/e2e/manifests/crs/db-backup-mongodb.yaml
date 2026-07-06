@@ -11,7 +11,7 @@ spec:
       port: 27017
       username: root
       password: password
-      auth_db: admin
+      authdb: admin
       oplog: true
 ---
 apiVersion: gobackup.io/v1alpha1
