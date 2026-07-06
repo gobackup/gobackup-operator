@@ -60,13 +60,14 @@ jobs:
         id: ai-review
         continue-on-error: true
         env:
-          ARVAN_API_KEY: ${{ secrets.ARVAN_AI_API_KEY }}
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          AI_API_URL: ${{ vars.AI_API_URL || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent' }}
         run: |
           # Read the diff
-          DIFF_CONTENT=$(cat pr_diff.txt | jq -Rs .)
-          
+          DIFF_CONTENT=$(cat pr_diff.txt)
+
           # Prepare the review prompt
-          PROMPT="Act as a senior Go and Kubernetes engineer. Review the diff and flag only true bugs, security concerns, or risky changes. Return ONLY valid JSON matching this schema:
+          PROMPT="You are an expert code reviewer specializing in Go, Kubernetes, and cloud-native applications. Act as a senior Go and Kubernetes engineer. Review the diff and flag only true bugs, security concerns, or risky changes. Return ONLY valid JSON matching this schema:
           {
             \"summary\": string | null,
             \"comments\": [
@@ -82,33 +83,23 @@ jobs:
           - Use comments array only for actionable findings. Leave it empty when there are no issues.
           - Omit suggestion when not needed. When present, include only the replacement code lines.
           - Set summary to a short overview or null. If there are no issues, respond with {\"summary\":\"NO_ISSUES\",\"comments\":[]}.
-          
+          - Return raw JSON only, with no markdown code fences.
+
           Code diff:
           $DIFF_CONTENT"
-          
-          # Call ArvanCloud AI API
+
+          REQUEST_BODY=$(jq -n --arg text "$PROMPT" '{contents: [{parts: [{text: $text}]}]}')
+
+          # Call the configured AI API
           RESPONSE=$(curl -s -X POST \
-            "https://arvancloudai.ir/gateway/models/GPT-5/dLeqgnGfz1C2zftmNeS4Nd9Q0Fb33Qx5JRqplYEFa4yWAFRC8saj2LMJiyMAjrDOedL4qNXb_PMDMjCSnEFqSCQkgVFnCx3T4Qtu-sruzmH-wRNhYvxHSI34EjG_nfnoOe9djzeqGnhfCJlQ-Z3zUowQQYYeg510o8t8FtAWu35poiK93SAFBYWkU_bbOCe_ZU3gg8dBzzFwpXgD2z4BWzYhz96DR1jTXOanCnI7gw4/v1/chat/completions" \
-            -H "Authorization: Bearer $ARVAN_API_KEY" \
+            "${AI_API_URL}?key=${AI_API_KEY}" \
             -H "Content-Type: application/json" \
-            -d "{
-              \"model\": \"gpt-5\",
-              \"messages\": [
-                {
-                  \"role\": \"system\",
-                  \"content\": \"You are an expert code reviewer specializing in Go, Kubernetes, and cloud-native applications.\"
-                },
-                {
-                  \"role\": \"user\",
-                  \"content\": $(echo "$PROMPT" | jq -Rs .)
-                }
-              ],
-              \"temperature\": 0.3,
-              \"max_tokens\": 2000
-            }")
-          
+            -d "$REQUEST_BODY")
+
           # Extract the review content
-          REVIEW=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // ""')
+          REVIEW=$(echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text // ""')
+          # Strip optional markdown code fences the model sometimes wraps JSON in
+          REVIEW=$(echo "$REVIEW" | sed -e '1{/^```/d}' -e '${/^```$/d}')
           HAS_ISSUES=false
 
           if echo "$RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
