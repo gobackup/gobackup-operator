@@ -2,6 +2,7 @@ models:
   cache-backup:
     databases:
       cache:
+        args: --tls
         host: redis.svc
         invoke_save: true
         mode: copy

@@ -86,7 +86,7 @@ func Build(
 		if dbType == "" {
 			return nil, fmt.Errorf("database %q has an empty spec.type", ref.Name)
 		}
-		entry, err := configToMap(db.Spec.Config)
+		entry, err := subConfigToMap(db.Spec.Config, dbType)
 		if err != nil {
 			return nil, fmt.Errorf("marshal database %q config: %w", ref.Name, err)
 		}
@@ -109,7 +109,7 @@ func Build(
 		if storageType == "" {
 			return nil, fmt.Errorf("storage %q has an empty spec.type", ref.Name)
 		}
-		entry, err := configToMap(storage.Spec.Config)
+		entry, err := subConfigToMap(storage.Spec.Config, storageType)
 		if err != nil {
 			return nil, fmt.Errorf("marshal storage %q config: %w", ref.Name, err)
 		}
@@ -144,19 +144,30 @@ func Build(
 	return yaml.Marshal(cfg)
 }
 
-// configToMap projects a typed config struct to a map keyed by its JSON tags,
-// dropping unset (omitempty) fields. This is the lossless bridge: the JSON tag
-// becomes the gobackup key with no hand-maintained field list.
-func configToMap(config any) (map[string]any, error) {
+// subConfigToMap projects the nested config sub-object matching backendType to a
+// flat map keyed by its JSON tags. The CRD nests one sub-object per backend type
+// under config (config.postgresql, config.s3, …) purely as authoring sugar; the
+// emitted gobackup.yml stays flat, so we serialize the whole config, select the
+// sub-object keyed by backendType, and return its (already flat) contents. The
+// JSON tag on each sub-struct field is the gobackup key, so nothing is dropped.
+func subConfigToMap(config any, backendType string) (map[string]any, error) {
 	raw, err := json.Marshal(config)
 	if err != nil {
 		return nil, err
 	}
-	out := map[string]any{}
-	if err := json.Unmarshal(raw, &out); err != nil {
+	full := map[string]any{}
+	if err := json.Unmarshal(raw, &full); err != nil {
 		return nil, err
 	}
-	return out, nil
+	sub, ok := full[backendType]
+	if !ok {
+		return nil, fmt.Errorf("config.%s is not set", backendType)
+	}
+	entry, ok := sub.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("config.%s is not an object", backendType)
+	}
+	return entry, nil
 }
 
 // resolveRefs replaces every "<field>_ref" entry (a serialized

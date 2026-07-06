@@ -6,6 +6,7 @@ metadata:
 spec:
   type: etcd
   config:
-    endpoints:
+    etcd:
+      endpoints:
       - 192.168.1.1:2379
       - 192.168.1.2:2379

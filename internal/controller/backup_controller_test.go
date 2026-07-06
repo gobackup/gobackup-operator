@@ -68,10 +68,12 @@ var _ = Describe("BackupReconciler status conditions", func() {
 			Spec: backupv1.DatabaseSpec{
 				Type: "postgresql",
 				Config: backupv1.DatabaseConfig{
-					Host:     ptr("localhost"),
-					Database: ptr("testdb"),
-					Username: ptr("user"),
-					Password: ptr("pass"),
+					PostgreSQL: &backupv1.PostgreSQLConfig{
+						Host:     ptr("localhost"),
+						Database: ptr("testdb"),
+						Username: ptr("user"),
+						Password: ptr("pass"),
+					},
 				},
 			},
 		}
@@ -82,10 +84,12 @@ var _ = Describe("BackupReconciler status conditions", func() {
 			Spec: backupv1.StorageSpec{
 				Type: "s3",
 				Config: backupv1.StorageConfig{
-					Bucket:          ptr("test-bucket"),
-					Region:          ptr("us-east-1"),
-					AccessKeyID:     ptr("access-key"),
-					SecretAccessKey: ptr("secret-key"),
+					S3: &backupv1.S3CompatibleConfig{
+						Bucket:          ptr("test-bucket"),
+						Region:          ptr("us-east-1"),
+						AccessKeyID:     ptr("access-key"),
+						SecretAccessKey: ptr("secret-key"),
+					},
 				},
 			},
 		}
@@ -156,10 +160,12 @@ var _ = Describe("BackupReconciler deprecated ref fields", func() {
 			Spec: backupv1.DatabaseSpec{
 				Type: "postgresql",
 				Config: backupv1.DatabaseConfig{
-					Host:     ptr("localhost"),
-					Database: ptr("testdb"),
-					Username: ptr("user"),
-					Password: ptr("pass"),
+					PostgreSQL: &backupv1.PostgreSQLConfig{
+						Host:     ptr("localhost"),
+						Database: ptr("testdb"),
+						Username: ptr("user"),
+						Password: ptr("pass"),
+					},
 				},
 			},
 		}
@@ -170,10 +176,12 @@ var _ = Describe("BackupReconciler deprecated ref fields", func() {
 			Spec: backupv1.StorageSpec{
 				Type: "s3",
 				Config: backupv1.StorageConfig{
-					Bucket:          ptr("test-bucket"),
-					Region:          ptr("us-east-1"),
-					AccessKeyID:     ptr("access-key"),
-					SecretAccessKey: ptr("secret-key"),
+					S3: &backupv1.S3CompatibleConfig{
+						Bucket:          ptr("test-bucket"),
+						Region:          ptr("us-east-1"),
+						AccessKeyID:     ptr("access-key"),
+						SecretAccessKey: ptr("secret-key"),
+					},
 				},
 			},
 		}

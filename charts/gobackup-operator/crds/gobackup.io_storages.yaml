@@ -48,327 +48,1757 @@ spec:
           metadata:
             type: object
           spec:
-            description: StorageSpec defines the desired state of Storage
+            description: |-
+              StorageSpec defines the desired state of Storage.
+
+              Config carries one nested sub-object per storage type; exactly the sub-object
+              matching spec.type must be set. The two CEL rules below enforce that invariant
+              (the emitter flattens the chosen sub-object into gobackup.yml). The s3-family
+              backends (s3, oss, r2, spaces, b2, cos, us3, kodo, bos, minio, obs, tos,
+              upyun) all share S3CompatibleConfig; sftp and scp share SSHConfig.
             properties:
               config:
-                description: Config contains the storage configuration
+                description: Config carries exactly one nested sub-object matching
+                  spec.type.
                 properties:
-                  access_key_id:
-                    description: |-
-                      AccessKeyID is the access key ID. Use access_key_id_ref to reference a Secret instead
-                      Used by: s3, oss, r2, spaces, b2, cos, us3, kodo, bos, minio, obs, tos, upyun
-                    type: string
-                  access_key_id_ref:
-                    description: |-
-                      AccessKeyIDRef references a Secret containing the access key ID
-                      Used by: s3, oss, r2, spaces, b2, cos, us3, kodo, bos, minio, obs, tos, upyun
+                  azure:
+                    description: 'Azure Blob Storage (spec.type: azure).'
                     properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
+                      account:
+                        description: Account is the Azure Storage Account name.
                         type: string
-                      name:
-                        default: ""
-                        description: |-
-                          Name of the referent.
-                          This field is effectively required, but due to backwards compatibility is
-                          allowed to be empty. Instances of this type with an empty value here are
-                          almost certainly wrong.
-                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      bucket:
+                        description: Bucket is an alias for the Azure Storage Account
+                          name.
                         type: string
-                      optional:
-                        description: Specify whether the Secret or its key must be
-                          defined
-                        type: boolean
-                    required:
-                    - key
+                      client_id:
+                        description: ClientID is the Azure Client ID.
+                        type: string
+                      client_secret:
+                        description: ClientSecret is the Azure Client Secret. Use
+                          client_secret_ref to reference a Secret instead.
+                        type: string
+                      client_secret_ref:
+                        description: ClientSecretRef references a Secret containing
+                          the Azure Client Secret.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      container:
+                        description: Container is the Azure container name.
+                        type: string
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      path:
+                        description: Path is the remote path prefix for backups.
+                        type: string
+                      tenant_id:
+                        description: TenantID is the Azure Tenant ID.
+                        type: string
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
                     type: object
-                    x-kubernetes-map-type: atomic
-                  account:
-                    description: |-
-                      Account is the Azure Storage Account name (alias: bucket)
-                      Required for: azure
-                    type: string
-                  account_id:
-                    description: |-
-                      AccountID is the account identifier
-                      Required for: r2 (Cloudflare R2)
-                    type: string
-                  bucket:
-                    description: |-
-                      Bucket is the bucket/container name
-                      Required for: s3, oss, gcs, r2, spaces, b2, cos, us3, kodo, bos, minio, obs, tos, upyun
-                    type: string
-                  client_id:
-                    description: |-
-                      ClientID is the Azure Client ID (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-                      Required for: azure
-                    type: string
-                  client_secret:
-                    description: |-
-                      ClientSecret is the Azure Client Secret. Use client_secret_ref to reference a Secret instead
-                      Required for: azure
-                    type: string
-                  client_secret_ref:
-                    description: |-
-                      ClientSecretRef references a Secret containing the Azure Client Secret
-                      Used by: azure
+                  b2:
+                    description: 'Backblaze B2 storage (spec.type: b2).'
                     properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
+                      access_key_id:
+                        description: AccessKeyID is the access key ID. Use access_key_id_ref
+                          to reference a Secret instead.
                         type: string
-                      name:
-                        default: ""
-                        description: |-
-                          Name of the referent.
-                          This field is effectively required, but due to backwards compatibility is
-                          allowed to be empty. Instances of this type with an empty value here are
-                          almost certainly wrong.
-                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      access_key_id_ref:
+                        description: AccessKeyIDRef references a Secret containing
+                          the access key ID.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      account_id:
+                        description: AccountID is the account identifier (e.g. Cloudflare
+                          R2 account ID).
                         type: string
-                      optional:
-                        description: Specify whether the Secret or its key must be
-                          defined
+                      bucket:
+                        description: Bucket is the bucket name.
+                        type: string
+                      endpoint:
+                        description: Endpoint is the custom endpoint URL.
+                        type: string
+                      force_path_style:
+                        description: ForcePathStyle forces path-style URLs instead
+                          of virtual-hosted-style.
                         type: boolean
-                    required:
-                    - key
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      max_retries:
+                        description: MaxRetries is the maximum number of retry attempts.
+                        type: integer
+                      path:
+                        description: Path is the remote path prefix for backups.
+                        type: string
+                      region:
+                        description: Region is the storage region.
+                        type: string
+                      secret_access_key:
+                        description: SecretAccessKey is the secret access key. Use
+                          secret_access_key_ref to reference a Secret instead.
+                        type: string
+                      secret_access_key_ref:
+                        description: SecretAccessKeyRef references a Secret containing
+                          the secret access key.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      storage_class:
+                        description: StorageClass is the object storage class.
+                        type: string
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
+                      token:
+                        description: Token is the session token for temporary credentials.
+                        type: string
                     type: object
-                    x-kubernetes-map-type: atomic
-                  container:
-                    description: |-
-                      Container is the Azure container name
-                      Required for: azure
-                    type: string
-                  credentials:
-                    description: |-
-                      Credentials is the JSON content of Google Cloud Application Credentials. Use credentials_ref to reference a Secret instead
-                      Used by: gcs
-                    type: string
-                  credentials_file:
-                    description: |-
-                      CredentialsFile is the path to Google Cloud Application Credentials file
-                      Used by: gcs
-                    type: string
-                  credentials_ref:
-                    description: |-
-                      CredentialsRef references a Secret containing the Google Cloud Application Credentials JSON
-                      Used by: gcs
+                  bos:
+                    description: 'Baidu BOS storage (spec.type: bos).'
                     properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
+                      access_key_id:
+                        description: AccessKeyID is the access key ID. Use access_key_id_ref
+                          to reference a Secret instead.
                         type: string
-                      name:
-                        default: ""
-                        description: |-
-                          Name of the referent.
-                          This field is effectively required, but due to backwards compatibility is
-                          allowed to be empty. Instances of this type with an empty value here are
-                          almost certainly wrong.
-                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      access_key_id_ref:
+                        description: AccessKeyIDRef references a Secret containing
+                          the access key ID.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      account_id:
+                        description: AccountID is the account identifier (e.g. Cloudflare
+                          R2 account ID).
                         type: string
-                      optional:
-                        description: Specify whether the Secret or its key must be
-                          defined
+                      bucket:
+                        description: Bucket is the bucket name.
+                        type: string
+                      endpoint:
+                        description: Endpoint is the custom endpoint URL.
+                        type: string
+                      force_path_style:
+                        description: ForcePathStyle forces path-style URLs instead
+                          of virtual-hosted-style.
                         type: boolean
-                    required:
-                    - key
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      max_retries:
+                        description: MaxRetries is the maximum number of retry attempts.
+                        type: integer
+                      path:
+                        description: Path is the remote path prefix for backups.
+                        type: string
+                      region:
+                        description: Region is the storage region.
+                        type: string
+                      secret_access_key:
+                        description: SecretAccessKey is the secret access key. Use
+                          secret_access_key_ref to reference a Secret instead.
+                        type: string
+                      secret_access_key_ref:
+                        description: SecretAccessKeyRef references a Secret containing
+                          the secret access key.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      storage_class:
+                        description: StorageClass is the object storage class.
+                        type: string
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
+                      token:
+                        description: Token is the session token for temporary credentials.
+                        type: string
                     type: object
-                    x-kubernetes-map-type: atomic
-                  endpoint:
-                    description: |-
-                      Endpoint is the custom endpoint URL for S3-compatible services
-                      Used by: s3, oss, r2, spaces, b2, minio, and other S3-compatible services
-                    type: string
-                  force_path_style:
-                    description: |-
-                      ForcePathStyle forces path-style URLs instead of virtual-hosted-style
-                      Used by: s3 and S3-compatible services
-                    type: boolean
-                  host:
-                    description: |-
-                      Host is the server hostname
-                      Required for: ftp, sftp, scp
-                    type: string
-                  keep:
-                    description: |-
-                      Keep specifies how many backups to retain at this storage location
-                      Used by: all storage types
-                    type: integer
-                  max_retries:
-                    description: |-
-                      MaxRetries is the maximum number of retry attempts. Default: 3
-                      Used by: s3, oss, r2, spaces, b2, cos, us3, kodo, bos, minio, obs, tos, upyun
-                    type: integer
-                  passphrase:
-                    description: |-
-                      Passphrase is the password for the private key if present
-                      Used by: sftp, scp
-                    type: string
-                  passphrase_ref:
-                    description: |-
-                      PassphraseRef references a Secret containing the private key passphrase
-                      Used by: sftp, scp
+                  cos:
+                    description: 'Tencent COS storage (spec.type: cos).'
                     properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
+                      access_key_id:
+                        description: AccessKeyID is the access key ID. Use access_key_id_ref
+                          to reference a Secret instead.
                         type: string
-                      name:
-                        default: ""
-                        description: |-
-                          Name of the referent.
-                          This field is effectively required, but due to backwards compatibility is
-                          allowed to be empty. Instances of this type with an empty value here are
-                          almost certainly wrong.
-                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      access_key_id_ref:
+                        description: AccessKeyIDRef references a Secret containing
+                          the access key ID.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      account_id:
+                        description: AccountID is the account identifier (e.g. Cloudflare
+                          R2 account ID).
                         type: string
-                      optional:
-                        description: Specify whether the Secret or its key must be
-                          defined
+                      bucket:
+                        description: Bucket is the bucket name.
+                        type: string
+                      endpoint:
+                        description: Endpoint is the custom endpoint URL.
+                        type: string
+                      force_path_style:
+                        description: ForcePathStyle forces path-style URLs instead
+                          of virtual-hosted-style.
                         type: boolean
-                    required:
-                    - key
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      max_retries:
+                        description: MaxRetries is the maximum number of retry attempts.
+                        type: integer
+                      path:
+                        description: Path is the remote path prefix for backups.
+                        type: string
+                      region:
+                        description: Region is the storage region.
+                        type: string
+                      secret_access_key:
+                        description: SecretAccessKey is the secret access key. Use
+                          secret_access_key_ref to reference a Secret instead.
+                        type: string
+                      secret_access_key_ref:
+                        description: SecretAccessKeyRef references a Secret containing
+                          the secret access key.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      storage_class:
+                        description: StorageClass is the object storage class.
+                        type: string
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
+                      token:
+                        description: Token is the session token for temporary credentials.
+                        type: string
                     type: object
-                    x-kubernetes-map-type: atomic
-                  password:
-                    description: |-
-                      Password for authentication. Use password_ref to reference a Secret instead
-                      Used by: ftp, sftp, scp, webdav
-                    type: string
-                  password_ref:
-                    description: |-
-                      PasswordRef references a Secret containing the password
-                      Used by: ftp, sftp, scp, webdav
+                  ftp:
+                    description: 'FTP storage (spec.type: ftp).'
                     properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
-                        type: string
-                      name:
-                        default: ""
-                        description: |-
-                          Name of the referent.
-                          This field is effectively required, but due to backwards compatibility is
-                          allowed to be empty. Instances of this type with an empty value here are
-                          almost certainly wrong.
-                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        type: string
-                      optional:
-                        description: Specify whether the Secret or its key must be
-                          defined
+                      explicit_tls:
+                        description: ExplicitTLS enables explicit FTPS.
                         type: boolean
-                    required:
-                    - key
+                      host:
+                        description: Host is the FTP server hostname.
+                        type: string
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      no_check_certificate:
+                        description: NoCheckCertificate skips TLS certificate verification.
+                        type: boolean
+                      password:
+                        description: Password for authentication. Use password_ref
+                          to reference a Secret instead.
+                        type: string
+                      password_ref:
+                        description: PasswordRef references a Secret containing the
+                          password.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      path:
+                        description: Path is the remote path for backups.
+                        type: string
+                      port:
+                        description: Port is the FTP server port.
+                        type: integer
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
+                      tls:
+                        description: TLS enables implicit FTPS.
+                        type: boolean
+                      username:
+                        description: Username for authentication.
+                        type: string
                     type: object
-                    x-kubernetes-map-type: atomic
-                  path:
-                    description: |-
-                      Path is the remote path for saving backup files
-                      Used by: all storage types except azure (uses container)
-                    type: string
-                  port:
-                    description: |-
-                      Port is the server port. Default varies by protocol (ftp: 21, sftp: 22, scp: 22)
-                      Used by: ftp, sftp, scp
-                    type: integer
-                  private_key:
-                    description: |-
-                      PrivateKey is the path to SSH private key. Default: ~/.ssh/id_rsa
-                      Used by: sftp, scp
-                    type: string
-                  private_key_ref:
-                    description: |-
-                      PrivateKeyRef references a Secret containing the SSH private key content
-                      Used by: sftp, scp
+                  gcs:
+                    description: 'Google Cloud Storage (spec.type: gcs).'
                     properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
+                      bucket:
+                        description: Bucket is the GCS bucket name.
                         type: string
-                      name:
-                        default: ""
-                        description: |-
-                          Name of the referent.
-                          This field is effectively required, but due to backwards compatibility is
-                          allowed to be empty. Instances of this type with an empty value here are
-                          almost certainly wrong.
-                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      credentials:
+                        description: Credentials is the JSON content of the Google
+                          Cloud credentials. Use credentials_ref to reference a Secret
+                          instead.
                         type: string
-                      optional:
-                        description: Specify whether the Secret or its key must be
-                          defined
-                        type: boolean
-                    required:
-                    - key
+                      credentials_file:
+                        description: CredentialsFile is the path to a Google Cloud
+                          credentials file.
+                        type: string
+                      credentials_ref:
+                        description: CredentialsRef references a Secret containing
+                          the Google Cloud credentials JSON.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      path:
+                        description: Path is the remote path prefix for backups.
+                        type: string
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
                     type: object
-                    x-kubernetes-map-type: atomic
-                  region:
-                    description: |-
-                      Region is the storage region. Default varies by provider (s3: us-east-1, oss: cn-hangzhou, spaces: nyc1, b2: us-east-001, minio: us-east-1)
-                      Used by: s3, oss, spaces, b2, minio, and other S3-compatible services
-                    type: string
-                  root:
-                    description: |-
-                      Root is the WebDAV server root URL (e.g., http://localhost:8080)
-                      Required for: webdav
-                    type: string
-                  secret_access_key:
-                    description: |-
-                      SecretAccessKey is the secret access key. Use secret_access_key_ref to reference a Secret instead
-                      Used by: s3, oss, r2, spaces, b2, cos, us3, kodo, bos, minio, obs, tos, upyun
-                    type: string
-                  secret_access_key_ref:
-                    description: |-
-                      SecretAccessKeyRef references a Secret containing the secret access key
-                      Used by: s3, oss, r2, spaces, b2, cos, us3, kodo, bos, minio, obs, tos, upyun
+                  kodo:
+                    description: 'Qiniu Kodo storage (spec.type: kodo).'
                     properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
+                      access_key_id:
+                        description: AccessKeyID is the access key ID. Use access_key_id_ref
+                          to reference a Secret instead.
                         type: string
-                      name:
-                        default: ""
-                        description: |-
-                          Name of the referent.
-                          This field is effectively required, but due to backwards compatibility is
-                          allowed to be empty. Instances of this type with an empty value here are
-                          almost certainly wrong.
-                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      access_key_id_ref:
+                        description: AccessKeyIDRef references a Secret containing
+                          the access key ID.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      account_id:
+                        description: AccountID is the account identifier (e.g. Cloudflare
+                          R2 account ID).
                         type: string
-                      optional:
-                        description: Specify whether the Secret or its key must be
-                          defined
+                      bucket:
+                        description: Bucket is the bucket name.
+                        type: string
+                      endpoint:
+                        description: Endpoint is the custom endpoint URL.
+                        type: string
+                      force_path_style:
+                        description: ForcePathStyle forces path-style URLs instead
+                          of virtual-hosted-style.
                         type: boolean
-                    required:
-                    - key
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      max_retries:
+                        description: MaxRetries is the maximum number of retry attempts.
+                        type: integer
+                      path:
+                        description: Path is the remote path prefix for backups.
+                        type: string
+                      region:
+                        description: Region is the storage region.
+                        type: string
+                      secret_access_key:
+                        description: SecretAccessKey is the secret access key. Use
+                          secret_access_key_ref to reference a Secret instead.
+                        type: string
+                      secret_access_key_ref:
+                        description: SecretAccessKeyRef references a Secret containing
+                          the secret access key.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      storage_class:
+                        description: StorageClass is the object storage class.
+                        type: string
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
+                      token:
+                        description: Token is the session token for temporary credentials.
+                        type: string
                     type: object
-                    x-kubernetes-map-type: atomic
-                  storage_class:
-                    description: |-
-                      StorageClass is the storage class. Default varies by provider (s3: STANDARD_IA, oss: STANDARD_IA, spaces: STANDARD, b2: STANDARD)
-                      Used by: s3, oss, spaces, b2
-                    type: string
-                  tenant_id:
-                    description: |-
-                      TenantID is the Azure Tenant ID (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-                      Required for: azure
-                    type: string
-                  timeout:
-                    default: 300
-                    description: |-
-                      Timeout is the upload timeout in seconds. Default: 300
-                      Used by: s3, oss, ftp, sftp, scp, gcs, azure, r2, spaces, b2, cos, us3, kodo, bos, minio, obs, tos, upyun
-                    type: integer
-                  username:
-                    description: |-
-                      Username for authentication
-                      Used by: ftp, sftp, scp, webdav
-                    type: string
+                  local:
+                    description: 'Local filesystem storage (spec.type: local).'
+                    properties:
+                      path:
+                        description: Path is the local directory backups are written
+                          to.
+                        type: string
+                    type: object
+                  minio:
+                    description: 'MinIO storage (spec.type: minio).'
+                    properties:
+                      access_key_id:
+                        description: AccessKeyID is the access key ID. Use access_key_id_ref
+                          to reference a Secret instead.
+                        type: string
+                      access_key_id_ref:
+                        description: AccessKeyIDRef references a Secret containing
+                          the access key ID.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      account_id:
+                        description: AccountID is the account identifier (e.g. Cloudflare
+                          R2 account ID).
+                        type: string
+                      bucket:
+                        description: Bucket is the bucket name.
+                        type: string
+                      endpoint:
+                        description: Endpoint is the custom endpoint URL.
+                        type: string
+                      force_path_style:
+                        description: ForcePathStyle forces path-style URLs instead
+                          of virtual-hosted-style.
+                        type: boolean
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      max_retries:
+                        description: MaxRetries is the maximum number of retry attempts.
+                        type: integer
+                      path:
+                        description: Path is the remote path prefix for backups.
+                        type: string
+                      region:
+                        description: Region is the storage region.
+                        type: string
+                      secret_access_key:
+                        description: SecretAccessKey is the secret access key. Use
+                          secret_access_key_ref to reference a Secret instead.
+                        type: string
+                      secret_access_key_ref:
+                        description: SecretAccessKeyRef references a Secret containing
+                          the secret access key.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      storage_class:
+                        description: StorageClass is the object storage class.
+                        type: string
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
+                      token:
+                        description: Token is the session token for temporary credentials.
+                        type: string
+                    type: object
+                  obs:
+                    description: 'Huawei OBS storage (spec.type: obs).'
+                    properties:
+                      access_key_id:
+                        description: AccessKeyID is the access key ID. Use access_key_id_ref
+                          to reference a Secret instead.
+                        type: string
+                      access_key_id_ref:
+                        description: AccessKeyIDRef references a Secret containing
+                          the access key ID.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      account_id:
+                        description: AccountID is the account identifier (e.g. Cloudflare
+                          R2 account ID).
+                        type: string
+                      bucket:
+                        description: Bucket is the bucket name.
+                        type: string
+                      endpoint:
+                        description: Endpoint is the custom endpoint URL.
+                        type: string
+                      force_path_style:
+                        description: ForcePathStyle forces path-style URLs instead
+                          of virtual-hosted-style.
+                        type: boolean
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      max_retries:
+                        description: MaxRetries is the maximum number of retry attempts.
+                        type: integer
+                      path:
+                        description: Path is the remote path prefix for backups.
+                        type: string
+                      region:
+                        description: Region is the storage region.
+                        type: string
+                      secret_access_key:
+                        description: SecretAccessKey is the secret access key. Use
+                          secret_access_key_ref to reference a Secret instead.
+                        type: string
+                      secret_access_key_ref:
+                        description: SecretAccessKeyRef references a Secret containing
+                          the secret access key.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      storage_class:
+                        description: StorageClass is the object storage class.
+                        type: string
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
+                      token:
+                        description: Token is the session token for temporary credentials.
+                        type: string
+                    type: object
+                  oss:
+                    description: 'Aliyun OSS storage (spec.type: oss).'
+                    properties:
+                      access_key_id:
+                        description: AccessKeyID is the access key ID. Use access_key_id_ref
+                          to reference a Secret instead.
+                        type: string
+                      access_key_id_ref:
+                        description: AccessKeyIDRef references a Secret containing
+                          the access key ID.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      account_id:
+                        description: AccountID is the account identifier (e.g. Cloudflare
+                          R2 account ID).
+                        type: string
+                      bucket:
+                        description: Bucket is the bucket name.
+                        type: string
+                      endpoint:
+                        description: Endpoint is the custom endpoint URL.
+                        type: string
+                      force_path_style:
+                        description: ForcePathStyle forces path-style URLs instead
+                          of virtual-hosted-style.
+                        type: boolean
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      max_retries:
+                        description: MaxRetries is the maximum number of retry attempts.
+                        type: integer
+                      path:
+                        description: Path is the remote path prefix for backups.
+                        type: string
+                      region:
+                        description: Region is the storage region.
+                        type: string
+                      secret_access_key:
+                        description: SecretAccessKey is the secret access key. Use
+                          secret_access_key_ref to reference a Secret instead.
+                        type: string
+                      secret_access_key_ref:
+                        description: SecretAccessKeyRef references a Secret containing
+                          the secret access key.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      storage_class:
+                        description: StorageClass is the object storage class.
+                        type: string
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
+                      token:
+                        description: Token is the session token for temporary credentials.
+                        type: string
+                    type: object
+                  r2:
+                    description: 'Cloudflare R2 storage (spec.type: r2).'
+                    properties:
+                      access_key_id:
+                        description: AccessKeyID is the access key ID. Use access_key_id_ref
+                          to reference a Secret instead.
+                        type: string
+                      access_key_id_ref:
+                        description: AccessKeyIDRef references a Secret containing
+                          the access key ID.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      account_id:
+                        description: AccountID is the account identifier (e.g. Cloudflare
+                          R2 account ID).
+                        type: string
+                      bucket:
+                        description: Bucket is the bucket name.
+                        type: string
+                      endpoint:
+                        description: Endpoint is the custom endpoint URL.
+                        type: string
+                      force_path_style:
+                        description: ForcePathStyle forces path-style URLs instead
+                          of virtual-hosted-style.
+                        type: boolean
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      max_retries:
+                        description: MaxRetries is the maximum number of retry attempts.
+                        type: integer
+                      path:
+                        description: Path is the remote path prefix for backups.
+                        type: string
+                      region:
+                        description: Region is the storage region.
+                        type: string
+                      secret_access_key:
+                        description: SecretAccessKey is the secret access key. Use
+                          secret_access_key_ref to reference a Secret instead.
+                        type: string
+                      secret_access_key_ref:
+                        description: SecretAccessKeyRef references a Secret containing
+                          the secret access key.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      storage_class:
+                        description: StorageClass is the object storage class.
+                        type: string
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
+                      token:
+                        description: Token is the session token for temporary credentials.
+                        type: string
+                    type: object
+                  s3:
+                    description: 'Amazon S3 storage (spec.type: s3).'
+                    properties:
+                      access_key_id:
+                        description: AccessKeyID is the access key ID. Use access_key_id_ref
+                          to reference a Secret instead.
+                        type: string
+                      access_key_id_ref:
+                        description: AccessKeyIDRef references a Secret containing
+                          the access key ID.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      account_id:
+                        description: AccountID is the account identifier (e.g. Cloudflare
+                          R2 account ID).
+                        type: string
+                      bucket:
+                        description: Bucket is the bucket name.
+                        type: string
+                      endpoint:
+                        description: Endpoint is the custom endpoint URL.
+                        type: string
+                      force_path_style:
+                        description: ForcePathStyle forces path-style URLs instead
+                          of virtual-hosted-style.
+                        type: boolean
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      max_retries:
+                        description: MaxRetries is the maximum number of retry attempts.
+                        type: integer
+                      path:
+                        description: Path is the remote path prefix for backups.
+                        type: string
+                      region:
+                        description: Region is the storage region.
+                        type: string
+                      secret_access_key:
+                        description: SecretAccessKey is the secret access key. Use
+                          secret_access_key_ref to reference a Secret instead.
+                        type: string
+                      secret_access_key_ref:
+                        description: SecretAccessKeyRef references a Secret containing
+                          the secret access key.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      storage_class:
+                        description: StorageClass is the object storage class.
+                        type: string
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
+                      token:
+                        description: Token is the session token for temporary credentials.
+                        type: string
+                    type: object
+                  scp:
+                    description: 'SCP storage (spec.type: scp).'
+                    properties:
+                      host:
+                        description: Host is the server hostname.
+                        type: string
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      passphrase:
+                        description: Passphrase is the password for the private key
+                          if present.
+                        type: string
+                      passphrase_ref:
+                        description: PassphraseRef references a Secret containing
+                          the private key passphrase.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      password:
+                        description: Password for authentication. Use password_ref
+                          to reference a Secret instead.
+                        type: string
+                      password_ref:
+                        description: PasswordRef references a Secret containing the
+                          password.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      path:
+                        description: Path is the remote path for backups.
+                        type: string
+                      port:
+                        description: Port is the server port.
+                        type: integer
+                      private_key:
+                        description: PrivateKey is the path to the SSH private key.
+                        type: string
+                      private_key_ref:
+                        description: PrivateKeyRef references a Secret containing
+                          the SSH private key content.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
+                      username:
+                        description: Username for authentication.
+                        type: string
+                    type: object
+                  sftp:
+                    description: 'SFTP storage (spec.type: sftp).'
+                    properties:
+                      host:
+                        description: Host is the server hostname.
+                        type: string
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      passphrase:
+                        description: Passphrase is the password for the private key
+                          if present.
+                        type: string
+                      passphrase_ref:
+                        description: PassphraseRef references a Secret containing
+                          the private key passphrase.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      password:
+                        description: Password for authentication. Use password_ref
+                          to reference a Secret instead.
+                        type: string
+                      password_ref:
+                        description: PasswordRef references a Secret containing the
+                          password.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      path:
+                        description: Path is the remote path for backups.
+                        type: string
+                      port:
+                        description: Port is the server port.
+                        type: integer
+                      private_key:
+                        description: PrivateKey is the path to the SSH private key.
+                        type: string
+                      private_key_ref:
+                        description: PrivateKeyRef references a Secret containing
+                          the SSH private key content.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
+                      username:
+                        description: Username for authentication.
+                        type: string
+                    type: object
+                  spaces:
+                    description: 'DigitalOcean Spaces storage (spec.type: spaces).'
+                    properties:
+                      access_key_id:
+                        description: AccessKeyID is the access key ID. Use access_key_id_ref
+                          to reference a Secret instead.
+                        type: string
+                      access_key_id_ref:
+                        description: AccessKeyIDRef references a Secret containing
+                          the access key ID.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      account_id:
+                        description: AccountID is the account identifier (e.g. Cloudflare
+                          R2 account ID).
+                        type: string
+                      bucket:
+                        description: Bucket is the bucket name.
+                        type: string
+                      endpoint:
+                        description: Endpoint is the custom endpoint URL.
+                        type: string
+                      force_path_style:
+                        description: ForcePathStyle forces path-style URLs instead
+                          of virtual-hosted-style.
+                        type: boolean
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      max_retries:
+                        description: MaxRetries is the maximum number of retry attempts.
+                        type: integer
+                      path:
+                        description: Path is the remote path prefix for backups.
+                        type: string
+                      region:
+                        description: Region is the storage region.
+                        type: string
+                      secret_access_key:
+                        description: SecretAccessKey is the secret access key. Use
+                          secret_access_key_ref to reference a Secret instead.
+                        type: string
+                      secret_access_key_ref:
+                        description: SecretAccessKeyRef references a Secret containing
+                          the secret access key.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      storage_class:
+                        description: StorageClass is the object storage class.
+                        type: string
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
+                      token:
+                        description: Token is the session token for temporary credentials.
+                        type: string
+                    type: object
+                  tos:
+                    description: 'Volcengine TOS storage (spec.type: tos).'
+                    properties:
+                      access_key_id:
+                        description: AccessKeyID is the access key ID. Use access_key_id_ref
+                          to reference a Secret instead.
+                        type: string
+                      access_key_id_ref:
+                        description: AccessKeyIDRef references a Secret containing
+                          the access key ID.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      account_id:
+                        description: AccountID is the account identifier (e.g. Cloudflare
+                          R2 account ID).
+                        type: string
+                      bucket:
+                        description: Bucket is the bucket name.
+                        type: string
+                      endpoint:
+                        description: Endpoint is the custom endpoint URL.
+                        type: string
+                      force_path_style:
+                        description: ForcePathStyle forces path-style URLs instead
+                          of virtual-hosted-style.
+                        type: boolean
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      max_retries:
+                        description: MaxRetries is the maximum number of retry attempts.
+                        type: integer
+                      path:
+                        description: Path is the remote path prefix for backups.
+                        type: string
+                      region:
+                        description: Region is the storage region.
+                        type: string
+                      secret_access_key:
+                        description: SecretAccessKey is the secret access key. Use
+                          secret_access_key_ref to reference a Secret instead.
+                        type: string
+                      secret_access_key_ref:
+                        description: SecretAccessKeyRef references a Secret containing
+                          the secret access key.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      storage_class:
+                        description: StorageClass is the object storage class.
+                        type: string
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
+                      token:
+                        description: Token is the session token for temporary credentials.
+                        type: string
+                    type: object
+                  upyun:
+                    description: 'UpYun storage (spec.type: upyun).'
+                    properties:
+                      access_key_id:
+                        description: AccessKeyID is the access key ID. Use access_key_id_ref
+                          to reference a Secret instead.
+                        type: string
+                      access_key_id_ref:
+                        description: AccessKeyIDRef references a Secret containing
+                          the access key ID.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      account_id:
+                        description: AccountID is the account identifier (e.g. Cloudflare
+                          R2 account ID).
+                        type: string
+                      bucket:
+                        description: Bucket is the bucket name.
+                        type: string
+                      endpoint:
+                        description: Endpoint is the custom endpoint URL.
+                        type: string
+                      force_path_style:
+                        description: ForcePathStyle forces path-style URLs instead
+                          of virtual-hosted-style.
+                        type: boolean
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      max_retries:
+                        description: MaxRetries is the maximum number of retry attempts.
+                        type: integer
+                      path:
+                        description: Path is the remote path prefix for backups.
+                        type: string
+                      region:
+                        description: Region is the storage region.
+                        type: string
+                      secret_access_key:
+                        description: SecretAccessKey is the secret access key. Use
+                          secret_access_key_ref to reference a Secret instead.
+                        type: string
+                      secret_access_key_ref:
+                        description: SecretAccessKeyRef references a Secret containing
+                          the secret access key.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      storage_class:
+                        description: StorageClass is the object storage class.
+                        type: string
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
+                      token:
+                        description: Token is the session token for temporary credentials.
+                        type: string
+                    type: object
+                  us3:
+                    description: 'UCloud US3 storage (spec.type: us3).'
+                    properties:
+                      access_key_id:
+                        description: AccessKeyID is the access key ID. Use access_key_id_ref
+                          to reference a Secret instead.
+                        type: string
+                      access_key_id_ref:
+                        description: AccessKeyIDRef references a Secret containing
+                          the access key ID.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      account_id:
+                        description: AccountID is the account identifier (e.g. Cloudflare
+                          R2 account ID).
+                        type: string
+                      bucket:
+                        description: Bucket is the bucket name.
+                        type: string
+                      endpoint:
+                        description: Endpoint is the custom endpoint URL.
+                        type: string
+                      force_path_style:
+                        description: ForcePathStyle forces path-style URLs instead
+                          of virtual-hosted-style.
+                        type: boolean
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      max_retries:
+                        description: MaxRetries is the maximum number of retry attempts.
+                        type: integer
+                      path:
+                        description: Path is the remote path prefix for backups.
+                        type: string
+                      region:
+                        description: Region is the storage region.
+                        type: string
+                      secret_access_key:
+                        description: SecretAccessKey is the secret access key. Use
+                          secret_access_key_ref to reference a Secret instead.
+                        type: string
+                      secret_access_key_ref:
+                        description: SecretAccessKeyRef references a Secret containing
+                          the secret access key.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      storage_class:
+                        description: StorageClass is the object storage class.
+                        type: string
+                      timeout:
+                        default: 300
+                        description: Timeout is the upload timeout in seconds.
+                        type: integer
+                      token:
+                        description: Token is the session token for temporary credentials.
+                        type: string
+                    type: object
+                  webdav:
+                    description: 'WebDAV storage (spec.type: webdav).'
+                    properties:
+                      keep:
+                        description: Keep specifies how many backups to retain at
+                          this storage location.
+                        type: integer
+                      password:
+                        description: Password for authentication. Use password_ref
+                          to reference a Secret instead.
+                        type: string
+                      password_ref:
+                        description: PasswordRef references a Secret containing the
+                          password.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      path:
+                        description: Path is the remote path for backups.
+                        type: string
+                      root:
+                        description: Root is the WebDAV server root URL.
+                        type: string
+                      username:
+                        description: Username for authentication.
+                        type: string
+                    type: object
                 type: object
               type:
-                description: Type is the storage backend type
+                description: Type is the storage backend type.
                 enum:
                 - local
                 - ftp
@@ -395,6 +1825,25 @@ spec:
             - config
             - type
             type: object
+            x-kubernetes-validations:
+            - message: exactly one config sub-object must be set
+              rule: (has(self.config.local)?1:0)+(has(self.config.s3)?1:0)+(has(self.config.oss)?1:0)+(has(self.config.r2)?1:0)+(has(self.config.spaces)?1:0)+(has(self.config.b2)?1:0)+(has(self.config.cos)?1:0)+(has(self.config.us3)?1:0)+(has(self.config.kodo)?1:0)+(has(self.config.bos)?1:0)+(has(self.config.minio)?1:0)+(has(self.config.obs)?1:0)+(has(self.config.tos)?1:0)+(has(self.config.upyun)?1:0)+(has(self.config.gcs)?1:0)+(has(self.config.azure)?1:0)+(has(self.config.ftp)?1:0)+(has(self.config.sftp)?1:0)+(has(self.config.scp)?1:0)+(has(self.config.webdav)?1:0)
+                == 1
+            - message: the config sub-object must match spec.type
+              rule: (self.type == 'local' && has(self.config.local)) || (self.type
+                == 's3' && has(self.config.s3)) || (self.type == 'oss' && has(self.config.oss))
+                || (self.type == 'r2' && has(self.config.r2)) || (self.type == 'spaces'
+                && has(self.config.spaces)) || (self.type == 'b2' && has(self.config.b2))
+                || (self.type == 'cos' && has(self.config.cos)) || (self.type == 'us3'
+                && has(self.config.us3)) || (self.type == 'kodo' && has(self.config.kodo))
+                || (self.type == 'bos' && has(self.config.bos)) || (self.type == 'minio'
+                && has(self.config.minio)) || (self.type == 'obs' && has(self.config.obs))
+                || (self.type == 'tos' && has(self.config.tos)) || (self.type == 'upyun'
+                && has(self.config.upyun)) || (self.type == 'gcs' && has(self.config.gcs))
+                || (self.type == 'azure' && has(self.config.azure)) || (self.type
+                == 'ftp' && has(self.config.ftp)) || (self.type == 'sftp' && has(self.config.sftp))
+                || (self.type == 'scp' && has(self.config.scp)) || (self.type == 'webdav'
+                && has(self.config.webdav))
           status:
             description: StorageStatus defines the observed state of Storage
             properties:

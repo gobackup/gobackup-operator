@@ -6,9 +6,10 @@ metadata:
 spec:
   type: minio
   config:
-    bucket: test-bucket
-    endpoint: http://minio.gobackup-e2e-test:9000
-    region: us-east-1
-    access_key_id: minioadmin
-    secret_access_key: minioadmin
-    force_path_style: true
+    minio:
+      bucket: test-bucket
+      endpoint: http://minio.gobackup-e2e-test:9000
+      region: us-east-1
+      access_key_id: minioadmin
+      secret_access_key: minioadmin
+      force_path_style: true

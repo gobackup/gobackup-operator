@@ -6,9 +6,10 @@ metadata:
 spec:
   type: mssql
   config:
-    host: mssql.example.svc.cluster.local
-    port: 1433
-    database: exampledb
-    username: sa
-    password: examplepassword
-    trust_server_certificate: true
+    mssql:
+      host: mssql.example.svc.cluster.local
+      port: 1433
+      database: exampledb
+      username: sa
+      password: examplepassword
+      trust_server_certificate: true

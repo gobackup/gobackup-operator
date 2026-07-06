@@ -6,19 +6,20 @@ metadata:
 spec:
   type: postgresql
   config:
-    host: localhost
-    port: 5432
-    socket: ""
-    database: exampledb
-    username_ref:
-      name: database-credentials
-      key: username
-    password_ref:
-      name: database-credentials
-      key: password
-    tables:
+    postgresql:
+      host: localhost
+      port: 5432
+      socket: ''
+      database: exampledb
+      username_ref:
+        name: database-credentials
+        key: username
+      password_ref:
+        name: database-credentials
+        key: password
+      tables:
       - table1
       - table2
-    exclude_tables:
+      exclude_tables:
       - table3
-    args: "--no-owner"
+      args: --no-owner

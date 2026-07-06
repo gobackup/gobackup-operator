@@ -6,11 +6,12 @@ metadata:
 spec:
   type: influxdb
   config:
-    host: influxdb.gobackup-e2e-test
-    port: 8086
-    token: my-super-secret-auth-token
-    org: my-org
-    bucket: my-bucket
+    influxdb:
+      host: influxdb.gobackup-e2e-test
+      port: 8086
+      token: my-super-secret-auth-token
+      org: my-org
+      bucket: my-bucket
 ---
 apiVersion: gobackup.io/v1alpha1
 kind: Backup
@@ -19,10 +20,10 @@ metadata:
   namespace: gobackup-e2e-test
 spec:
   schedule:
-    cron: "*/5 * * * *"
+    cron: '*/5 * * * *'
   databaseRefs:
-    - name: influxdb
+  - name: influxdb
   storageRefs:
-    - name: minio
+  - name: minio
   compressWith:
     type: gzip

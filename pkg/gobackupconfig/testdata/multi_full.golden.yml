@@ -5,6 +5,7 @@ models:
     compress_with: gzip
     databases:
       mongo:
+        authdb: admin
         database: m
         host: mongo
         oplog: true

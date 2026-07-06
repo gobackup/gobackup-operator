@@ -72,21 +72,23 @@ func TestBuildGolden(t *testing.T) {
 				"app-pg": {ObjectMeta: meta("app-pg"), Spec: backupv1.DatabaseSpec{
 					Type: "postgresql",
 					Config: backupv1.DatabaseConfig{
-						Host:          ptr("localhost"),
-						Port:          ptr(5432),
-						Database:      ptr("appdb"),
-						Username:      ptr("appuser"),
-						Password:      ptr("s3cr3t"),
-						Tables:        []string{"users", "orders"},
-						ExcludeTables: []string{"audit"},
-						Args:          ptr("--no-owner"),
+						PostgreSQL: &backupv1.PostgreSQLConfig{
+							Host:          ptr("localhost"),
+							Port:          ptr(5432),
+							Database:      ptr("appdb"),
+							Username:      ptr("appuser"),
+							Password:      ptr("s3cr3t"),
+							Tables:        []string{"users", "orders"},
+							ExcludeTables: []string{"audit"},
+							Args:          ptr("--no-owner"),
+						},
 					},
 				}},
 			},
 			storages: map[string]*backupv1.Storage{
 				"app-local": {ObjectMeta: meta("app-local"), Spec: backupv1.StorageSpec{
 					Type:   "local",
-					Config: backupv1.StorageConfig{Path: ptr("/backups")},
+					Config: backupv1.StorageConfig{Local: &backupv1.LocalConfig{Path: ptr("/backups")}},
 				}},
 			},
 		},
@@ -103,11 +105,13 @@ func TestBuildGolden(t *testing.T) {
 				"app-pg": {ObjectMeta: meta("app-pg"), Spec: backupv1.DatabaseSpec{
 					Type: "postgresql",
 					Config: backupv1.DatabaseConfig{
-						Host:        ptr("pg.svc"),
-						Port:        ptr(5432),
-						Database:    ptr("appdb"),
-						UsernameRef: secretRef("db-creds", "username"),
-						PasswordRef: secretRef("db-creds", "password"),
+						PostgreSQL: &backupv1.PostgreSQLConfig{
+							Host:        ptr("pg.svc"),
+							Port:        ptr(5432),
+							Database:    ptr("appdb"),
+							UsernameRef: secretRef("db-creds", "username"),
+							PasswordRef: secretRef("db-creds", "password"),
+						},
 					},
 				}},
 			},
@@ -115,12 +119,14 @@ func TestBuildGolden(t *testing.T) {
 				"app-s3": {ObjectMeta: meta("app-s3"), Spec: backupv1.StorageSpec{
 					Type: "s3",
 					Config: backupv1.StorageConfig{
-						Bucket:             ptr("my-bucket"),
-						Region:             ptr("us-east-1"),
-						Path:               ptr("backups/app"),
-						AccessKeyIDRef:     secretRef("s3-creds", "access-key-id"),
-						SecretAccessKeyRef: secretRef("s3-creds", "secret-access-key"),
-						StorageClass:       ptr("STANDARD_IA"),
+						S3: &backupv1.S3CompatibleConfig{
+							Bucket:             ptr("my-bucket"),
+							Region:             ptr("us-east-1"),
+							Path:               ptr("backups/app"),
+							AccessKeyIDRef:     secretRef("s3-creds", "access-key-id"),
+							SecretAccessKeyRef: secretRef("s3-creds", "secret-access-key"),
+							StorageClass:       ptr("STANDARD_IA"),
+						},
 					},
 				}},
 			},
@@ -138,11 +144,16 @@ func TestBuildGolden(t *testing.T) {
 				"cache": {ObjectMeta: meta("cache"), Spec: backupv1.DatabaseSpec{
 					Type: "redis",
 					Config: backupv1.DatabaseConfig{
-						Host:       ptr("redis.svc"),
-						Port:       ptr(6379),
-						Password:   ptr("redispw"),
-						Mode:       ptr("copy"),
-						InvokeSave: ptr(true),
+						// Proves the redis bug-fix: only mode + args are emitted
+						// (never sync/copy/args_redis).
+						Redis: &backupv1.RedisConfig{
+							Host:       ptr("redis.svc"),
+							Port:       ptr(6379),
+							Password:   ptr("redispw"),
+							Mode:       ptr("copy"),
+							InvokeSave: ptr(true),
+							Args:       ptr("--tls"),
+						},
 					},
 				}},
 			},
@@ -150,10 +161,12 @@ func TestBuildGolden(t *testing.T) {
 				"minio": {ObjectMeta: meta("minio"), Spec: backupv1.StorageSpec{
 					Type: "minio",
 					Config: backupv1.StorageConfig{
-						Bucket:          ptr("dumps"),
-						Endpoint:        ptr("http://minio.svc:9000"),
-						AccessKeyID:     ptr("minioadmin"),
-						SecretAccessKey: ptr("minioadmin"),
+						MinIO: &backupv1.S3CompatibleConfig{
+							Bucket:          ptr("dumps"),
+							Endpoint:        ptr("http://minio.svc:9000"),
+							AccessKeyID:     ptr("minioadmin"),
+							SecretAccessKey: ptr("minioadmin"),
+						},
 					},
 				}},
 			},
@@ -174,16 +187,17 @@ func TestBuildGolden(t *testing.T) {
 			dbs: map[string]*backupv1.Database{
 				"pg": {ObjectMeta: meta("pg"), Spec: backupv1.DatabaseSpec{
 					Type:   "postgresql",
-					Config: backupv1.DatabaseConfig{Host: ptr("pg"), Port: ptr(5432), Database: ptr("d")},
+					Config: backupv1.DatabaseConfig{PostgreSQL: &backupv1.PostgreSQLConfig{Host: ptr("pg"), Port: ptr(5432), Database: ptr("d")}},
 				}},
+				// Proves the mongodb bug-fix: auth DB is emitted as `authdb`.
 				"mongo": {ObjectMeta: meta("mongo"), Spec: backupv1.DatabaseSpec{
 					Type:   "mongodb",
-					Config: backupv1.DatabaseConfig{Host: ptr("mongo"), Port: ptr(27017), Database: ptr("m"), Oplog: ptr(true)},
+					Config: backupv1.DatabaseConfig{MongoDB: &backupv1.MongoDBConfig{Host: ptr("mongo"), Port: ptr(27017), Database: ptr("m"), AuthDB: ptr("admin"), Oplog: ptr(true)}},
 				}},
 			},
 			storages: map[string]*backupv1.Storage{
-				"s3":    {ObjectMeta: meta("s3"), Spec: backupv1.StorageSpec{Type: "s3", Config: backupv1.StorageConfig{Bucket: ptr("b"), Region: ptr("r")}}},
-				"local": {ObjectMeta: meta("local"), Spec: backupv1.StorageSpec{Type: "local", Config: backupv1.StorageConfig{Path: ptr("/b")}}},
+				"s3":    {ObjectMeta: meta("s3"), Spec: backupv1.StorageSpec{Type: "s3", Config: backupv1.StorageConfig{S3: &backupv1.S3CompatibleConfig{Bucket: ptr("b"), Region: ptr("r")}}}},
+				"local": {ObjectMeta: meta("local"), Spec: backupv1.StorageSpec{Type: "local", Config: backupv1.StorageConfig{Local: &backupv1.LocalConfig{Path: ptr("/b")}}}},
 			},
 		},
 	}
@@ -224,7 +238,7 @@ func TestBuildRegressionGuard(t *testing.T) {
 	dbs := map[string]*backupv1.Database{
 		"d": {ObjectMeta: meta("d"), Spec: backupv1.DatabaseSpec{
 			Type:   "postgresql",
-			Config: backupv1.DatabaseConfig{ExcludeTables: []string{"secret_table"}},
+			Config: backupv1.DatabaseConfig{PostgreSQL: &backupv1.PostgreSQLConfig{ExcludeTables: []string{"secret_table"}}},
 		}},
 	}
 	got, err := Build(context.Background(), backup, dbs, nil, fakeResolver)

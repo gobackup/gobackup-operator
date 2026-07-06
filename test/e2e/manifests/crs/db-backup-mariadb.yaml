@@ -6,11 +6,12 @@ metadata:
 spec:
   type: mariadb
   config:
-    host: mariadb.gobackup-e2e-test
-    port: 3306
-    username: root
-    password: password
-    database: testdb
+    mariadb:
+      host: mariadb.gobackup-e2e-test
+      port: 3306
+      username: root
+      password: password
+      database: testdb
 ---
 apiVersion: gobackup.io/v1alpha1
 kind: Backup
@@ -19,10 +20,10 @@ metadata:
   namespace: gobackup-e2e-test
 spec:
   schedule:
-    cron: "*/5 * * * *"
+    cron: '*/5 * * * *'
   databaseRefs:
-    - name: mariadb
+  - name: mariadb
   storageRefs:
-    - name: minio
+  - name: minio
   compressWith:
     type: gzip

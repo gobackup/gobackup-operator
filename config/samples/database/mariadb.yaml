@@ -6,12 +6,13 @@ metadata:
 spec:
   type: mariadb
   config:
-    host: mariadb.example.svc.cluster.local
-    port: 3306
-    database: exampledb
-    username_ref:
-      name: database-credentials
-      key: username
-    password_ref:
-      name: database-credentials
-      key: password
+    mariadb:
+      host: mariadb.example.svc.cluster.local
+      port: 3306
+      database: exampledb
+      username_ref:
+        name: database-credentials
+        key: username
+      password_ref:
+        name: database-credentials
+        key: password
