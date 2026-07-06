@@ -79,15 +79,19 @@ spec:
                     captures.
                   properties:
                     apiGroup:
-                      description: APIGroup is the API group of the referenced Database
-                        resource. Defaults to gobackup.io.
+                      description: |-
+                        Deprecated: APIGroup is ignored. The referenced Database is always resolved
+                        in the gobackup.io API group; this field has no effect and will be removed
+                        in a future release.
                       type: string
                     name:
                       description: Name is the name of the referenced Database resource.
                       type: string
                     type:
-                      description: Type is the database backend type (postgresql,
-                        redis, etc.) matching the Database resource's spec.type field
+                      description: |-
+                        Deprecated: Type is ignored. The database backend type is read from the
+                        referenced Database resource's spec.type (the source of truth); this field
+                        has no effect and will be removed in a future release.
                       type: string
                   type: object
                 type: array
@@ -130,8 +134,10 @@ spec:
                     writes to.
                   properties:
                     apiGroup:
-                      description: APIGroup is the API group of the referenced Storage
-                        resource. Defaults to gobackup.io.
+                      description: |-
+                        Deprecated: APIGroup is ignored. The referenced Storage is always resolved
+                        in the gobackup.io API group; this field has no effect and will be removed
+                        in a future release.
                       type: string
                     keep:
                       description: Keep specifies how many backups to retain at this
@@ -145,9 +151,10 @@ spec:
                         storage location.
                       type: integer
                     type:
-                      description: Type is the storage backend type (s3, gcs, azure,
-                        local, ftp, etc.) matching the Storage resource's spec.type
-                        field
+                      description: |-
+                        Deprecated: Type is ignored. The storage backend type is read from the
+                        referenced Storage resource's spec.type (the source of truth); this field
+                        has no effect and will be removed in a future release.
                       type: string
                   type: object
                 type: array
