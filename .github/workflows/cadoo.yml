@@ -4,29 +4,6 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch: {}
 jobs:
-  debug-gateway-models:
-    runs-on: ubuntu-latest
-    steps:
-      - name: List models available on LLM gateway
-        env:
-          LLM_GATEWAY_URL: ${{ secrets.LLM_GATEWAY_URL }}
-          LLM_GATEWAY_API_KEY: ${{ secrets.LLM_GATEWAY_API_KEY }}
-        run: |
-          echo "URL length: ${#LLM_GATEWAY_URL} chars"
-          echo "Key length: ${#LLM_GATEWAY_API_KEY} chars"
-
-          for path in "/models" "/v1/models"; do
-            echo "=== GET \$LLM_GATEWAY_URL$path ==="
-            HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" \
-              -H "Authorization: Bearer $LLM_GATEWAY_API_KEY" \
-              "$LLM_GATEWAY_URL$path")
-            echo "HTTP status: $HTTP_STATUS"
-            echo "Body size: $(wc -c < response.json) bytes"
-            cat response.json
-            echo ""
-            jq -r '.data[]?.id // .[]?.id // "could not parse .data[].id, see raw body above"' response.json 2>/dev/null || true
-            echo ""
-          done
   cadoo-review:
     runs-on: ubuntu-latest
     permissions:
