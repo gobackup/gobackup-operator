@@ -38,7 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
+	backupv1 "github.com/gobackup/gobackup-operator/api/v1alpha1"
 	"github.com/gobackup/gobackup-operator/pkg/k8sutil"
 )
 
@@ -64,8 +64,6 @@ const (
 // +kubebuilder:rbac:groups=gobackup.io,resources=backups/finalizers,verbs=update
 // +kubebuilder:rbac:groups=gobackup.io,resources=databases,verbs=get;list;watch
 // +kubebuilder:rbac:groups=gobackup.io,resources=storages,verbs=get;list;watch
-// +kubebuilder:rbac:groups=gobackup.io,resources=postgresqls,verbs=get;list;watch
-// +kubebuilder:rbac:groups=gobackup.io,resources=s3s,verbs=get;list;watch
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete

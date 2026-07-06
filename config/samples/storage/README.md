@@ -74,7 +74,7 @@ stringData:
 ### Step 2: Reference the Secret in Storage
 
 ```yaml
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Storage
 metadata:
   name: my-s3-storage
@@ -148,7 +148,7 @@ See `complete/test-backup-with-storage.yaml` for a full end-to-end example that 
 Reference storage in a Backup using the storage backend type:
 
 ```yaml
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Backup
 metadata:
   name: my-backup

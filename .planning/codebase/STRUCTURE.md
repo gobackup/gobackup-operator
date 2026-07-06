@@ -7,7 +7,7 @@
 ```
 gobackup-operator/
 ├── api/                    # CRD type definitions (Kubebuilder-generated)
-│   └── v1/                 # All types live under gobackup.io/v1
+│   └── v1/                 # All types live under gobackup.io/v1alpha1
 │       ├── backup_types.go
 │       ├── database_types.go
 │       ├── storage_types.go
@@ -67,7 +67,7 @@ gobackup-operator/
 
 **`api/v1/`:**
 - Purpose: Go type definitions for all three CRDs (`Backup`, `Database`, `Storage`)
-- Contains: `*_types.go` files with Spec/Status structs + Kubebuilder markers; `groupversion_info.go` registers `gobackup.io/v1`; `zz_generated.deepcopy.go` is auto-generated (do not edit)
+- Contains: `*_types.go` files with Spec/Status structs + Kubebuilder markers; `groupversion_info.go` registers `gobackup.io/v1alpha1`; `zz_generated.deepcopy.go` is auto-generated (do not edit)
 - Key files: `api/v1/backup_types.go`, `api/v1/database_types.go`, `api/v1/storage_types.go`
 
 **`internal/controller/`:**

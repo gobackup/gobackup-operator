@@ -13,7 +13,7 @@ stringData:
 
 ---
 # Storage resource using S3 with SecretRef
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Storage
 metadata:
   name: production-s3
@@ -37,7 +37,7 @@ spec:
 
 ---
 # Database resource for PostgreSQL
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Database
 metadata:
   name: production-postgres
@@ -54,7 +54,7 @@ spec:
 
 ---
 # Backup resource combining database and storage
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Backup
 metadata:
   name: production-backup

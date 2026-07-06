@@ -73,8 +73,6 @@ rules:
   - gobackup.io
   resources:
   - databases
-  - postgresqls
-  - s3s
   - storages
   verbs:
   - get

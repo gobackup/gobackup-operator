@@ -16,7 +16,7 @@ kubectl wait --for=condition=available --timeout=60s deployment/gobackup-operato
 
 # Create a PostgreSQL database CR
 cat <<EOF | kubectl apply -f -
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: PostgreSQL
 metadata:
   name: test-postgres
@@ -31,7 +31,7 @@ EOF
 
 # Create an S3 storage CR
 cat <<EOF | kubectl apply -f -
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: S3
 metadata:
   name: test-s3
@@ -48,7 +48,7 @@ EOF
 
 # 3. Test immediate backup
 cat <<EOF | kubectl apply -f -
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Backup
 metadata:
   name: test-backup-immediate
@@ -70,7 +70,7 @@ EOF
 
 # 4. Test scheduled backup
 cat <<EOF | kubectl apply -f -
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Backup
 metadata:
   name: test-backup-scheduled

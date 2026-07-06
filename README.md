@@ -133,7 +133,7 @@ make deploy
 Create a PostgreSQL database reference:
 
 ```yaml
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: PostgreSQL
 metadata:
   name: my-postgres
@@ -161,7 +161,7 @@ spec:
 Create an S3 storage reference:
 
 ```yaml
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: S3
 metadata:
   name: my-s3
@@ -189,7 +189,7 @@ spec:
 For an immediate, one-time backup:
 
 ```yaml
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Backup
 metadata:
   name: my-immediate-backup
@@ -217,7 +217,7 @@ spec:
 For scheduled backups using cron syntax:
 
 ```yaml
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Backup
 metadata:
   name: my-scheduled-backup

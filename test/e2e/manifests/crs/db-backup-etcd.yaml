@@ -1,4 +1,4 @@
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Database
 metadata:
   name: etcd
@@ -8,7 +8,7 @@ spec:
   config:
     endpoints: ["http://etcd.gobackup-e2e-test:2379"]
 ---
-apiVersion: gobackup.io/v1
+apiVersion: gobackup.io/v1alpha1
 kind: Backup
 metadata:
   name: backup-etcd

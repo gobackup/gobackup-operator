@@ -33,8 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	backupv1 "github.com/gobackup/gobackup-operator/api/v1"
-	gobackupiov1 "github.com/gobackup/gobackup-operator/api/v1"
+	backupv1 "github.com/gobackup/gobackup-operator/api/v1alpha1"
 	"github.com/gobackup/gobackup-operator/internal/controller"
 	"github.com/gobackup/gobackup-operator/pkg/k8sutil"
 	//+kubebuilder:scaffold:imports
@@ -49,7 +48,6 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(backupv1.AddToScheme(scheme))
-	utilruntime.Must(gobackupiov1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
