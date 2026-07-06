@@ -6,8 +6,9 @@ metadata:
 spec:
   type: webdav
   config:
-    root: http://webdav.gobackup-e2e-test
-    username: root
-    password: password
-    path: /
-    keep: 5
+    webdav:
+      root: http://webdav.gobackup-e2e-test
+      username: root
+      password: password
+      path: /
+      keep: 5

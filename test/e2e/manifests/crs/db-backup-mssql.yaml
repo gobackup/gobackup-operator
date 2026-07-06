@@ -6,12 +6,13 @@ metadata:
 spec:
   type: mssql
   config:
-    host: mssql.gobackup-e2e-test
-    port: 1433
-    username: sa
-    password: Password123!
-    database: master
-    trust_server_certificate: true
+    mssql:
+      host: mssql.gobackup-e2e-test
+      port: 1433
+      username: sa
+      password: Password123!
+      database: master
+      trust_server_certificate: true
 ---
 apiVersion: gobackup.io/v1alpha1
 kind: Backup
@@ -20,10 +21,10 @@ metadata:
   namespace: gobackup-e2e-test
 spec:
   schedule:
-    cron: "*/5 * * * *"
+    cron: '*/5 * * * *'
   databaseRefs:
-    - name: mssql
+  - name: mssql
   storageRefs:
-    - name: minio
+  - name: minio
   compressWith:
     type: gzip

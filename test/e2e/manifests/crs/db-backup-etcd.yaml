@@ -6,7 +6,9 @@ metadata:
 spec:
   type: etcd
   config:
-    endpoints: ["http://etcd.gobackup-e2e-test:2379"]
+    etcd:
+      endpoints:
+      - http://etcd.gobackup-e2e-test:2379
 ---
 apiVersion: gobackup.io/v1alpha1
 kind: Backup
@@ -15,10 +17,10 @@ metadata:
   namespace: gobackup-e2e-test
 spec:
   schedule:
-    cron: "*/5 * * * *"
+    cron: '*/5 * * * *'
   databaseRefs:
-    - name: etcd
+  - name: etcd
   storageRefs:
-    - name: minio
+  - name: minio
   compressWith:
     type: gzip

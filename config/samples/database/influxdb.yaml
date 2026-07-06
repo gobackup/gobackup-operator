@@ -6,9 +6,10 @@ metadata:
 spec:
   type: influxdb
   config:
-    host: influxdb.example.svc.cluster.local
-    token_ref:
-      name: database-credentials
-      key: token
-    bucket: mybucket
-    org: myorg
+    influxdb:
+      host: influxdb.example.svc.cluster.local
+      token_ref:
+        name: database-credentials
+        key: token
+      bucket: mybucket
+      org: myorg

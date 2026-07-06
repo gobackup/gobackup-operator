@@ -1,4 +1,3 @@
----
 apiVersion: gobackup.io/v1alpha1
 kind: Storage
 metadata:
@@ -7,15 +6,13 @@ metadata:
 spec:
   type: ftp
   config:
-    host: ftp.example.com
-    port: 21
-    username: ftpuser
-    # Using SecretRef for password
-    password_ref:
-      name: storage-credentials
-      key: ftp-password
-    # Or use direct password:
-    # password: YOUR_PASSWORD
-    path: /backups
-    keep: 20
-    timeout: 300
+    ftp:
+      host: ftp.example.com
+      port: 21
+      username: ftpuser
+      password_ref:
+        name: storage-credentials
+        key: ftp-password
+      path: /backups
+      keep: 20
+      timeout: 300

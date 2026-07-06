@@ -6,5 +6,5 @@ metadata:
 spec:
   type: local
   config:
-    path: /tmp/backups
-    keep: 5
+    local:
+      path: /tmp/backups
