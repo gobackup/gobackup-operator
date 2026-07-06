@@ -8,6 +8,8 @@ metadata:
 spec:
   group: gobackup.io
   names:
+    categories:
+    - gobackup
     kind: Backup
     listKind: BackupList
     plural: backups
@@ -16,7 +18,23 @@ spec:
     singular: backup
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .spec.schedule.cron
+      name: Schedule
+      type: string
+    - jsonPath: .status.lastSuccessfulBackupTime
+      name: LastSuccess
+      type: date
+    - jsonPath: .status.failureCount
+      name: Failures
+      type: integer
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Backup is the Schema for the backups API
@@ -51,15 +69,21 @@ spec:
                 description: CompressWith defines the compression to use
                 properties:
                   type:
+                    description: Type is the compression algorithm (e.g. gzip).
                     type: string
                 type: object
               databaseRefs:
                 description: DatabaseRefs represents the list of databases to backup
                 items:
+                  description: DatabaseRef references a Database resource that a Backup
+                    captures.
                   properties:
                     apiGroup:
+                      description: APIGroup is the API group of the referenced Database
+                        resource. Defaults to gobackup.io.
                       type: string
                     name:
+                      description: Name is the name of the referenced Database resource.
                       type: string
                     type:
                       description: Type is the database backend type (postgresql,
@@ -71,6 +95,7 @@ spec:
                 description: EncodeWith defines the encoding to use
                 properties:
                   type:
+                    description: Type is the encoding type.
                     type: string
                 type: object
               schedule:
@@ -101,14 +126,23 @@ spec:
                 description: StorageRefs represents the list of storages to backup
                   to
                 items:
+                  description: StorageRef references a Storage resource that a Backup
+                    writes to.
                   properties:
                     apiGroup:
+                      description: APIGroup is the API group of the referenced Storage
+                        resource. Defaults to gobackup.io.
                       type: string
                     keep:
+                      description: Keep specifies how many backups to retain at this
+                        storage location.
                       type: integer
                     name:
+                      description: Name is the name of the referenced Storage resource.
                       type: string
                     timeout:
+                      description: Timeout is the upload timeout in seconds for this
+                        storage location.
                       type: integer
                     type:
                       description: Type is the storage backend type (s3, gcs, azure,
@@ -211,8 +245,13 @@ spec:
                       This is truncated to avoid status size issues (max 1024 characters)
                     type: string
                   phase:
-                    description: Phase is the current phase of the backup (Pending,
+                    description: Phase is the current phase of the backup run (Pending,
                       Running, Succeeded, Failed)
+                    enum:
+                    - Pending
+                    - Running
+                    - Succeeded
+                    - Failed
                     type: string
                   startTime:
                     description: StartTime is when the backup job started
@@ -234,6 +273,11 @@ spec:
               phase:
                 description: Phase is the current phase of the backup (Idle, Running,
                   Succeeded, Failed)
+                enum:
+                - Idle
+                - Running
+                - Succeeded
+                - Failed
                 type: string
               recentRuns:
                 description: |-
@@ -262,8 +306,13 @@ spec:
                         This is truncated to avoid status size issues (max 1024 characters)
                       type: string
                     phase:
-                      description: Phase is the current phase of the backup (Pending,
+                      description: Phase is the current phase of the backup run (Pending,
                         Running, Succeeded, Failed)
+                      enum:
+                      - Pending
+                      - Running
+                      - Succeeded
+                      - Failed
                       type: string
                     startTime:
                       description: StartTime is when the backup job started
