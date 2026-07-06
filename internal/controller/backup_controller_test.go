@@ -27,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	backupv1 "github.com/gobackup/gobackup-operator/api/v1alpha1"
@@ -131,7 +131,7 @@ var _ = Describe("BackupReconciler deprecated ref fields", func() {
 	var (
 		ctx        context.Context
 		reconciler *BackupReconciler
-		recorder   *record.FakeRecorder
+		recorder   *events.FakeRecorder
 	)
 
 	BeforeEach(func() {
@@ -142,7 +142,7 @@ var _ = Describe("BackupReconciler deprecated ref fields", func() {
 		dynClient, err := dynamic.NewForConfig(cfg)
 		Expect(err).NotTo(HaveOccurred())
 
-		recorder = record.NewFakeRecorder(10)
+		recorder = events.NewFakeRecorder(10)
 		reconciler = &BackupReconciler{
 			Client:   k8sClient,
 			Scheme:   k8sClient.Scheme(),
@@ -215,22 +215,22 @@ var _ = Describe("BackupReconciler deprecated ref fields", func() {
 
 		// Drain the FakeRecorder and assert DeprecatedRefField Warnings were emitted
 		// for both the database and storage refs.
-		var events []string
+		var emitted []string
 		for draining := true; draining; {
 			select {
 			case e := <-recorder.Events:
-				events = append(events, e)
+				emitted = append(emitted, e)
 			default:
 				draining = false
 			}
 		}
 
-		Expect(events).To(ContainElement(And(
+		Expect(emitted).To(ContainElement(And(
 			ContainSubstring("Warning"),
 			ContainSubstring("DeprecatedRefField"),
 			ContainSubstring("databaseRef"),
 		)))
-		Expect(events).To(ContainElement(And(
+		Expect(emitted).To(ContainElement(And(
 			ContainSubstring("Warning"),
 			ContainSubstring("DeprecatedRefField"),
 			ContainSubstring("storageRef"),

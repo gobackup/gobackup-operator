@@ -32,7 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -48,7 +48,7 @@ type BackupReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
 	K8s      *k8sutil.K8s
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 }
 
 const (
@@ -310,21 +310,21 @@ func (r *BackupReconciler) emitDeprecatedRefWarnings(backup *backupv1.Backup) {
 	}
 	for _, ref := range backup.Spec.DatabaseRefs {
 		if ref.Type != "" { //nolint:staticcheck // intentionally reading the deprecated field to warn about it
-			r.Recorder.Eventf(backup, corev1.EventTypeWarning, "DeprecatedRefField",
+			r.Recorder.Eventf(backup, nil, corev1.EventTypeWarning, "DeprecatedRefField", "RemoveDeprecatedField",
 				"databaseRef %q sets deprecated field type; it is ignored, remove it", ref.Name)
 		}
 		if ref.APIGroup != "" { //nolint:staticcheck // intentionally reading the deprecated field to warn about it
-			r.Recorder.Eventf(backup, corev1.EventTypeWarning, "DeprecatedRefField",
+			r.Recorder.Eventf(backup, nil, corev1.EventTypeWarning, "DeprecatedRefField", "RemoveDeprecatedField",
 				"databaseRef %q sets deprecated field apiGroup; it is ignored, remove it", ref.Name)
 		}
 	}
 	for _, ref := range backup.Spec.StorageRefs {
 		if ref.Type != "" { //nolint:staticcheck // intentionally reading the deprecated field to warn about it
-			r.Recorder.Eventf(backup, corev1.EventTypeWarning, "DeprecatedRefField",
+			r.Recorder.Eventf(backup, nil, corev1.EventTypeWarning, "DeprecatedRefField", "RemoveDeprecatedField",
 				"storageRef %q sets deprecated field type; it is ignored, remove it", ref.Name)
 		}
 		if ref.APIGroup != "" { //nolint:staticcheck // intentionally reading the deprecated field to warn about it
-			r.Recorder.Eventf(backup, corev1.EventTypeWarning, "DeprecatedRefField",
+			r.Recorder.Eventf(backup, nil, corev1.EventTypeWarning, "DeprecatedRefField", "RemoveDeprecatedField",
 				"storageRef %q sets deprecated field apiGroup; it is ignored, remove it", ref.Name)
 		}
 	}
@@ -403,7 +403,7 @@ func (r *BackupReconciler) buildJobTemplate(backup *backupv1.Backup) batchv1.Job
 // SetupWithManager sets up the controller with the Manager.
 func (r *BackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if r.Recorder == nil {
-		r.Recorder = mgr.GetEventRecorderFor("backup-controller")
+		r.Recorder = mgr.GetEventRecorder("backup-controller")
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&backupv1.Backup{}).
