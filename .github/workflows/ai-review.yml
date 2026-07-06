@@ -61,6 +61,7 @@ jobs:
         continue-on-error: true
         env:
           ARVAN_API_KEY: ${{ secrets.ARVAN_AI_API_KEY }}
+          ARVAN_AI_URL: ${{ secrets.ARVAN_AI_URL }}
         run: |
           # Read the diff
           DIFF_CONTENT=$(cat pr_diff.txt | jq -Rs .)
@@ -88,7 +89,7 @@ jobs:
           
           # Call ArvanCloud AI API
           RESPONSE=$(curl -s -X POST \
-            "https://arvancloudai.ir/gateway/models/GPT-5/dLeqgnGfz1C2zftmNeS4Nd9Q0Fb33Qx5JRqplYEFa4yWAFRC8saj2LMJiyMAjrDOedL4qNXb_PMDMjCSnEFqSCQkgVFnCx3T4Qtu-sruzmH-wRNhYvxHSI34EjG_nfnoOe9djzeqGnhfCJlQ-Z3zUowQQYYeg510o8t8FtAWu35poiK93SAFBYWkU_bbOCe_ZU3gg8dBzzFwpXgD2z4BWzYhz96DR1jTXOanCnI7gw4/v1/chat/completions" \
+            "$ARVAN_AI_URL" \
             -H "Authorization: Bearer $ARVAN_API_KEY" \
             -H "Content-Type: application/json" \
             -d "{

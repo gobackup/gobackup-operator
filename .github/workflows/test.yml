@@ -19,9 +19,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.26.0'
+          go-version: '1.26.4'
         id: go
-      - name: Get dependencies
-        run: go get -v -t -d ./...
+      - name: Download dependencies
+        run: go mod download
+      # `make test` installs the pinned controller-gen + setup-envtest into
+      # bin/, downloads the envtest assets (Kubernetes ENVTEST_K8S_VERSION),
+      # exports KUBEBUILDER_ASSETS, and runs both the unit and the controller
+      # envtest integration suite.
       - name: Test
-        run: go test ./...
+        run: make test
