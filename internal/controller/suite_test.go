@@ -17,9 +17,7 @@ limitations under the License.
 package controller
 
 import (
-	"fmt"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -57,13 +55,11 @@ var _ = BeforeSuite(func() {
 		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: true,
 
-		// The BinaryAssetsDirectory is only required if you want to run the tests directly
-		// without call the makefile target test. If not informed it will look for the
-		// default path defined in controller-runtime which is /usr/local/kubebuilder/.
-		// Note that you must have the required binaries setup under the bin directory to perform
-		// the tests directly. When we run make test it will be setup and used automatically.
-		BinaryAssetsDirectory: filepath.Join("..", "..", "bin", "k8s",
-			fmt.Sprintf("1.28.3-%s-%s", runtime.GOOS, runtime.GOARCH)),
+		// BinaryAssetsDirectory is intentionally left unset so controller-runtime
+		// discovers the envtest binaries via the KUBEBUILDER_ASSETS environment
+		// variable, which `make test` populates from `setup-envtest`. To run this
+		// suite directly, export KUBEBUILDER_ASSETS (e.g.
+		// `export KUBEBUILDER_ASSETS="$(bin/setup-envtest use <version> -p path)"`).
 	}
 
 	var err error

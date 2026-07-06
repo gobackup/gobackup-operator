@@ -1,7 +1,8 @@
 # Image URL to use all building/pushing image targets
 IMG ?= payamqorbanpour/gobackup-operator:dev
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.28.0
+# Aligned with the k8s libraries (k8s.io/api v0.35.x == Kubernetes 1.35).
+ENVTEST_K8S_VERSION = 1.35.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -24,8 +25,6 @@ SHELL = /usr/bin/env bash -o pipefail
 .PHONY: all
 all: build
 
-LINT = golang.org/x/lint/golint
-
 ##@ General
 
 # The help target prints out all targets with their descriptions organized
@@ -46,8 +45,17 @@ help: ## Display this help.
 ##@ Development
 
 .PHONY: manifests
-manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+manifests: controller-gen sync-helm-crds ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+
+# Split out so controller-gen runs before the Helm sync (order matters: sync copies the freshly generated CRDs).
+.PHONY: gen-crds
+gen-crds: controller-gen
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
+.PHONY: sync-helm-crds
+sync-helm-crds: gen-crds ## Copy generated CRDs from config/crd/bases into the Helm chart.
+	@mkdir -p charts/gobackup-operator/crds
+	cp config/crd/bases/*.yaml charts/gobackup-operator/crds/
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -96,13 +104,13 @@ test-coverage: test ## Generate test coverage report.
 	go tool cover -html=cover.out -o cover.html
 	@echo "Coverage report generated: cover.html"
 
-GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
-GOLANGCI_LINT_VERSION ?= v1.54.2
-golangci-lint:
-	@[ -f $(GOLANGCI_LINT) ] || { \
-	set -e ;\
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell dirname $(GOLANGCI_LINT)) $(GOLANGCI_LINT_VERSION) ;\
-	}
+GOLANGCI_LINT = $(LOCALBIN)/golangci-lint
+GOLANGCI_LINT_VERSION ?= v2.12.2
+.PHONY: golangci-lint
+golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
+$(GOLANGCI_LINT): $(LOCALBIN)
+	test -s $(GOLANGCI_LINT) || \
+	GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter & yamllint
@@ -186,7 +194,7 @@ kind-run: fmt vet kustomize ## Run the operator on a local kind cluster
 	cd config/manager && $(KUSTOMIZE) edit set image controller=gobackup-operator:dev
 	$(KUSTOMIZE) build config/default | $(KUBECTL) apply -f -
 	@echo "Operator is running on kind cluster"
-	@echo "Use 'kubectl get pods -n gobackup-system' to verify the deployment"
+	@echo "Use 'kubectl get pods -n gobackup-operator-system' to verify the deployment"
 
 ##@ Build
 
@@ -225,7 +233,7 @@ PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
 .PHONY: docker-buildx
 docker-buildx: ## Build and push docker image for the manager for cross-platform support
 	# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into Dockerfile.cross, and preserve the original Dockerfile
-	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' Dockerfile > Dockerfile.cross
+	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' build/Dockerfile > Dockerfile.cross
 	- $(CONTAINER_TOOL) buildx create --name project-v3-builder
 	$(CONTAINER_TOOL) buildx use project-v3-builder
 	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${IMG} -f Dockerfile.cross .
@@ -270,7 +278,11 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.2.1
-CONTROLLER_TOOLS_VERSION ?= latest
+# Matches the controller-gen.kubebuilder.io/version stamp in config/crd/bases.
+CONTROLLER_TOOLS_VERSION ?= v0.19.0
+# setup-envtest is released from controller-runtime branches; pin to the branch
+# matching sigs.k8s.io/controller-runtime v0.23.x.
+ENVTEST_VERSION ?= release-0.23
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary. If wrong version is installed, it will be removed before downloading.
@@ -285,12 +297,12 @@ $(KUSTOMIZE): $(LOCALBIN)
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary. If wrong version is installed, it will be overwritten.
 $(CONTROLLER_GEN): $(LOCALBIN)
 	test -s $(LOCALBIN)/controller-gen || \
-	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@latest
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@$(ENVTEST_VERSION)
 
 .PHONY: kind-delete
 kind-delete: ## Delete the gobackup-operator kind cluster
@@ -310,7 +322,7 @@ kind-restart: ## Restart the operator service in the kind cluster
 		echo "Operator service restarted. Watching rollout status..."; \
 		kubectl -n gobackup-operator-system rollout status deployment gobackup-operator-controller-manager; \
 	else \
-		echo "gobackup-system namespace not found. Has the operator been deployed?"; \
+		echo "gobackup-operator-system namespace not found. Has the operator been deployed?"; \
 	fi
 
 .PHONY: kind-rebuild
@@ -347,48 +359,6 @@ test-env-delete: ## Delete the test kind cluster
 		echo "No gobackup-test cluster found."; \
 	fi
 
-.PHONY: test-env-deploy
-test-env-deploy: ## Deploy the operator and test resources to the test environment
-	@echo "Deploying operator and test resources..."
-	@# Install CRDs
-	$(KUBECTL) apply -f config/crd/bases
-	@# Deploy operator
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | $(KUBECTL) apply -f -
-	@# Wait for operator to be ready
-	@echo "Waiting for operator to be ready..."
-	$(KUBECTL) wait --for=condition=available --timeout=60s deployment/gobackup-operator-controller-manager -n gobackup-operator-system
-	@# Deploy test resources
-	@echo "Deploying test resources..."
-	$(KUBECTL) apply -f example.local/database/postgresql.yaml
-	$(KUBECTL) apply -f example.local/backup-immediate.yaml
-	$(KUBECTL) apply -f example.local/backup-scheduled.yaml
-	@echo "Deployment completed!"
-
-.PHONY: test-env-clean
-test-env-clean: ## Clean up test resources (but keep the cluster)
-	@echo "Cleaning up test resources..."
-	$(KUBECTL) delete -f example.local/backup-scheduled.yaml --ignore-not-found=true
-	$(KUBECTL) delete -f example.local/backup-immediate.yaml --ignore-not-found=true
-	$(KUBECTL) delete -f example.local/database/postgresql.yaml --ignore-not-found=true
-	@echo "Test resources cleaned up!"
-
-.PHONY: test-env-status
-test-env-status: ## Show status of test environment
-	@echo "=== Cluster Status ==="
-	kind get clusters
-	@echo "\n=== Operator Status ==="
-	$(KUBECTL) get pods -n gobackup-operator-system
-	@echo "\n=== Test Resources ==="
-	$(KUBECTL) get postgresql -n gobackup-operator-test
-	$(KUBECTL) get backup -n gobackup-operator-test
-	$(KUBECTL) get jobs -n gobackup-operator-test
-	$(KUBECTL) get cronjobs -n gobackup-operator-test
-
 .PHONY: test-env-logs
 test-env-logs: ## Show operator logs
 	$(KUBECTL) logs -n gobackup-operator-system -l control-plane=controller-manager -c manager -f
-
-.PHONY: test-env-setup
-test-env-setup: test-env-create test-env-deploy ## Create and deploy complete test environment in one command
-	@echo "Test environment setup completed!"
