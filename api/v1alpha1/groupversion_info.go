@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1 contains API Schema definitions for the backup v1 API group
+// Package v1alpha1 contains API Schema definitions for the backup v1alpha1 API group
 // +kubebuilder:object:generate=true
 // +groupName=gobackup.io
 package v1alpha1
@@ -22,6 +22,14 @@ package v1alpha1
 import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/scheme"
+)
+
+// Resource names (plural, lowercase) used when resolving Database/Storage
+// references dynamically. Centralized here so the dynamic client's GVR can
+// never drift from the CRD names.
+const (
+	ResourceDatabases = "databases"
+	ResourceStorages  = "storages"
 )
 
 var (

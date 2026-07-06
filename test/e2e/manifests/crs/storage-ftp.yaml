@@ -6,9 +6,10 @@ metadata:
 spec:
   type: ftp
   config:
-    host: ftp.gobackup-e2e-test
-    port: 21
-    username: root
-    password: password
-    path: /
-    keep: 5
+    ftp:
+      host: ftp.gobackup-e2e-test
+      port: 21
+      username: root
+      password: password
+      path: /
+      keep: 5

@@ -6,14 +6,15 @@ metadata:
 spec:
   type: mongodb
   config:
-    host: mongodb.example.svc.cluster.local
-    port: 27017
-    database: exampledb
-    username_ref:
-      name: database-credentials
-      key: username
-    password_ref:
-      name: database-credentials
-      key: password
-    auth_db: admin
-    oplog: true
+    mongodb:
+      host: mongodb.example.svc.cluster.local
+      port: 27017
+      database: exampledb
+      username_ref:
+        name: database-credentials
+        key: username
+      password_ref:
+        name: database-credentials
+        key: password
+      authdb: admin
+      oplog: true

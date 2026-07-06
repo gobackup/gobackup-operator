@@ -1,0 +1,21 @@
+models:
+  app-backup:
+    compress_with: gzip
+    databases:
+      app-pg:
+        args: --no-owner
+        database: appdb
+        exclude_tables:
+        - audit
+        host: localhost
+        password: s3cr3t
+        port: 5432
+        tables:
+        - users
+        - orders
+        type: postgresql
+        username: appuser
+    storages:
+      app-local:
+        path: /backups
+        type: local

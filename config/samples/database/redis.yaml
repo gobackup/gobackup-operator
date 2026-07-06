@@ -6,9 +6,10 @@ metadata:
 spec:
   type: redis
   config:
-    host: redis.example.svc.cluster.local
-    port: 6379
-    password_ref:
-      name: database-credentials
-      key: password
-    mode: sync
+    redis:
+      host: redis.example.svc.cluster.local
+      port: 6379
+      password_ref:
+        name: database-credentials
+        key: password
+      mode: sync

@@ -6,14 +6,15 @@ metadata:
 spec:
   type: mysql
   config:
-    host: mysql.example.svc.cluster.local
-    port: 3306
-    socket: ""
-    database: exampledb
-    username_ref:
-      name: database-credentials
-      key: username
-    password_ref:
-      name: database-credentials
-      key: password
-    args: "--skip-ssl"
+    mysql:
+      host: mysql.example.svc.cluster.local
+      port: 3306
+      socket: ''
+      database: exampledb
+      username_ref:
+        name: database-credentials
+        key: username
+      password_ref:
+        name: database-credentials
+        key: password
+      args: --skip-ssl

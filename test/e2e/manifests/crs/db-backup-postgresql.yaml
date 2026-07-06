@@ -6,11 +6,12 @@ metadata:
 spec:
   type: postgresql
   config:
-    host: postgres.gobackup-e2e-test
-    port: 5432
-    username: postgres
-    password: password
-    database: testdb
+    postgresql:
+      host: postgres.gobackup-e2e-test
+      port: 5432
+      username: postgres
+      password: password
+      database: testdb
 ---
 apiVersion: gobackup.io/v1alpha1
 kind: Backup
@@ -19,10 +20,10 @@ metadata:
   namespace: gobackup-e2e-test
 spec:
   schedule:
-    cron: "*/5 * * * *"
+    cron: '*/5 * * * *'
   databaseRefs:
-    - name: postgresql
+  - name: postgresql
   storageRefs:
-    - name: minio
+  - name: minio
   compressWith:
     type: gzip

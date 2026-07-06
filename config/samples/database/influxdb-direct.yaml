@@ -6,7 +6,8 @@ metadata:
 spec:
   type: influxdb
   config:
-    host: influxdb.example.svc.cluster.local
-    token: mytoken
-    bucket: mybucket
-    org: myorg
+    influxdb:
+      host: influxdb.example.svc.cluster.local
+      token: mytoken
+      bucket: mybucket
+      org: myorg

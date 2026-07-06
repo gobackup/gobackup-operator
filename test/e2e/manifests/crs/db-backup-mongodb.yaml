@@ -6,12 +6,13 @@ metadata:
 spec:
   type: mongodb
   config:
-    host: mongodb.gobackup-e2e-test
-    port: 27017
-    username: root
-    password: "password"
-    auth_db: admin
-    oplog: true
+    mongodb:
+      host: mongodb.gobackup-e2e-test
+      port: 27017
+      username: root
+      password: password
+      authdb: admin
+      oplog: true
 ---
 apiVersion: gobackup.io/v1alpha1
 kind: Backup
@@ -20,10 +21,10 @@ metadata:
   namespace: gobackup-e2e-test
 spec:
   schedule:
-    cron: "*/5 * * * *"
+    cron: '*/5 * * * *'
   databaseRefs:
-    - name: mongodb
+  - name: mongodb
   storageRefs:
-    - name: minio
+  - name: minio
   compressWith:
     type: gzip

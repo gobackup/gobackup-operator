@@ -6,12 +6,13 @@ metadata:
 spec:
   type: mysql
   config:
-    host: mysql.gobackup-e2e-test
-    port: 3306
-    username: root
-    password: password
-    database: testdb
-    args: "--no-tablespaces"
+    mysql:
+      host: mysql.gobackup-e2e-test
+      port: 3306
+      username: root
+      password: password
+      database: testdb
+      args: --no-tablespaces
 ---
 apiVersion: gobackup.io/v1alpha1
 kind: Backup
@@ -20,10 +21,10 @@ metadata:
   namespace: gobackup-e2e-test
 spec:
   schedule:
-    cron: "*/5 * * * *"
+    cron: '*/5 * * * *'
   databaseRefs:
-    - name: mysql
+  - name: mysql
   storageRefs:
-    - name: minio
+  - name: minio
   compressWith:
     type: gzip

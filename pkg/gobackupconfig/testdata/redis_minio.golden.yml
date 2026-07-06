@@ -1,0 +1,18 @@
+models:
+  cache-backup:
+    databases:
+      cache:
+        args: --tls
+        host: redis.svc
+        invoke_save: true
+        mode: copy
+        password: redispw
+        port: 6379
+        type: redis
+    storages:
+      minio:
+        access_key_id: minioadmin
+        bucket: dumps
+        endpoint: http://minio.svc:9000
+        secret_access_key: minioadmin
+        type: minio
