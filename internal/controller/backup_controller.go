@@ -32,7 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -46,9 +46,9 @@ import (
 // BackupReconciler reconciles a Backup object
 type BackupReconciler struct {
 	client.Client
-	Scheme    *runtime.Scheme
-	K8s       *k8sutil.K8s
-	Clientset *kubernetes.Clientset
+	Scheme   *runtime.Scheme
+	K8s      *k8sutil.K8s
+	Recorder record.EventRecorder
 }
 
 const (
@@ -70,6 +70,7 @@ const (
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,resources=pods/log,verbs=get
+// +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 
 // Reconcile is the main reconciliation loop for Backup resources.
 // It handles the creation and management of CronJobs for scheduled backups.
@@ -163,6 +164,9 @@ func (r *BackupReconciler) handleBackupCreate(ctx context.Context, backup *backu
 		return ctrl.Result{}, err
 	}
 
+	// Warn on refs still carrying the deprecated apiGroup/type fields.
+	r.emitDeprecatedRefWarnings(backup)
+
 	// Create the secret that will be used by the CronJob
 	if err := r.K8s.CreateSecret(ctx, backup); err != nil {
 		logger.Error(err, "Failed to create secret for scheduled backup")
@@ -213,6 +217,9 @@ func (r *BackupReconciler) handleBackupUpdate(ctx context.Context, backup *backu
 		logger.Error(err, "Invalid backup specification during update")
 		return ctrl.Result{}, err
 	}
+
+	// Warn on refs still carrying the deprecated apiGroup/type fields.
+	r.emitDeprecatedRefWarnings(backup)
 
 	// Only act when the manifest actually changed. The API server bumps
 	// metadata.generation on every spec edit but not on status/metadata-only
@@ -293,6 +300,36 @@ func (r *BackupReconciler) validateBackupSpec(backup *backupv1.Backup) error {
 	return nil
 }
 
+// emitDeprecatedRefWarnings records a Warning event for every database or
+// storage reference that still sets the deprecated APIGroup/Type fields. The
+// backend type and API group are read from the referenced resource, so these
+// ref fields are ignored; the event nudges users to remove them.
+func (r *BackupReconciler) emitDeprecatedRefWarnings(backup *backupv1.Backup) {
+	if r.Recorder == nil {
+		return
+	}
+	for _, ref := range backup.Spec.DatabaseRefs {
+		if ref.Type != "" { //nolint:staticcheck // intentionally reading the deprecated field to warn about it
+			r.Recorder.Eventf(backup, corev1.EventTypeWarning, "DeprecatedRefField",
+				"databaseRef %q sets deprecated field type; it is ignored, remove it", ref.Name)
+		}
+		if ref.APIGroup != "" { //nolint:staticcheck // intentionally reading the deprecated field to warn about it
+			r.Recorder.Eventf(backup, corev1.EventTypeWarning, "DeprecatedRefField",
+				"databaseRef %q sets deprecated field apiGroup; it is ignored, remove it", ref.Name)
+		}
+	}
+	for _, ref := range backup.Spec.StorageRefs {
+		if ref.Type != "" { //nolint:staticcheck // intentionally reading the deprecated field to warn about it
+			r.Recorder.Eventf(backup, corev1.EventTypeWarning, "DeprecatedRefField",
+				"storageRef %q sets deprecated field type; it is ignored, remove it", ref.Name)
+		}
+		if ref.APIGroup != "" { //nolint:staticcheck // intentionally reading the deprecated field to warn about it
+			r.Recorder.Eventf(backup, corev1.EventTypeWarning, "DeprecatedRefField",
+				"storageRef %q sets deprecated field apiGroup; it is ignored, remove it", ref.Name)
+		}
+	}
+}
+
 // validateCronExpression performs basic validation on the cron expression.
 // This is a simple validation - Kubernetes CronJob will perform more thorough validation.
 func (r *BackupReconciler) validateCronExpression(cron string) error {
@@ -365,6 +402,9 @@ func (r *BackupReconciler) buildJobTemplate(backup *backupv1.Backup) batchv1.Job
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *BackupReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if r.Recorder == nil {
+		r.Recorder = mgr.GetEventRecorderFor("backup-controller")
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&backupv1.Backup{}).
 		Owns(&batchv1.CronJob{}).
@@ -750,7 +790,7 @@ func (r *BackupReconciler) buildRunStatus(ctx context.Context, job *batchv1.Job)
 	}
 
 	// Collect logs only on failure to save space
-	if runStatus.Phase == backupv1.RunPhaseFailed && r.Clientset != nil {
+	if runStatus.Phase == backupv1.RunPhaseFailed && r.K8s != nil && r.K8s.Clientset != nil {
 		logs, err := r.collectPodLogs(ctx, job)
 		if err != nil {
 			logger.V(1).Info("Failed to collect pod logs", "error", err)
@@ -765,7 +805,7 @@ func (r *BackupReconciler) buildRunStatus(ctx context.Context, job *batchv1.Job)
 
 // collectPodLogs collects logs from pods belonging to a Job
 func (r *BackupReconciler) collectPodLogs(ctx context.Context, job *batchv1.Job) (string, error) {
-	if r.Clientset == nil {
+	if r.K8s == nil || r.K8s.Clientset == nil {
 		return "", fmt.Errorf("clientset not available")
 	}
 
@@ -791,7 +831,7 @@ func (r *BackupReconciler) collectPodLogs(ctx context.Context, job *batchv1.Job)
 		TailLines: &tailLines,
 	}
 
-	req := r.Clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, podLogOpts)
+	req := r.K8s.Clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, podLogOpts)
 	podLogs, err := req.Stream(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get pod logs: %w", err)
