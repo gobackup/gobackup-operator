@@ -1,0 +1,39 @@
+name: Lint & Generated Code
+on:
+  pull_request:
+  push:
+    branches:
+      - "*"
+    tags:
+      - "*"
+jobs:
+  lint:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26.4'
+      # Uses the golangci-lint version pinned in the Makefile
+      # (GOLANGCI_LINT_VERSION) and the repo .golangci.yml.
+      - name: Run golangci-lint
+        run: make lint
+
+  crd-drift:
+    name: CRD drift guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26.4'
+      # Regenerate CRDs + deepcopy, sync the Helm chart CRDs, and fail if any
+      # generated file drifts from what is committed.
+      - name: Regenerate manifests and check for drift
+        run: |
+          make manifests generate
+          make sync-helm-crds
+          git diff --exit-code
