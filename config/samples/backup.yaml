@@ -5,13 +5,9 @@ metadata:
   namespace: gobackup-operator-system
 spec:
   databaseRefs:
-    - apiGroup: gobackup.io
-      type: postgresql
-      name: example-postgresql
+    - name: example-postgresql
   storageRefs:
-    - apiGroup: gobackup.io
-      type: s3
-      name: s3-direct
+    - name: s3-direct
       keep: 5
       timeout: 300
   compressWith:

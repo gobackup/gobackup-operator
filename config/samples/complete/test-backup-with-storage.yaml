@@ -67,14 +67,10 @@ spec:
     failedJobsHistoryLimit: 1
   
   databaseRefs:
-    - apiGroup: gobackup.io
-      type: postgresql
-      name: production-postgres
-  
+    - name: production-postgres
+
   storageRefs:
-    - apiGroup: gobackup.io
-      type: s3
-      name: production-s3
+    - name: production-s3
       keep: 30
       timeout: 600
   

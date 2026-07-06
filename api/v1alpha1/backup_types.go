@@ -109,10 +109,14 @@ type BackupSchedule struct {
 
 // StorageRef references a Storage resource that a Backup writes to.
 type StorageRef struct {
-	// APIGroup is the API group of the referenced Storage resource. Defaults to gobackup.io.
+	// Deprecated: APIGroup is ignored. The referenced Storage is always resolved
+	// in the gobackup.io API group; this field has no effect and will be removed
+	// in a future release.
 	// +optional
 	APIGroup string `json:"apiGroup,omitempty"`
-	// Type is the storage backend type (s3, gcs, azure, local, ftp, etc.) matching the Storage resource's spec.type field
+	// Deprecated: Type is ignored. The storage backend type is read from the
+	// referenced Storage resource's spec.type (the source of truth); this field
+	// has no effect and will be removed in a future release.
 	// +optional
 	Type string `json:"type,omitempty"`
 	// Name is the name of the referenced Storage resource.
@@ -128,10 +132,14 @@ type StorageRef struct {
 
 // DatabaseRef references a Database resource that a Backup captures.
 type DatabaseRef struct {
-	// APIGroup is the API group of the referenced Database resource. Defaults to gobackup.io.
+	// Deprecated: APIGroup is ignored. The referenced Database is always resolved
+	// in the gobackup.io API group; this field has no effect and will be removed
+	// in a future release.
 	// +optional
 	APIGroup string `json:"apiGroup,omitempty"`
-	// Type is the database backend type (postgresql, redis, etc.) matching the Database resource's spec.type field
+	// Deprecated: Type is ignored. The database backend type is read from the
+	// referenced Database resource's spec.type (the source of truth); this field
+	// has no effect and will be removed in a future release.
 	// +optional
 	Type string `json:"type,omitempty"`
 	// Name is the name of the referenced Database resource.
