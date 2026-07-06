@@ -2,7 +2,19 @@ name: Cadoo
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch: {}
 jobs:
+  debug-gateway-models:
+    runs-on: ubuntu-latest
+    steps:
+      - name: List models available on LLM gateway
+        env:
+          LLM_GATEWAY_URL: ${{ secrets.LLM_GATEWAY_URL }}
+          LLM_GATEWAY_API_KEY: ${{ secrets.LLM_GATEWAY_API_KEY }}
+        run: |
+          curl -s -H "Authorization: Bearer $LLM_GATEWAY_API_KEY" "$LLM_GATEWAY_URL/models" | tee models.json
+          echo "---"
+          jq -r '.data[]?.id // .[]?.id // "could not parse .data[].id, see raw output above"' models.json 2>/dev/null || true
   cadoo-review:
     runs-on: ubuntu-latest
     permissions:
